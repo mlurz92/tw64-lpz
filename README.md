@@ -43,9 +43,10 @@ Gemeinsam für alle Stilwelten: Bestandsküche (Nussbaum/Granit), **Bäder nach 
 | | **Bad** | **Dusche / Gäste-WC** |
 |---|---|---|
 | Vorwand | Waschtisch-Vorwand W37 mit **Ablage 1,18 m** (90 × 25 cm), Wannen-Vorwand W38 mit Ablage 1,18 m | Vorwand über die volle Wand W43 mit **Ablage 1,18 m** (131 × 15 cm) |
-| Spiegel | **Maßspiegel über die gesamte Wand W37 oberhalb der Ablage bis zur Decke (182 × 138 cm)** | **Maßspiegel über die gesamte Wand W43 oberhalb der Ablage bis zur Decke (131 × 138 cm)** |
+| Spiegel | **Maßspiegel über die volle Breite des Waschtisch-Vorsprungs oberhalb der Ablage bis zur Decke (90 × 138 cm)** – endet bündig an der Wannenkante, über der Wanne bleibt die Wand gefliest | **Maßspiegel über die gesamte Wand W43 oberhalb der Ablage bis zur Decke (131 × 138 cm)** |
 | Waschtisch | Laufen **VAL** 60 × 42 + schwebender Unterschrank (2 Schubkästen) | Laufen **VAL** 60 × 42 + Unterschrank |
 | WC | Laufen **Meda**, Vorwand W35 | Laufen **Meda**, W46 |
+| Wäsche | **Waschtrockner** (Frontlader 60 × 60 × 85) in der ersten Nische direkt neben der Tür, Steinablage über die volle Nischenbreite, Hängeschrank 76 × 35 × 72 darüber | – |
 | Wanne / Dusche | Villeroy & Boch **Collaro** 180 × 80, eingefliest | Walk-in 105 × 80, Linienrinne, Glas L-förmig |
 | Armaturen | **alle schwarz matt**: Duravit **Tulum** Waschtischmischer, Wannenthermostat Aufputz mit Handbrause | **alle schwarz matt**: Duravit **Tulum** Duschsystem Aufputz (Kopf- und Handbrause), Waschtischmischer |
 | Licht | 2 IP44-Pendel vor der Spiegelwand + Einbaustrahler, 3000 K | 2 IP44-Pendel + Einbaustrahler, 3000 K |
@@ -62,7 +63,7 @@ Die Spiegel werden als **echte planare Spiegelungen** gerendert (Reflector-Knote
 | Materialehrlichkeit | Echtholz/-furnier, Naturstein, Kalk-/Lehmputz, Leinen, Wolle, Bouclé; je Stilwelt nur ein Metallton |
 | Mehrschichtiges Licht 2700 K, CRI > 95 | Grundlicht entblendet, indirekte LED-Vouten/-Unterleuchtung, Zonen- und Stimmungslicht; Bad 3000 K |
 | Großzügige Proportionen | Teppich 240 × 350 (Sofa und Sessel stehen darauf), deckenhohe, bodenlange Vorhänge, Kunst mit Bildmitte ≈ 1,45 m |
-| Spiegel als Architektur | wandfüllende Maßspiegel in beiden Bädern |
+| Spiegel als Architektur | Maßspiegel oberhalb der Ablagen bis zur Decke: im Gäste-WC wandfüllend, im Bad über die Breite des Waschtisch-Vorsprungs (nicht über der Wanne) |
 | Wenige, starke Setzungen | je Raum ein Statement (Lamellen-, Spiegel-, Bibliothekswand) |
 
 ### Stauraum
@@ -73,7 +74,7 @@ Die Spiegel werden als **echte planare Spiegelungen** gerendert (Reflector-Knote
 | Wohnen | Lowboard 1,8–2,78 m (je Stil) + Einbaubank 225 × 40 mit 3 Schubkästen, Sideboard, Highboard/Regal an W08 |
 | Schlafen | PAX 300 × 58 × 236 + Deckenblende, Nachttische |
 | Arbeiten | Bibliothekswand 150 × 40 × 252 (geschlossene Unterschränke + 4 beleuchtete Böden) |
-| Bad / WC | Unterschränke mit Schubkästen, Ablagen 1,18 m, Waschturm hinter Fronten |
+| Bad / WC | Unterschränke mit Schubkästen, Ablagen 1,18 m, Hängeschrank über dem Waschtrockner in der Türnische |
 | HWR | Hochschrank 80 × 45 × 220, Regal mit Körben |
 
 ### Geometrie & Zonierung
@@ -158,7 +159,7 @@ Stand dieser Planung: **alle vier Stilwelten bestehen sämtliche Prüfungen** (j
 
 Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf drei Maßketten kalibriert (Arbeiten/Gäste-Breite 3,48 m, Innentür 0,885 m, Badtür 0,76 m). Raumhöhe 2,56 m, Türen 2,135 m, bodentiefe Fenster (BRH 0,00). Sanitärobjekte, Vorwände (Ablage 1,18 m) und Heizkörper folgen den Angaben des HLS-Plans.
 
-> **Wichtig:** Planungs- und Visualisierungswerkzeug, kein Bestandsaufmaß und keine Fertigungsgrundlage. Vor Möbelkauf, Einbau oder Montage lichte Maße, Türanschläge, Heizkörper, Elektro- und Sanitäranschlüsse vor Ort prüfen – insbesondere die Spiegelmaße gegen die ausgeführten Vorwände.
+> **Wichtig:** Planungs- und Visualisierungswerkzeug, kein Bestandsaufmaß und keine Fertigungsgrundlage. Vor Möbelkauf, Einbau oder Montage lichte Maße, Türanschläge, Heizkörper, Elektro- und Sanitäranschlüsse vor Ort prüfen – insbesondere die Spiegelmaße gegen die ausgeführten Vorwände und die Nischenmaße gegen den gewählten Waschtrockner.
 
 ## Export
 
@@ -192,7 +193,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   │       ├── architecture.js   # Wände, Laibungen, Böden, Decken, Fenster, Türen, Balkone
 │   │       ├── catalog.js        # Westwing-/IKEA-Modelle (inkl. Zumi, Hilda, PAX, BESTÅ …)
 │   │       ├── furniture.js      # Maßmöbel (Lamellenwand, Lowboard, Einbaubank, Bibliothekswand …)
-│   │       ├── bath.js           # Vorwände 1,18 m, Maßspiegel, Laufen VAL/Meda, V&B Collaro, Duravit Tulum
+│   │       ├── bath.js           # Vorwände 1,18 m, Maßspiegel, Waschtrockner-Nische, Laufen VAL/Meda, V&B Collaro, Duravit Tulum
 │   │       └── kitchen.js · decor.js · textiles.js · common.js
 │   └── ui/plan2d.js              # SVG-Grundriss
 ├── vendor/                       # three.js r186 (WebGPU + TSL) und Add-ons (lokal, offline, versionsfest)
