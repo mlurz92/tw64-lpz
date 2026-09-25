@@ -1,0 +1,200 @@
+{
+ "floorOak": {
+  "maps": {
+   "map": {
+    "file": "floorOak_map.webp",
+    "srgb": true,
+    "size": 3.8
+   },
+   "normalMap": {
+    "file": "floorOak_normalMap.webp",
+    "srgb": false,
+    "size": 3.8
+   },
+   "roughnessMap": {
+    "file": "floorOak_roughnessMap.webp",
+    "srgb": false,
+    "size": 3.8
+   }
+  },
+  "extra": {
+   "aspect": 0.8421052631578948
+  }
+ },
+ "deck": {
+  "maps": {
+   "map": {
+    "file": "deck_map.webp",
+    "srgb": true,
+    "size": 2.4
+   },
+   "normalMap": {
+    "file": "deck_normalMap.webp",
+    "srgb": false,
+    "size": 2.4
+   },
+   "roughnessMap": {
+    "file": "deck_roughnessMap.webp",
+    "srgb": false,
+    "size": 2.4
+   }
+  },
+  "extra": {
+   "aspect": 0.9333333333333335
+  }
+ },
+ "calacatta": {
+  "maps": {
+   "map": {
+    "file": "calacatta_map.webp",
+    "srgb": true,
+    "size": 1.4
+   },
+   "roughnessMap": {
+    "file": "calacatta_roughnessMap.webp",
+    "srgb": false,
+    "size": 1.4
+   },
+   "normalMap": {
+    "file": "calacatta_normalMap.webp",
+    "srgb": false,
+    "size": 1.4
+   }
+  },
+  "extra": {}
+ },
+ "calacattaFine": {
+  "maps": {
+   "map": {
+    "file": "calacattaFine_map.webp",
+    "srgb": true,
+    "size": 0.8
+   },
+   "roughnessMap": {
+    "file": "calacattaFine_roughnessMap.webp",
+    "srgb": false,
+    "size": 0.8
+   },
+   "normalMap": {
+    "file": "calacattaFine_normalMap.webp",
+    "srgb": false,
+    "size": 0.8
+   }
+  },
+  "extra": {}
+ },
+ "granite": {
+  "maps": {
+   "map": {
+    "file": "granite_map.webp",
+    "srgb": true,
+    "size": 0.9
+   }
+  },
+  "extra": {}
+ },
+ "tiles": {
+  "maps": {
+   "map": {
+    "file": "tiles_map.webp",
+    "srgb": true,
+    "size": 2.4
+   },
+   "normalMap": {
+    "file": "tiles_normalMap.webp",
+    "srgb": false,
+    "size": 2.4
+   }
+  },
+  "extra": {
+   "aspect": 1
+  }
+ },
+ "tilesFloor": {
+  "maps": {
+   "map": {
+    "file": "tilesFloor_map.webp",
+    "srgb": true,
+    "size": 2.4
+   },
+   "normalMap": {
+    "file": "tilesFloor_normalMap.webp",
+    "srgb": false,
+    "size": 2.4
+   }
+  },
+  "extra": {
+   "aspect": 1
+  }
+ },
+ "travertine": {
+  "maps": {
+   "map": {
+    "file": "travertine_map.webp",
+    "srgb": true,
+    "size": 0.9
+   },
+   "normalMap": {
+    "file": "travertine_normalMap.webp",
+    "srgb": false,
+    "size": 0.9
+   }
+  },
+  "extra": {}
+ },
+ "travertineVein": {
+  "maps": {
+   "map": {
+    "file": "travertineVein_map.webp",
+    "srgb": true,
+    "size": 1.1
+   },
+   "normalMap": {
+    "file": "travertineVein_normalMap.webp",
+    "srgb": false,
+    "size": 1.1
+   }
+  },
+  "extra": {}
+ },
+ "darkStone": {
+  "maps": {
+   "map": {
+    "file": "darkStone_map.webp",
+    "srgb": true,
+    "size": 1.2
+   },
+   "roughnessMap": {
+    "file": "darkStone_roughnessMap.webp",
+    "srgb": false,
+    "size": 1.2
+   },
+   "normalMap": {
+    "file": "darkStone_normalMap.webp",
+    "srgb": false,
+    "size": 1.2
+   }
+  },
+  "extra": {}
+ },
+ "limewash": {
+  "maps": {
+   "map": {
+    "file": "limewash_map.webp",
+    "srgb": true,
+    "size": 2.4
+   }
+  },
+  "extra": {}
+ },
+ "wool": {
+  "maps": {
+   "map": {
+    "file": "wool_map.webp",
+    "srgb": true,
+    "size": 0.6
+   }
+  },
+  "extra": {}
+ }
+}

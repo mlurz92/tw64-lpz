@@ -53,6 +53,7 @@ export class ModelLibrary {
       g.traverse((o) => {
         if (!o.isMesh) return;
         o.castShadow = true; o.receiveShadow = true;
+        o.geometry.userData.shared = true;
         o.userData.keepUV = true;
         const m = o.material;
         if (m && m.isMeshStandardMaterial) {

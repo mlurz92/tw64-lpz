@@ -5,7 +5,8 @@ import { ModelLibrary } from './engine/models.js';
 import { ApartmentScene } from './engine/scene.js';
 import { PlanView } from './ui/plan2d.js';
 import { ROOMS, WALLS, BALCONIES } from './core/geometry.js';
-import { CONCEPT, ROOM_NOTES } from './data/design.js';
+import { STYLES, DEFAULT_STYLE } from './data/design.js';
+import { roomNotes } from './data/styles.js';
 import PLAN from './data/plan.js';
 import { validateLayout } from './core/validate.js';
 
@@ -13,6 +14,13 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const f2 = (n) => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const STORE_KEY = 'we13-style';
+function initialStyle() {
+  const h = new URLSearchParams(location.hash.slice(1)).get('stil');
+  if (h && STYLES[h]) return h;
+  try { const v = localStorage.getItem(STORE_KEY); if (v && STYLES[v]) return v; } catch { /* storage unavailable */ }
+  return DEFAULT_STYLE;
+}
 const roomName = (id) => ROOMS.find((r) => r.id === id)?.name ?? BALCONIES.find((b) => b.id === id)?.name ?? id;
 
 function progress(p, text) {
@@ -33,35 +41,42 @@ async function boot() {
     console.error(e);
     return;
   }
+  const T = { t0: performance.now() }; const mark = (k) => { T[k] = Math.round(performance.now() - T.t0); };
   progress(0.05, 'Materialien, Hölzer und Stein werden erzeugt …');
   const [M, lib] = await Promise.all([
-    createMaterials(),
+    createMaterials().then((m) => { mark('materials'); return m; }),
     (async () => { const l = new ModelLibrary(); await l.load((p) => progress(0.1 + p * 0.3, 'Pflanzen und Keramik werden geladen …')); return l; })(),
   ]);
   progress(0.5, 'Wohnung wird aufgebaut …');
   await new Promise((r) => setTimeout(r, 30));
-  const apartment = new ApartmentScene(M, lib).build();
-  progress(0.75, 'Licht und Umgebung werden berechnet …');
-  viewer.setApartment(apartment);
-  await viewer.loadHDRI(MOODS.day.hdri);
+  mark('assets');
+  const styleId = initialStyle();
+  const apartment = new ApartmentScene(M, lib, styleId).build();
+  mark('build');
+  progress(0.72, 'Shader werden kompiliert, Licht und Umgebung berechnet …');
   viewer.setMode('orbit');
+  await viewer.setApartment(apartment);
+  mark('scene');
   viewer.goto('overview', false);
-  progress(0.92, 'Shader werden kompiliert …');
-  await viewer.renderer.compileAsync?.(viewer.scene, viewer.camera).catch(() => {});
+  viewer.renderNow();
+  mark('firstFrame');
   progress(1, 'Fertig');
   setTimeout(() => $('#loader').classList.add('done'), 250);
   setTimeout(() => { $('#loader').style.display = 'none'; }, 1300);
 
-  window.__app = { viewer, apartment, M, lib };
-  const ui = new UI(viewer, apartment);
+  const ui = new UI(viewer, apartment, { M, lib });
+  window.__app = { viewer, get apartment() { return ui.a; }, M, lib, timing: T, setVariant: (id) => ui.setStyle(id), validate: () => validateLayout(ui.a.items) };
   ui.init();
 }
 
 class UI {
-  constructor(viewer, apartment) { this.v = viewer; this.a = apartment; }
+  constructor(viewer, apartment, { M, lib }) { this.v = viewer; this.a = apartment; this.M = M; this.lib = lib; }
+
+  get style() { return this.a.style; }
+  get notes() { return roomNotes(this.a.style); }
 
   init() {
-    this.tabs(); this.toolbar(); this.stations(); this.details(); this.planView(); this.wallsView(); this.conceptView(); this.dialogs();
+    this.tabs(); this.toolbar(); this.stylePicker(); this.stations(); this.details(); this.planView(); this.wallsView(); this.conceptView(); this.dialogs();
     this.v.on((type, data) => {
       if (type === 'pick') { this.showItem(data); this.plan?.select(data); }
       if (type === 'station') $$('#stationList button').forEach((b) => b.classList.toggle('active', b.dataset.id === data));
@@ -84,6 +99,7 @@ class UI {
       $$('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + b.dataset.view));
       if (b.dataset.view === 'plan') this.plan.render();
       this.v.renderer.setAnimationLoop(b.dataset.view === '3d' ? () => this.v.loop() : null);
+      if (b.dataset.view === '3d') this.v.invalidate();
     }));
   }
 
@@ -102,7 +118,7 @@ class UI {
     });
     $('#exposure').addEventListener('input', (e) => v.setExposure(+e.target.value));
     $('#quality').addEventListener('change', (e) => v.setQuality(e.target.value));
-    $('#btnShot').addEventListener('click', () => this.download(v.screenshot(), `WE13_${v.station ?? 'ansicht'}.png`));
+    $('#btnShot').addEventListener('click', () => this.download(v.screenshot(), `WE13_${this.style.id}_${v.station ?? 'ansicht'}.png`));
     $('[data-collapse="stations"]').addEventListener('click', (e) => { const p = $('#stations'); p.classList.toggle('collapsed'); e.target.textContent = p.classList.contains('collapsed') ? '+' : '–'; });
   }
 
@@ -123,7 +139,8 @@ class UI {
   }
 
   showRoom(id) {
-    const n = ROOM_NOTES[id]; if (!n) return;
+    const n = this.notes[id]; if (!n) return;
+    this.lastRoom = id;
     $('#details').classList.remove('hidden');
     const r = ROOMS.find((x) => x.id === id), items = this.a.byRoom.get(id) ?? [];
     this.detailEl.innerHTML = `<span class="chip">Raum</span><h3>${esc(n.title)}</h3>
@@ -165,7 +182,7 @@ class UI {
   }
 
   planInfoRoom(id) {
-    const n = ROOM_NOTES[id]; const items = (this.a.byRoom.get(id) ?? []).filter((i) => i.footprint && i.plan !== false && i.plan !== 'soft');
+    const n = this.notes[id]; const items = (this.a.byRoom.get(id) ?? []).filter((i) => i.footprint && i.plan !== false && i.plan !== 'soft');
     $('#planInfo').innerHTML = `<div class="eyebrow">Raum</div><h4>${esc(n?.title ?? roomName(id))}</h4><p class="sub">${esc(n?.zoning ?? '')}</p>
       <table class="inv">${items.map((i) => `<tr data-item="${i.id}"><td>${this.plan.number(i.id)}</td><td>${esc(i.name)}</td></tr>`).join('')}</table>`;
     $$('#planInfo tr').forEach((tr) => tr.addEventListener('click', () => { this.plan.select(tr.dataset.item); this.planInfoItem(tr.dataset.item); }));
@@ -198,25 +215,81 @@ class UI {
   }
 
   conceptView() {
+    const st = this.style;
     const items = this.a.items.filter((i) => i.plan !== false || ['Leuchte', 'Kunst', 'Textil'].includes(i.cat)).filter((i) => !i.id.startsWith('spot-'));
     const byRoom = new Map();
     for (const it of items) { if (!byRoom.has(it.room)) byRoom.set(it.room, []); byRoom.get(it.room).push(it); }
-    const moods = ['Moodboard Refined Metallic Japandi.png', 'Farben neu.png', 'Moodboard Japandi x Soft Brutalism.png', 'Moodboard Refined Brutalism.png', 'Moodboard Cool Quiet Luxury.png', 'kitchen-reference.png'];
+    const brands = { Westwing: items.filter((i) => /Westwing/.test(i.name + i.spec)).length, IKEA: items.filter((i) => /IKEA/.test(i.name + i.spec)).length };
+    const moods = [st.moodboard, ...Object.values(STYLES).map((x) => x.moodboard).filter((m) => m !== st.moodboard), 'Farben neu.png', 'kitchen-reference.png'];
     $('#concept').innerHTML = `
-      <div class="concept-hero"><div><div class="eyebrow">Einrichtungskonzept WE 13</div><h2>${esc(CONCEPT.title)}</h2><p class="lead">${esc(CONCEPT.claim)} Warme Eiche, Räuchereiche mit Kannelierung, heller Calacatta, gebürstete Bronze und Salbei-Akzente auf warm-greigem Kalkputz. Jede Position ist maßstäblich aus dem Ausführungsplan abgeleitet; Wege, Türschwenkbereiche und Fensterzugänge bleiben frei.</p></div>
-      <div class="swatches">${CONCEPT.palette.map(([n, c]) => `<div class="swatch" style="background:${c}"><span>${esc(n)}<br>${c}</span></div>`).join('')}</div></div>
-      <div class="eyebrow" style="margin-top:40px">Materialität</div>
-      <div class="materials-list">${CONCEPT.materials.map(([m, u]) => `<div>${esc(m)}<small>${esc(u)}</small></div>`).join('')}</div>
+      <div class="style-tabs" role="tablist" aria-label="Stilwelt">${Object.values(STYLES).map((x) => `<button role="tab" data-style="${x.id}" class="${x.id === st.id ? 'active' : ''}"><span class="dots">${x.palette.slice(1, 7).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span>${esc(x.label)}</button>`).join('')}</div>
+      <div class="concept-hero"><div><div class="eyebrow">Einrichtungskonzept WE 13 · Stilwelt</div><h2>${esc(st.label)}</h2><p class="lead"><strong>${esc(st.claim)}</strong> ${esc(st.lead)} Jede Position ist maßstäblich aus dem Ausführungsplan abgeleitet; Wege, Türschwenkbereiche und Fensterzugänge bleiben frei.</p>
+        <p class="sub">${brands.Westwing} Positionen Westwing · ${brands.IKEA} Positionen IKEA · übrige: Bestand, Einbauten nach Maß, Deko</p></div>
+      <div class="swatches">${st.palette.map(([n, c]) => `<div class="swatch" style="background:${c}"><span>${esc(n)}<br>${c}</span></div>`).join('')}</div></div>
+      <div class="concept-cols">
+        <div><div class="eyebrow">Materialität</div><div class="materials-list">${st.materials.map(([m, u]) => `<div>${esc(m)}<small>${esc(u)}</small></div>`).join('')}</div></div>
+        <div><div class="eyebrow">Wandgestaltung</div><div class="materials-list">${st.walls.map(([m, u]) => `<div>${esc(m)}<small>${esc(u)}</small></div>`).join('')}</div></div>
+        <div><div class="eyebrow">Lichtplanung</div><div class="materials-list">${st.lightPlan.map((l) => `<div>${esc(l)}</div>`).join('')}</div></div>
+      </div>
       ${this.auditHtml()}
-      <div class="cards">${Object.entries(ROOM_NOTES).map(([id, n]) => `<div class="card"><div class="eyebrow">${esc(roomName(id))}</div><h4>${esc(n.title)}</h4><p>${esc(n.zoning)}</p>${n.points.length ? `<ul>${n.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}</div>`).join('')}</div>
-      <div class="eyebrow">Möbel- und Ausstattungsliste</div><h3 style="margin:6px 0 14px">${items.length} Positionen</h3>
-      <div class="table-wrap"><table class="inv"><thead><tr><th>#</th><th>Position</th><th>Raum</th><th>Kategorie</th><th>Maß (B × T)</th><th>Spezifikation / Empfehlung</th></tr></thead><tbody>
+      <div class="cards">${Object.entries(this.notes).map(([id, n]) => `<div class="card"><div class="eyebrow">${esc(roomName(id))}</div><h4>${esc(n.title)}</h4><p>${esc(n.zoning)}</p>${n.points.length ? `<ul>${n.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}</div>`).join('')}</div>
+      <div class="eyebrow">Möbel- und Ausstattungsliste · ${esc(st.label)}</div><h3 style="margin:6px 0 14px">${items.length} Positionen</h3>
+      <div class="table-wrap"><table class="inv"><thead><tr><th>#</th><th>Position</th><th>Raum</th><th>Kategorie</th><th>Maß (B × T)</th><th>Spezifikation / Bezugsquelle</th></tr></thead><tbody>
       ${[...byRoom].map(([room, list]) => list.map((i, k) => `<tr data-item="${i.id}"><td>${k + 1}</td><td>${esc(i.name)}</td><td>${esc(roomName(room))}</td><td>${esc(i.cat)}</td><td class="num">${i.size ? `${Math.round(i.size[0] * 100)} × ${Math.round(i.size[1] * 100)}` : '–'}</td><td>${esc(i.spec)}</td></tr>`).join('')).join('')}
       </tbody></table></div>
-      <p class="sub" style="margin-top:10px">Produktnamen sind Stil- bzw. Größenreferenzen. Verfügbarkeit, Varianten, Liefermaße und Montageabstände vor Bestellung prüfen.</p>
+      <p class="sub" style="margin-top:10px">Westwing- und IKEA-Artikel mit Herstellermaßen (Recherche 09/2026); Maßanfertigungen und Stilreferenzen sind gekennzeichnet. Verfügbarkeit, Bezüge/Farben, Liefermaße und Montageabstände vor Bestellung prüfen.</p>
       <div class="eyebrow" style="margin-top:36px">Stilreferenzen</div>
       <div class="moodboards">${moods.map((m) => `<a href="assets/${encodeURIComponent(m)}" target="_blank" rel="noopener"><img loading="lazy" src="assets/${encodeURIComponent(m)}" alt="${esc(m.replace('.png', ''))}"></a>`).join('')}</div>`;
     $$('#concept tr[data-item]').forEach((tr) => tr.addEventListener('click', () => { $('.tabs button[data-view="3d"]').click(); this.v.focusItem(tr.dataset.item); this.showItem(tr.dataset.item); }));
+    $$('#concept .style-tabs button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
+  }
+
+  stylePicker() {
+    const pop = $('#stylePop');
+    const render = () => {
+      $('#styleLabel').textContent = this.style.short;
+      $('#styleDots').innerHTML = this.style.palette.slice(1, 6).map(([, c]) => `<i style="background:${c}"></i>`).join('');
+      pop.innerHTML = `<div class="eyebrow">Stilwelt wählen</div>` + Object.values(STYLES).map((x) => `<button data-style="${x.id}" class="style-card${x.id === this.style.id ? ' active' : ''}">
+        <span class="dots">${x.palette.map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span>
+        <strong>${esc(x.label)}</strong><small>${esc(x.claim)}</small></button>`).join('');
+      $$('#stylePop button').forEach((b) => b.addEventListener('click', () => { pop.classList.remove('open'); this.setStyle(b.dataset.style); }));
+    };
+    this.renderStylePicker = render;
+    render();
+    $('#btnStyle').addEventListener('click', (e) => { e.stopPropagation(); pop.classList.toggle('open'); });
+    document.addEventListener('click', (e) => { if (!e.target.closest('#stylePop')) pop.classList.remove('open'); });
+  }
+
+  /** Switches the furnishing style: rebuilds the apartment, keeps camera, mood and selection context. */
+  async setStyle(id) {
+    if (!STYLES[id] || id === this.style.id || this.busy) return;
+    this.busy = true;
+    document.body.classList.add('is-switching');
+    $('#switching').textContent = `${STYLES[id].label} wird eingerichtet …`;
+    try {
+      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 20)));
+      const wasPT = this.v.pathTracer.active;
+      const a = new ApartmentScene(this.M, this.lib, id).build();
+      const cam = { pos: this.v.camera.position.clone(), target: this.v.controls.target.clone() };
+      await this.v.setApartment(a);
+      this.v.camera.position.copy(cam.pos); this.v.controls.target.copy(cam.target); this.v.controls.update();
+      this.a = a;
+      try { localStorage.setItem(STORE_KEY, id); } catch { /* storage unavailable */ }
+      history.replaceState(null, '', '#stil=' + id);
+      this.plan.apartment = a; this.plan.selected = null; this.plan.render();
+      this.planInfoRoom('living');
+      this.conceptView();
+      this.renderStylePicker();
+      this.showRoom(ROOMS.some((r) => r.id === this.lastRoom) ? this.lastRoom : 'living');
+      document.title = `WE 13 · ${STYLES[id].short} · Raumatelier`;
+      if (wasPT) this.v.pathTracer.start();
+      toast(`Stilwelt: ${STYLES[id].label}`);
+    } catch (e) {
+      console.error(e); toast('Stilwechsel fehlgeschlagen: ' + e.message);
+    } finally {
+      document.body.classList.remove('is-switching');
+      this.busy = false;
+    }
   }
 
   auditHtml() {
@@ -252,13 +325,13 @@ class UI {
 
   export(kind) {
     const v = this.v;
-    if (kind === 'png') this.download(v.screenshot(), `WE13_${v.station ?? 'ansicht'}${v.pathTracer.active ? '_pathtraced' : ''}.png`);
+    if (kind === 'png') this.download(v.screenshot(), `WE13_${this.style.id}_${v.station ?? 'ansicht'}${v.pathTracer.active ? '_pathtraced' : ''}.png`);
     if (kind === 'png4k') {
       const pr = v.renderer.getPixelRatio(); v.renderer.setPixelRatio(pr * 2); v.resize();
-      v.composer.render(0); this.download(v.renderer.domElement.toDataURL('image/png'), 'WE13_ansicht_2x.png');
+      v.renderNow(); this.download(v.renderer.domElement.toDataURL('image/png'), `WE13_${this.style.id}_ansicht_2x.png`);
       v.renderer.setPixelRatio(pr); v.resize();
     }
-    if (kind === 'svg') this.download(this.blob(this.plan.svg({ forExport: true }), 'image/svg+xml'), 'WE13_grundriss_einrichtung.svg');
+    if (kind === 'svg') this.download(this.blob(this.plan.svg({ forExport: true }), 'image/svg+xml'), `WE13_grundriss_${this.style.id}.svg`);
     if (kind === 'csvWalls') {
       const rows = [['Wand', 'Raum', 'Laenge_m', 'Oeffnungen', 'Nettoabschnitte_m', 'Netto_Summe_m', 'Pruefen']];
       for (const w of WALLS) {
@@ -270,11 +343,11 @@ class UI {
     if (kind === 'csvItems') {
       const rows = [['ID', 'Position', 'Raum', 'Kategorie', 'Breite_cm', 'Tiefe_cm', 'Spezifikation', 'X_m', 'Y_m', 'Drehung_grad']];
       for (const i of this.a.items) rows.push([i.id, i.name, roomName(i.room), i.cat, i.size ? Math.round(i.size[0] * 100) : '', i.size ? Math.round(i.size[1] * 100) : '', i.spec, i.pos[0].toFixed(3), i.pos[1].toFixed(3), ((i.yaw * 180) / Math.PI).toFixed(1)]);
-      this.download(this.blob(csv(rows), 'text/csv'), 'WE13_moebelliste.csv');
+      this.download(this.blob(csv(rows), 'text/csv'), `WE13_moebelliste_${this.style.id}.csv`);
     }
     if (kind === 'json') {
-      const data = { plan: PLAN, rooms: ROOMS, furniture: this.a.items.map(({ object, ...rest }) => rest) };
-      this.download(this.blob(JSON.stringify(data, null, 1), 'application/json'), 'WE13_geometrie_einrichtung.json');
+      const data = { style: this.style.id, plan: PLAN, rooms: ROOMS, furniture: this.a.items.map(({ object, ...rest }) => rest) };
+      this.download(this.blob(JSON.stringify(data, null, 1), 'application/json'), `WE13_geometrie_einrichtung_${this.style.id}.json`);
     }
     if (kind === 'print') { $('.tabs button[data-view="plan"]').click(); setTimeout(() => window.print(), 300); }
     toast('Export erstellt');

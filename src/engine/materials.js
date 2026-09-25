@@ -1,6 +1,7 @@
-// Physically based material library for the "Refined Metallic Japandi" concept.
-// All materials are MeshPhysicalMaterial so that the WebGL renderer and the GPU path tracer
-// share one description (sheen for textiles, clearcoat for lacquer, transmission for glass).
+// Physically based material library. One base library (Refined Metallic Japandi) plus style
+// themes that remap or re-tint slots (see themeMaterials). All materials are MeshPhysicalMaterial
+// so that the WebGL renderer and the GPU path tracer share one description (sheen for textiles,
+// clearcoat for lacquer, transmission for glass).
 import * as THREE from 'three';
 import * as TX from './textures.js';
 
@@ -10,14 +11,34 @@ export const PALETTE = {
   wall: '#DDD6CB', wallDeep: '#CFC6B8', ceiling: '#F0EDE8', linen: '#D8CFBF', ivory: '#E9E3D8',
 };
 
+/**
+ * Procedural texture sets (key → generator). Used at runtime (baked WebP first, generator as
+ * fallback) and by tools/bake-textures.mjs, so both always produce identical textures.
+ */
+export const PROCEDURAL = {
+  floorOak: () => TX.plankFloor({ veneer: 'oak_veneer_01', seed: 13, tone: 0.97, variance: 0.06 }),
+  deck: () => TX.plankFloor({ veneer: 'washed_grey_oak_veneer', plankL: 2.4, plankW: 0.14, rows: 16, planksPerRow: 1, seed: 3, gap: 0.006, tone: 0.9, variance: 0.1, hasRough: false }),
+  calacatta: () => TX.marble({ seed: 12, size: 1.4 }),
+  calacattaFine: () => TX.marble({ seed: 29, size: 0.8, veins: 1.3 }),
+  granite: () => TX.granite({ size: 0.9 }),
+  tiles: () => TX.limestoneTiles({}),
+  tilesFloor: () => TX.limestoneTiles({ seed: 19, base: [178, 170, 158], grout: [150, 143, 133] }),
+  travertine: () => TX.travertine({ size: 0.9 }),
+  travertineVein: () => TX.travertineVein({}),
+  darkStone: () => TX.darkStone({}),
+  limewash: () => TX.limewash({}),
+  wool: () => ({ map: TX.wool({ color: [200, 196, 190], size: 0.6 }) }),
+};
+
 const phys = (p) => new THREE.MeshPhysicalMaterial(p);
 const uv = (m, size, grain = null) => { m.userData.uv = { size, grain }; return m; };
 
-/** Builds all materials (async because of photo textures). */
+/** Builds all base materials (async because of photo textures). */
 export async function createMaterials() {
+  const P = Object.fromEntries(await Promise.all(Object.entries(PROCEDURAL).map(async ([k, gen]) => [k, await TX.procedural(k, gen)])));
   const [
     oakD, oakR, oakN, darkD, darkR, darkN, walD, walR, walN, lightD, lightR, lightN,
-    plasterN, plasterR, teddyN, teddyD, linenN, woolN, velvetN, deckD, deckN,
+    plasterN, plasterR, teddyN, teddyD, linenN, woolN, velvetN,
   ] = await Promise.all([
     TX.photo('oak_veneer_01_diff.jpg', { srgb: true, size: 1.2 }), TX.photo('oak_veneer_01_rough.jpg', { size: 1.2 }), TX.photo('oak_veneer_01_nor.jpg', { size: 1.2 }),
     TX.photo('black_oak_veneer_diff.jpg', { srgb: true, size: 0.9 }), TX.photo('black_oak_veneer_rough.jpg', { size: 0.9 }), TX.photo('black_oak_veneer_nor.jpg', { size: 0.9 }),
@@ -27,33 +48,24 @@ export async function createMaterials() {
     TX.photo('curly_teddy_natural_nor.jpg', { size: 0.28 }), TX.photo('curly_teddy_natural_diff.jpg', { srgb: true, size: 0.28 }),
     TX.photo('rough_linen_nor.jpg', { size: 0.25 }), TX.photo('poly_wool_herringbone_nor.jpg', { size: 0.3 }),
     TX.photo('velour_velvet_nor.jpg', { size: 0.25 }),
-    TX.photo('washed_grey_oak_veneer_diff.jpg', { srgb: true, size: 1 }), TX.photo('washed_grey_oak_veneer_nor.jpg', { size: 1 }),
   ]);
-
-  const floorOak = await TX.plankFloor({ veneer: 'oak_veneer_01', seed: 13, tone: 0.97, variance: 0.06 });
-  const deckTex = await TX.plankFloor({ veneer: 'washed_grey_oak_veneer', plankL: 2.4, plankW: 0.14, rows: 16, planksPerRow: 1, seed: 3, gap: 0.006, tone: 0.9, variance: 0.1, hasRough: false });
-  const calacatta = TX.marble({ seed: 12, size: 1.4 });
-  const calacattaFine = TX.marble({ seed: 29, size: 0.8, veins: 1.3 });
-  const graniteTex = TX.granite({ size: 0.9 });
-  const tiles = TX.limestoneTiles({});
-  const tilesFloor = TX.limestoneTiles({ seed: 19, base: [178, 170, 158], grout: [150, 143, 133] });
-  const trav = TX.travertine({ size: 0.9 });
-  const rugWool = TX.wool({ color: [196, 186, 170], size: 0.6 });
-  const rugWoolDark = TX.wool({ seed: 44, color: [150, 140, 126], size: 0.6 });
+  const lime = P.limewash.map;
 
   const M = {};
+  const T = M._tex = { oakD, oakR, oakN, darkD, darkR, darkN, walD, walR, walN, lightD, lightR, lightN, plasterN, plasterR, teddyN, teddyD, linenN, woolN, velvetN, lime, P };
   // --- architecture ---------------------------------------------------------------------
-  M.wall = uv(phys({ color: PALETTE.wall, roughness: 0.92, normalMap: plasterN, normalScale: new THREE.Vector2(0.35, 0.35), roughnessMap: plasterR }), 1.6);
-  M.wallDeep = uv(phys({ color: PALETTE.wallDeep, roughness: 0.92, normalMap: plasterN, normalScale: new THREE.Vector2(0.45, 0.45), roughnessMap: plasterR }), 1.6);
-  M.wallAccent = uv(phys({ color: '#BFB3A3', roughness: 0.95, normalMap: plasterN, normalScale: new THREE.Vector2(0.9, 0.9), roughnessMap: plasterR }), 1.2);
-  M.wallSage = uv(phys({ color: '#A7AE9C', roughness: 0.95, normalMap: plasterN, normalScale: new THREE.Vector2(0.7, 0.7), roughnessMap: plasterR }), 1.4);
+  // Walls: limewash albedo (neutral, tinted by colour) + photographed plaster relief.
+  M.wall = wallMaterial(T, '#DDD6CB', 0.35);
+  M.wallDeep = wallMaterial(T, '#CFC6B8', 0.45);
+  M.wallAccent = wallMaterial(T, '#BFB3A3', 0.9);
+  M.wallSage = wallMaterial(T, '#A7AE9C', 0.7);
   M.wallCap = phys({ color: '#3b3935', roughness: 0.9 });
   M.ceiling = uv(phys({ color: PALETTE.ceiling, roughness: 0.95, normalMap: plasterN, normalScale: new THREE.Vector2(0.12, 0.12) }), 1.6);
-  M.floorOak = uv(phys({ map: floorOak.map, normalMap: floorOak.normalMap, roughnessMap: floorOak.roughnessMap, roughness: 1, color: '#ffffff', clearcoat: 0.08, clearcoatRoughness: 0.55 }), 3.8);
-  M.floorOak.userData.uv.aspect = floorOak.aspect;
-  M.deck = uv(phys({ map: deckTex.map, normalMap: deckTex.normalMap, roughness: 0.8, color: '#c9c2b8' }), 2.4);
-  M.tileWall = uv(phys({ map: tiles.map, normalMap: tiles.normalMap, roughness: 0.55, color: '#ffffff' }), 2.4);
-  M.tileFloor = uv(phys({ map: tilesFloor.map, normalMap: tilesFloor.normalMap, roughness: 0.6, color: '#ffffff' }), 2.4);
+  M.floorOak = uv(phys({ map: P.floorOak.map, normalMap: P.floorOak.normalMap, roughnessMap: P.floorOak.roughnessMap, roughness: 1, color: '#ffffff', clearcoat: 0.08, clearcoatRoughness: 0.55 }), 3.8);
+  M.floorOak.userData.uv.aspect = P.floorOak.aspect;
+  M.deck = uv(phys({ map: P.deck.map, normalMap: P.deck.normalMap, roughness: 0.8, color: '#c9c2b8' }), 2.4);
+  M.tileWall = uv(phys({ map: P.tiles.map, normalMap: P.tiles.normalMap, roughness: 0.55, color: '#ffffff' }), 2.4);
+  M.tileFloor = uv(phys({ map: P.tilesFloor.map, normalMap: P.tilesFloor.normalMap, roughness: 0.6, color: '#ffffff' }), 2.4);
   M.skirting = phys({ color: PALETTE.wallDeep, roughness: 0.6 });
   M.slab = phys({ color: '#d7d2ca', roughness: 0.95 });
   M.facade = uv(phys({ color: '#E6E2DA', roughness: 0.95, normalMap: plasterN, normalScale: new THREE.Vector2(0.5, 0.5) }), 1.6);
@@ -61,23 +73,32 @@ export async function createMaterials() {
   // --- woods ---------------------------------------------------------------------------
   M.oak = uv(phys({ map: oakD, roughnessMap: oakR, normalMap: oakN, normalScale: new THREE.Vector2(0.4, 0.4), roughness: 0.85, color: '#e3d9cc' }), 1.2, 'v');
   M.oakLight = uv(phys({ map: lightD, roughnessMap: lightR, normalMap: lightN, normalScale: new THREE.Vector2(0.4, 0.4), roughness: 0.8, color: '#e8d6bf' }), 0.9, 'u');
+  M.oakNatural = uv(phys({ map: lightD, roughnessMap: lightR, normalMap: lightN, normalScale: new THREE.Vector2(0.4, 0.4), roughness: 0.78, color: '#d8bf9c' }), 0.9, 'u');
   M.smokedOak = uv(phys({ map: darkD, roughnessMap: darkR, normalMap: darkN, normalScale: new THREE.Vector2(0.5, 0.5), roughness: 0.75, color: '#9a8a7c', clearcoat: 0.12, clearcoatRoughness: 0.5 }), 0.9, 'u');
+  M.oakDark = uv(phys({ map: walD, roughnessMap: walR, normalMap: walN, normalScale: new THREE.Vector2(0.4, 0.4), roughness: 0.7, color: '#6e5646', clearcoat: 0.12, clearcoatRoughness: 0.5 }), 0.9, 'u');
   M.walnut = uv(phys({ map: walD, roughnessMap: walR, normalMap: walN, normalScale: new THREE.Vector2(0.4, 0.4), roughness: 0.6, color: '#5d4a40', clearcoat: 0.25, clearcoatRoughness: 0.35 }), 0.9, 'u');
   M.teak = uv(phys({ map: walD, roughness: 0.75, color: '#a57a55' }), 0.9, 'u');
+  M.beech = uv(phys({ map: lightD, roughnessMap: lightR, normalMap: lightN, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 0.7, color: '#e2c6a2' }), 0.9, 'u');
 
   // --- stones --------------------------------------------------------------------------
-  M.marble = uv(phys({ map: calacatta.map, roughnessMap: calacatta.roughnessMap, normalMap: calacatta.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 1, clearcoat: 0.4, clearcoatRoughness: 0.12 }), 1.4);
-  M.marbleFine = uv(phys({ map: calacattaFine.map, roughnessMap: calacattaFine.roughnessMap, normalMap: calacattaFine.normalMap, roughness: 1, clearcoat: 0.4, clearcoatRoughness: 0.12 }), 0.8);
-  M.granite = uv(phys({ map: graniteTex.map, roughness: 0.28, clearcoat: 0.5, clearcoatRoughness: 0.15 }), 0.9);
-  M.travertine = uv(phys({ map: trav.map, normalMap: trav.normalMap, roughness: 0.6 }), 0.9);
-  M.limestone = uv(phys({ map: tiles.map, roughness: 0.6 }), 2.4);
+  M.marble = uv(phys({ map: P.calacatta.map, roughnessMap: P.calacatta.roughnessMap, normalMap: P.calacatta.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 1, clearcoat: 0.4, clearcoatRoughness: 0.12 }), 1.4);
+  M.marbleFine = uv(phys({ map: P.calacattaFine.map, roughnessMap: P.calacattaFine.roughnessMap, normalMap: P.calacattaFine.normalMap, roughness: 1, clearcoat: 0.4, clearcoatRoughness: 0.12 }), 0.8);
+  M.granite = uv(phys({ map: P.granite.map, roughness: 0.28, clearcoat: 0.5, clearcoatRoughness: 0.15 }), 0.9);
+  M.travertine = uv(phys({ map: P.travertine.map, normalMap: P.travertine.normalMap, roughness: 0.6 }), 0.9);
+  M.travertineVein = uv(phys({ map: P.travertineVein.map, normalMap: P.travertineVein.normalMap, roughness: 0.55 }), 1.1);
+  M.stoneDark = uv(phys({ map: P.darkStone.map, roughnessMap: P.darkStone.roughnessMap, normalMap: P.darkStone.normalMap, normalScale: new THREE.Vector2(0.4, 0.4), roughness: 1, clearcoat: 0.15, clearcoatRoughness: 0.4 }), 1.2);
+  M.limestone = uv(phys({ map: P.tiles.map, roughness: 0.6 }), 2.4);
   M.concrete = uv(phys({ color: '#9d978d', roughness: 0.9, normalMap: plasterN, normalScale: new THREE.Vector2(0.8, 0.8) }), 1.6);
+  M.concreteDark = uv(phys({ color: '#5f5a54', roughness: 0.92, normalMap: plasterN, normalScale: new THREE.Vector2(0.9, 0.9) }), 1.2);
 
   // --- metals / glass ------------------------------------------------------------------
   M.bronze = phys({ color: '#8a6a48', metalness: 1, roughness: 0.34 });
   M.bronzeDark = phys({ color: '#5a4431', metalness: 1, roughness: 0.4 });
   M.brass = phys({ color: '#b8925f', metalness: 1, roughness: 0.28 });
+  M.brassBrushed = phys({ color: '#a8854f', metalness: 1, roughness: 0.42 });
   M.blackMetal = phys({ color: '#1c1c1b', metalness: 0.5, roughness: 0.42 });
+  M.blackMatte = phys({ color: '#181818', metalness: 0.2, roughness: 0.62 });
+  M.steelBlackened = phys({ color: '#2b2a28', metalness: 0.85, roughness: 0.5 });
   M.frame = phys({ color: '#2a2a29', metalness: 0.35, roughness: 0.5 });
   M.chrome = phys({ color: '#d8d8d8', metalness: 1, roughness: 0.08 });
   M.steel = phys({ color: '#9a9a98', metalness: 1, roughness: 0.3 });
@@ -87,31 +108,50 @@ export async function createMaterials() {
   M.glass.userData = { glass: true, pt: { transmission: 1, opacity: 1, transparent: false, thickness: 0.008 } };
   M.smokedGlass = phys({ color: '#3a3836', metalness: 0, roughness: 0.06, ior: 1.52, transparent: true, opacity: 0.55, depthWrite: false });
   M.smokedGlass.userData = { glass: true, pt: { transmission: 0.8, opacity: 1, transparent: false, thickness: 0.01, color: '#8f8a84' } };
+  M.amberGlass = phys({ color: '#9a6a36', metalness: 0, roughness: 0.08, ior: 1.52, transparent: true, opacity: 0.6, depthWrite: false, emissive: new THREE.Color('#ffb265'), emissiveIntensity: 0 });
+  M.amberGlass.userData = { glass: true, emissiveOn: 0.6, pt: { transmission: 0.85, opacity: 1, transparent: false, thickness: 0.004, color: '#d9a060' } };
   M.mirror = phys({ color: '#f4f4f4', metalness: 1, roughness: 0.015 });
   M.mirror.userData.mirror = true;
 
   // --- textiles ------------------------------------------------------------------------
   const fabric = (color, normal, nScale = 0.8, sheen = '#ffffff', size = 0.25, rough = 0.95) =>
     uv(phys({ color, roughness: rough, normalMap: normal, normalScale: new THREE.Vector2(nScale, nScale), sheen: 1, sheenColor: new THREE.Color(sheen), sheenRoughness: 0.75 }), size);
-  M.boucle = uv(phys({ color: '#E7E1D6', map: teddyD, roughness: 1, normalMap: teddyN, normalScale: new THREE.Vector2(1.1, 1.1), sheen: 1, sheenColor: new THREE.Color('#f4efe6'), sheenRoughness: 0.9 }), 0.28);
-  M.boucleSage = uv(phys({ color: '#8f9a85', map: teddyD, roughness: 1, normalMap: teddyN, normalScale: new THREE.Vector2(1.1, 1.1), sheen: 1, sheenColor: new THREE.Color('#aab59f'), sheenRoughness: 0.9 }), 0.28);
+  const boucle = (color, sheen) => uv(phys({ color, map: teddyD, roughness: 1, normalMap: teddyN, normalScale: new THREE.Vector2(1.1, 1.1), sheen: 1, sheenColor: new THREE.Color(sheen), sheenRoughness: 0.9 }), 0.28);
+  M.boucle = boucle('#E7E1D6', '#f4efe6');
+  M.boucleSage = boucle('#8f9a85', '#aab59f');
+  M.boucleOat = boucle('#D9CDBA', '#ebe1d1');
+  M.boucleTaupe = boucle('#A89A89', '#c7baa9');
+  M.boucleMoss = boucle('#5F6A4E', '#8a9676');
+  M.boucleCharcoal = boucle('#57534e', '#7d7872');
   M.linenGrey = fabric('#BDB6AB', linenN, 0.9, '#d9d3c8');
   M.linenIvory = fabric('#E4DDD0', linenN, 0.9, '#f3eee6');
+  M.linenBeige = fabric('#CFC3B0', linenN, 0.9, '#e6dccb');
   M.linenSage = fabric('#7F8B74', linenN, 0.9, '#a9b39e');
   M.linenTaupe = fabric('#9C8F80', linenN, 0.9, '#bcb0a2');
   M.linenCharcoal = fabric('#4A4845', linenN, 0.9, '#77736d');
+  M.linenCognac = fabric('#9A5E3A', linenN, 0.9, '#c58a62');
+  M.cordBeige = fabric('#D3C6B2', velvetN, 1.0, '#e8ddcc', 0.2, 0.9);
   M.velvetSage = fabric('#5E6B55', velvetN, 0.6, '#9aa88e', 0.25, 0.8);
+  M.velvetMoss = fabric('#434d38', velvetN, 0.6, '#7b8a67', 0.25, 0.8);
   M.velvetCognac = fabric('#8E5A3A', velvetN, 0.6, '#c08a64', 0.25, 0.8);
   M.woolGreige = fabric('#A89D8E', woolN, 0.8, '#c9bfb1', 0.3);
   M.leatherCognac = phys({ color: '#7a4b2f', roughness: 0.55, clearcoat: 0.3, clearcoatRoughness: 0.45 });
+  M.leatherBrown = phys({ color: '#4a3326', roughness: 0.55, clearcoat: 0.3, clearcoatRoughness: 0.45 });
   M.leatherBlack = phys({ color: '#1f1d1b', roughness: 0.5, clearcoat: 0.3, clearcoatRoughness: 0.4 });
   M.curtain = uv(phys({ color: '#E3DCCF', roughness: 1, normalMap: linenN, normalScale: new THREE.Vector2(0.6, 0.6), sheen: 1, sheenColor: new THREE.Color('#fbf6ee'), sheenRoughness: 0.6, side: THREE.DoubleSide }), 0.25);
   M.curtainDim = uv(phys({ color: '#B8AE9F', roughness: 1, normalMap: linenN, normalScale: new THREE.Vector2(0.6, 0.6), sheen: 1, sheenColor: new THREE.Color('#d6cdbf'), sheenRoughness: 0.6, side: THREE.DoubleSide }), 0.25);
-  M.rug = uv(phys({ map: rugWool, roughness: 1, normalMap: woolN, normalScale: new THREE.Vector2(1.2, 1.2), sheen: 1, sheenColor: new THREE.Color('#e2d9ca'), sheenRoughness: 0.9 }), 0.6);
-  M.rugDark = uv(phys({ map: rugWoolDark, roughness: 1, normalMap: woolN, normalScale: new THREE.Vector2(1.2, 1.2), sheen: 1, sheenColor: new THREE.Color('#b1a797'), sheenRoughness: 0.9 }), 0.6);
+  // Rugs share one neutral heathered wool map, tinted by colour.
+  const rug = (color, sheen) => uv(phys({ map: P.wool.map, color, roughness: 1, normalMap: woolN, normalScale: new THREE.Vector2(1.2, 1.2), sheen: 1, sheenColor: new THREE.Color(sheen), sheenRoughness: 0.9 }), 0.6);
+  M.rug = rug('#E0D2BE', '#e2d9ca');
+  M.rugDark = rug('#A89A86', '#b1a797');
+  M.rugIvory = rug('#EDE6DA', '#f4eee4');
+  M.rugGrey = rug('#A9A49C', '#c4bfb7');
+  M.rugSage = rug('#9FA592', '#bcc1b0');
   M.bedding = fabric('#EEE9E0', linenN, 0.7, '#ffffff', 0.25);
   M.beddingSand = fabric('#D9CFBF', linenN, 0.7, '#efe6d8', 0.25);
   M.throwSage = fabric('#65705C', woolN, 1.0, '#8d9883', 0.3);
+  M.throwMoss = fabric('#4f5a43', woolN, 1.0, '#7a866c', 0.3);
+  M.throwCognac = fabric('#8a5536', woolN, 1.0, '#b27c58', 0.3);
   M.towel = fabric('#E6DFD3', woolN, 1.3, '#f5efe6', 0.2);
   M.towelTaupe = fabric('#A59888', woolN, 1.3, '#c7baa9', 0.2);
 
@@ -121,7 +161,10 @@ export async function createMaterials() {
   M.stonewareSage = phys({ color: '#7d876f', roughness: 0.65 });
   M.stonewareSand = phys({ color: '#cbbfae', roughness: 0.8 });
   M.stonewareCharcoal = phys({ color: '#2a2927', roughness: 0.55, clearcoat: 0.2 });
+  M.stonewareClay = phys({ color: '#a8704c', roughness: 0.8 });
+  M.stonewareRaw = uv(phys({ color: '#a39a8c', roughness: 0.9, normalMap: plasterN, normalScale: new THREE.Vector2(1.2, 1.2) }), 0.5);
   M.lacquerGreige = phys({ color: '#9A9185', roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.4 });
+  M.lacquerBlack = phys({ color: '#1d1c1b', roughness: 0.55, clearcoat: 0.2, clearcoatRoughness: 0.5 });
   M.doorLeaf = uv(phys({ map: darkD, roughnessMap: darkR, normalMap: darkN, normalScale: new THREE.Vector2(0.4, 0.4), color: '#b8a99a', roughness: 0.7 }), 0.9, 'u');
   M.matteBlack = phys({ color: '#141414', roughness: 0.6 });
   M.plasticWhite = phys({ color: '#efefec', roughness: 0.35 });
@@ -149,15 +192,56 @@ export async function createMaterials() {
   M.candleFlame = phys({ color: '#ffb35c', emissive: new THREE.Color('#ff9a3c'), emissiveIntensity: 0 });
   M.candleFlame.userData.emissiveOn = 5;
 
-  for (const [k, m] of Object.entries(M)) m.name = k;
+  for (const [k, m] of Object.entries(M)) if (m.isMaterial) m.name = k;
   return M;
 }
 
-/** Artwork material: canvas painting with fine gesso normal. */
+// The limewash map averages ≈ 0.9 (linear); lift the tint so walls read at their nominal colour.
+function limewashTint(color) {
+  const c = new THREE.Color(color);
+  c.r = Math.min(0.97, c.r * 1.1); c.g = Math.min(0.97, c.g * 1.1); c.b = Math.min(0.97, c.b * 1.1);
+  return c;
+}
+
+/** Limewash wall: neutral limewash albedo tinted by `color`, plaster relief of given strength. */
+function wallMaterial(T, color, relief = 0.4, size = 2.4) {
+  const m = new THREE.MeshPhysicalMaterial({
+    color: limewashTint(color), map: T.lime, roughness: 0.93,
+    normalMap: T.plasterN, normalScale: new THREE.Vector2(relief, relief), roughnessMap: T.plasterR,
+  });
+  m.userData.uv = { size };
+  return m;
+}
+
+/**
+ * Style theme: returns a material set that inherits the base library and overrides slots.
+ *  walls:  { key: [colour, relief] }   → new limewash wall materials
+ *  remap:  { slot: otherSlot }         → e.g. bronze → blackMatte (all builders follow)
+ *  tint:   { slot: colour }            → clone with new base colour (e.g. floor tone)
+ */
+const themeCache = new Map();
+export function themeMaterials(M, theme) {
+  if (!theme) return M;
+  if (themeCache.has(theme.id)) return themeCache.get(theme.id);
+  const S = Object.create(M);
+  for (const [k, [color, relief]] of Object.entries(theme.walls ?? {})) { S[k] = wallMaterial(M._tex, color, relief); S[k].name = `${theme.id}-${k}`; }
+  for (const [k, color] of Object.entries(theme.tint ?? {})) {
+    const m = M[k].clone(); m.color.set(color); m.name = `${theme.id}-${k}`; S[k] = m;
+  }
+  for (const [k, target] of Object.entries(theme.remap ?? {})) S[k] = S[target];
+  themeCache.set(theme.id, S);
+  return S;
+}
+
+/** Artwork material: canvas painting with fine gesso normal (cached per kind + seed). */
+const artCache = new Map();
 export function artMaterial(kind, seed) {
+  const key = kind + seed;
+  if (artCache.has(key)) return artCache.get(key);
   const tex = TX.artwork(kind, { seed });
   const m = new THREE.MeshPhysicalMaterial({ map: tex, roughness: kind === 'ink' ? 0.9 : 0.75 });
   if (kind === 'relief') { m.normalMap = TX.reliefNormal({ seed }); m.normalScale = new THREE.Vector2(1.6, 1.6); }
   m.name = 'art-' + kind;
+  artCache.set(key, m);
   return m;
 }

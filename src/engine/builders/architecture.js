@@ -2,7 +2,7 @@
 // windows, sliding doors, interior doors, balconies and the floor slab.
 import * as THREE from 'three';
 import {
-  ROOMS, WALLS, BALCONIES, ROOM_HEIGHT, DOOR_HEIGHT, WINDOW_HEAD, OFFSET, wallThickness, add, mul, sub, dot, len, livingParts, polygonArea,
+  ROOMS, WALLS, BALCONIES, ROOM_HEIGHT, DOOR_HEIGHT, WINDOW_HEAD, OFFSET, EXTERIOR_WALL, wallThickness, add, mul, sub, dot, len, livingParts, polygonArea,
 } from '../../core/geometry.js';
 import { box, boxOn, mesh, consolidate } from './common.js';
 import { metricUV } from '../uv.js';
@@ -62,10 +62,8 @@ function prism(bk, w, u0, u1, v0, v1, y0, y1, faces) {
   const n3 = [w.n[0], 0, w.n[1]], d3 = [w.dir[0], 0, w.dir[1]];
   if (faces.inner) bk.quad(faces.inner, [V(u0, v1, y0), V(u1, v1, y0), V(u1, v1, y1), V(u0, v1, y1)], n3);
   if (faces.outer) bk.quad(faces.outer, [V(u0, v0, y0), V(u1, v0, y0), V(u1, v0, y1), V(u0, v0, y1)], mul3(n3, -1));
-  if (faces.ends) {
-    bk.quad(faces.ends, [V(u0, v0, y0), V(u0, v1, y0), V(u0, v1, y1), V(u0, v0, y1)], mul3(d3, -1));
-    bk.quad(faces.ends, [V(u1, v0, y0), V(u1, v1, y0), V(u1, v1, y1), V(u1, v0, y1)], d3);
-  }
+  if (faces.ends && faces.end0 !== false) bk.quad(faces.ends, [V(u0, v0, y0), V(u0, v1, y0), V(u0, v1, y1), V(u0, v0, y1)], mul3(d3, -1));
+  if (faces.ends && faces.end1 !== false) bk.quad(faces.ends, [V(u1, v0, y0), V(u1, v1, y0), V(u1, v1, y1), V(u1, v0, y1)], d3);
   if (faces.top) bk.quad(faces.top, [V(u0, v0, y1), V(u1, v0, y1), V(u1, v1, y1), V(u0, v1, y1)], [0, 1, 0]);
   if (faces.bottom) bk.quad(faces.bottom, [V(u0, v0, y0), V(u1, v0, y0), V(u1, v1, y0), V(u0, v1, y0)], [0, -1, 0]);
 }
@@ -83,12 +81,15 @@ export function analyseWalls() {
     for (const w of walls) {
       const th = wallThickness(w);
       const prev = byEdge.get((w.edge - 1 + nE) % nE);
-      let extStart = 0;
+      const next = byEdge.get((w.edge + 1) % nE);
+      let extStart = 0, extEnd = 0;
       if (prev) {
         const cross = prev.dir[0] * w.dir[1] - prev.dir[1] * w.dir[0];
         if (cross > 1e-3) extStart = wallThickness(prev).t;
       }
-      info.set(w.id, { ...th, extStart });
+      // convex corner at the end: overlap 1 cm into the next wall's body (closes hairline cracks)
+      if (next && w.dir[0] * next.dir[1] - w.dir[1] * next.dir[0] > 1e-3) extEnd = 0.01;
+      info.set(w.id, { ...th, extStart, extEnd, hasPrev: !!prev, hasNext: !!next });
     }
   }
   // Doors appearing on both sides of a partition are rendered once.
@@ -103,7 +104,8 @@ export function analyseWalls() {
   return { info, openings: doors };
 }
 
-export function buildArchitecture(M, { cut = ROOM_HEIGHT } = {}) {
+export function buildArchitecture(M, { cut = ROOM_HEIGHT, finish = FINISH, wallOverride = WALL_OVERRIDE } = {}) {
+  const FINISH = finish, WALL_OVERRIDE = wallOverride;
   const root = new THREE.Group(); root.name = 'architecture';
   const { info, openings } = analyseWalls();
   const H = ROOM_HEIGHT, top = Math.min(cut, H);
@@ -111,19 +113,24 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT } = {}) {
   // ---------------------------------------------------------------- walls
   const bk = new Buckets();
   for (const w of WALLS) {
-    const { t, exterior, extStart } = info.get(w.id);
+    const { t, exterior, extStart, extEnd, hasPrev, hasNext } = info.get(w.id);
     const fin = WALL_OVERRIDE[w.id] ?? FINISH[w.room].wall;
     const outer = exterior ? 'facade' : fin;
-    const faces = (y0, y1) => ({ inner: fin, outer, ends: fin, top: y1 >= top - 1e-6 ? 'wallCap' : null, bottom: y0 > 0 ? fin : null });
+    // Walls reach 2 cm above the ceiling plane so the wall/ceiling joint has no hairline crack.
+    const wTop = top >= H - 1e-6 ? H + 0.02 : top;
+    const faces = (y0, y1, end0, end1) => ({ inner: fin, outer, ends: fin, end0, end1, top: y1 >= wTop - 1e-6 ? 'wallCap' : null, bottom: y0 > 0 ? fin : null });
     const cuts = w.openings.map((o) => ({ ...o, head: openingHead(o) })).sort((p, q) => p.u0 - q.u0);
-    let u = -extStart;
-    const solid = (u0, u1) => { if (u1 - u0 > 1e-4) prism(bk, w, u0, u1, -t, 0, -SLAB, top, faces(0, top)); };
+    const start = -extStart, end = w.length + extEnd;
+    let u = start;
+    // End caps only at openings (reveals); caps at corners would be coplanar with the
+    // neighbouring wall face and flicker.
+    const solid = (u0, u1) => { if (u1 - u0 > 1e-4) prism(bk, w, u0, u1, -t, 0, -SLAB, wTop, faces(0, wTop, u0 !== start || !hasPrev, u1 !== end || !hasNext)); };
     for (const o of cuts) {
       solid(u, o.u0);
-      if (o.head < top) prism(bk, w, o.u0, o.u1, -t, 0, o.head, top, faces(o.head, top));
+      if (o.head < wTop) prism(bk, w, o.u0, o.u1, -t, 0, o.head, wTop, faces(o.head, wTop, false, false));
       u = o.u1;
     }
-    solid(u, w.length);
+    solid(u, end);
     // section cap above openings when cut is below the head: nothing to draw (open)
   }
   const wallMeshes = bk.meshes(M);
@@ -145,6 +152,12 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT } = {}) {
   for (const r of ROOMS) {
     const c = ceilingMesh(r.points, M.ceiling, H);
     c.userData.room = r.id; ceilings.add(c);
+    // Roof slab over the room incl. its walls: closes wall/ceiling joints and corner notches
+    // for the sun's shadow map (no light leaks in walk mode). Shadow-only, never drawn.
+    const roof = slabMesh(offsetPolygon(r.points, EXTERIOR_WALL), M.slab, H + 0.002, H + 0.25);
+    roof.castShadow = true; roof.receiveShadow = false;
+    roof.material = SHADOW_ONLY; roof.name = 'roof';
+    ceilings.add(roof);
   }
   // slab edge below the whole apartment
   const slabGroup = new THREE.Group(); slabGroup.name = 'slab'; root.add(slabGroup);
@@ -244,6 +257,22 @@ function ceilingMesh(pts, mat, y) {
   const m = new THREE.Mesh(g, mat);
   m.receiveShadow = true; m.castShadow = true; m.userData.keepUV = true;
   return m;
+}
+
+// Writes depth into shadow maps but never colour into the image.
+const SHADOW_ONLY = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+SHADOW_ONLY.name = 'shadowOnly';
+
+/** Mitred outward offset of a clockwise (y-down) room polygon. */
+function offsetPolygon(pts, d) {
+  const n = pts.length, out = [];
+  const normal = (a, b) => { const e = sub(b, a), L = len(e); return [e[1] / L, -e[0] / L]; };
+  for (let i = 0; i < n; i++) {
+    const p = pts[i], n1 = normal(pts[(i - 1 + n) % n], p), n2 = normal(p, pts[(i + 1) % n]);
+    const k = Math.max(0.35, 1 + dot(n1, n2));
+    out.push(add(p, mul(add(n1, n2), d / k)));
+  }
+  return out;
 }
 
 function slabMesh(pts, mat, y0, y1) {
