@@ -7,6 +7,10 @@ export const ROOM_HEIGHT = 2.56;          // RH laut Raumstempel
 export const DOOR_HEIGHT = 2.135;         // lichte Türhöhe laut Plan (2,13⁵)
 export const WINDOW_HEAD = 2.40;          // bodentiefe Fenster (BRH 0,00), Sturz mit Vorhangnische
 export const EXTERIOR_WALL = 0.36;
+/** Finished floor of WE 13 above ground level ("+9,28 OK FFB" laut Ausführungsplan, 3. OG). */
+export const FLOOR_LEVEL = 9.28;
+/** Storey height of the building (3 storeys below WE 13). */
+export const STOREY = FLOOR_LEVEL / 3;
 
 const m = (p) => [p[0] / SCALE, p[1] / SCALE];
 export const OFFSET = { x: 10.2, y: 13.4 };
@@ -80,9 +84,9 @@ function segmentDistance(p, a, b) {
 }
 
 /** Distance from a point along a ray to the first edge of another room/balcony polygon. */
-function rayToPolygons(origin, dirv, maxD, skipRoom) {
+function rayToPolygons(origin, dirv, maxD, skipRoom, onlyRoom = null) {
   let best = Infinity;
-  const polys = [...ROOMS.filter((r) => r.id !== skipRoom).map((r) => r.points), ...BALCONIES.map((b) => b.points)];
+  const polys = onlyRoom ? [room(onlyRoom).points] : [...ROOMS.filter((r) => r.id !== skipRoom).map((r) => r.points), ...BALCONIES.map((b) => b.points)];
   for (const pts of polys) {
     for (let i = 0; i < pts.length; i++) {
       const a = pts[i], b = pts[(i + 1) % pts.length];
@@ -104,6 +108,11 @@ function rayToPolygons(origin, dirv, maxD, skipRoom) {
 export function wallThickness(w) {
   const samples = [0.2, 0.5, 0.8].map((t) => add(w.a, mul(w.dir, w.length * t)));
   const out = mul(w.n, -1);
+  // Thin partition inside one room (e.g. the 10 cm wall between the washer-dryer niche and the
+  // WC pre-wall in the bath): the room itself lies behind the wall along its whole length →
+  // the partition is exactly that gap, never a 36 cm exterior wall.
+  const own = samples.map((p) => rayToPolygons(p, out, 0.3, null, w.room));
+  if (own.every(Number.isFinite) && Math.max(...own) - Math.min(...own) < 0.01) return { t: Math.min(...own), shared: false, exterior: false, partition: true };
   const d = Math.min(...samples.map((p) => rayToPolygons(p, out, 0.6, w.room)));
   if (!Number.isFinite(d)) return { t: EXTERIOR_WALL, shared: false, exterior: true };
   // Walls towards balconies are facade walls: fill the whole gap.

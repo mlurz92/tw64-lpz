@@ -1,6 +1,6 @@
 # WE 13 · Raumatelier
 
-Maßstäbliche, fotorealistische Einrichtungsplanung der Wohnung **WE 13, Täubchenweg 62–64, Leipzig (3. OG, 97,56 m²)** in **vier umschaltbaren Stilwelten** – alle aus den Moodboards abgeleitet, alle auf dieselbe gemessene Raumgeometrie geplant und überwiegend mit aktuellen Möbeln von **Westwing** und **IKEA** (Herstellermaße, Recherche 09/2026) möbliert.
+Maßstäbliche, fotorealistische Einrichtungsplanung der Wohnung **WE 13, Täubchenweg 62–64, Leipzig (3. OG, 97,56 m², Blick in den Park)** in **vier umschaltbaren Stilwelten** – alle aus den Moodboards abgeleitet, alle auf dieselbe gemessene Raumgeometrie geplant und überwiegend mit aktuellen Möbeln von **Westwing** und **IKEA** (Herstellermaße, Recherche 09/2026) möbliert.
 
 Die Anwendung verbindet die aus dem Ausführungsplan rekonstruierte Raumgeometrie mit einer vollständig durchgeplanten Möblierung und rendert sie mit der **WebGPU-Engine von three.js (r186)** – wahlweise als schnelle Echtzeitansicht oder im Modus **„Realistisch“** mit globaler Beleuchtung, Spiegelungen und temporalem Anti-Aliasing in Echtzeit.
 
@@ -23,7 +23,6 @@ Umschalten **direkt im 3D-Viewer** über die Stilwelt-Leiste oben (oder die Tast
 |---|---|---|---|---|
 | Idee | Räuchereiche kanneliert, Calacatta, Bronze, Salbei | Hell & erdig: Eiche natur, Travertin, Sand-/Lehmputz, Cognac + Salbei | Dunkel & architektonisch: Betonspachtel, Räuchereiche, dunkler Stein, Moos | Weiß & grafisch: Eiche natur vs. Eiche dunkel, Mattschwarz, Amberglas |
 | Medienwand W11 | **Räuchereichen-Lamellen (dunkel)** + LED-Voute, Lowboard 260 cm (BESTÅ + Maßfronten), The Frame 65″ | Strukturputz Sand, Westwing **Zumi** (180 × 45 × 55, Eiche/Travertin) | Betonspachtel, Lowboard 278 cm (BESTÅ + Maßfronten), 2 Wandleuchten | Lamellen Eiche dunkel, IKEA **BESTÅ** 240 cm mit **BJÖRKÖVIKEN**-Fronten braun gebeizt |
-| Einbaubank W10 | kanneliert, Calacatta-Platte | Eiche mit Leinenpolster + Kissen | Räuchereiche, Natursteinplatte, Bouclé-Polster | Eiche dunkel, Marmorplatte |
 | Sofa | Westwing **Alba** 3-Sitzer (235 × 114) | IKEA **SÖDERHAMN** 3er (198 × 99) | Westwing **Lennon** 3-Sitzer (238 × 119) | Westwing **Wolke** 3-Sitzer (256 × 118) |
 | Couchtisch | Calacatta Ø 100 auf Bronzetrommel (Maß) | Westwing **Hilda** Ø 102 (Eiche massiv) | Block-Couchtisch Naturstein dunkel (Maß) | Westwing **Marisa** Ø 70 + Trommel Ø 50 |
 | Sessel | Westwing **Mikkel** | IKEA **EKENÄSET** (Leseplatz) | Westwing **Mikkel** Moosgrün | Westwing **Mikkel** dunkelgrün |
@@ -58,7 +57,7 @@ Die Spiegel werden als **echte planare Spiegelungen** gerendert (Reflector-Knote
 
 | Prinzip | Umsetzung in WE 13 |
 |---|---|
-| Durchgehende Einbau-Joinery statt Einzelmöbel | Lowboard und Einbaubank als eine schwebende Horizontale ums Eck (W11 → W10), raumhohe Bibliothekswand W28, PAX mit Deckenblende |
+| Durchgehende Einbau-Joinery statt Einzelmöbel | schwebendes Lowboard über die Medienwand, raumhohe Bibliothekswand W28, PAX mit Deckenblende |
 | Verdeckter Stauraum, sichtbare Ruhe | grifflose/kannelierte Fronten, Push-to-open, verdeckte Kabelführung; offen nur kuratierte Deko |
 | Materialehrlichkeit | Echtholz/-furnier, Naturstein, Kalk-/Lehmputz, Leinen, Wolle, Bouclé; je Stilwelt nur ein Metallton |
 | Mehrschichtiges Licht 2700 K, CRI > 95 | Grundlicht entblendet, indirekte LED-Vouten/-Unterleuchtung, Zonen- und Stimmungslicht; Bad 3000 K |
@@ -71,7 +70,7 @@ Die Spiegel werden als **echte planare Spiegelungen** gerendert (Reflector-Knote
 | Raum | Stauraum |
 |---|---|
 | Diele | Einbaugarderobe PAX 200 × 40 × 256 mit Sitznische |
-| Wohnen | Lowboard 1,8–2,78 m (je Stil) + Einbaubank 225 × 40 mit 3 Schubkästen, Sideboard, Highboard/Regal an W08 |
+| Wohnen | Lowboard 1,8–2,78 m (je Stil), Sideboard, Highboard/Regal an W08 |
 | Schlafen | PAX 300 × 58 × 236 + Deckenblende, Nachttische |
 | Arbeiten | Bibliothekswand 150 × 40 × 252 (geschlossene Unterschränke + 4 beleuchtete Böden) |
 | Bad / WC | Unterschränke mit Schubkästen, Ablagen 1,18 m, Hängeschrank über dem Waschtrockner in der Türnische |
@@ -83,7 +82,7 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 
 | Raum | Zonierung |
 |---|---|
-| **Wohnen** | Medienwand W11 (284 cm) – Lounge (Sofarücken 0,5 m vor dem Wandversatz W09, Sehabstand ≈ 3,2–3,4 m, 40–45 cm Knieraum) – Einbaubank an W10 (Beginn hinter dem Lowboard, endet 14 cm vor dem Sofa) – Hauptweg Diele → Essplatz/Küche/Schlafen ≥ 1,0 m – Lesenische W05/W06 |
+| **Wohnen** | Medienwand W11 (284 cm) – Lounge (Sofarücken 0,5 m vor dem Wandversatz W09, Sehabstand ≈ 3,2–3,4 m, 40–45 cm Knieraum) – Hauptweg Diele → Essplatz/Küche/Schlafen ≥ 1,0 m – Lesenische W05/W06 |
 | **Essen** | Tischmitte vor W06, 1,1 m Durchgang zur Küche, 90-cm-Türzone Schlafen frei; Sideboard an W07, Regal/Highboard an W08 |
 | **Schlafen** | Bett mittig an W20, Schrank 300 cm an W22 mit ≈ 0,9 m Gang (Türen frei schwenkbar), Leseplatz in der Südostecke |
 | **Arbeiten / Gäste** | Bettsofa an W23 außerhalb der Türzone, Schreibtisch mit seitlichem Tageslicht an W24/W26, Bibliothekswand über die volle Wand W28 |
@@ -124,8 +123,9 @@ Gemeinsame Grundlagen:
 - **Weiche Sonnenschatten** (4K Shadow Map, Frustum deckt die gesamte Plandiagonale ab – keine Lichtlecks in Eckräumen).
 - **Lokale Raum-Lightprobe:** In der Begehung wird der Raum um die Kamera in eine Cubemap aufgenommen und in zwei Durchgängen (zwei Lichtbounces) als bildbasiertes Licht verwendet; im Modus *Realistisch* ergänzt SSGI den Nahbereich.
 - **Belichtungsautomatik:** log. Mittelwert der Leuchtdichte der Lightprobe (asynchrones GPU-Readback) → Zielwert der Lichtstimmung; der Belichtungsregler wirkt als Korrektur.
+- **Außenraum 3. OG mit Blick in den Park** (`builders/surroundings.js`, nur in der Begehung): Der Blick aus den Fenstern ist echte Geometrie statt eines Panoramafotos auf Straßenniveau – Parkrasen mit Kieswegen und Parkleuchten **9,28 m unter dem Fertigfußboden** (laut Plan „+9,28 OK FFB“), rund 150 Laubbäume (instanziert, 10–17 m hoch, spätsommerliche Grüntöne) mit freier Rasenfläche vor den Fensterfassaden, Eingangsstraße mit Gründerzeit-Häuserzeile, Stadtkante am Horizont, Luftperspektive ab 50 m. Das Gebäude selbst ist mit Erdgeschoss bis 2. OG, Geschossbändern, Fenstern und gestapelten Balkonen darunter sowie dem 4. OG darüber modelliert. Die Himmel sind reine Himmelspanoramen ohne Bodenkulisse; ihre Sonnenscheibe wird automatisch vermessen (Schwerpunkt der Scheibe) und exakt auf die Richtung des Schattenwurfs gedreht (Abweichung < 0,5°), die Scheibe selbst wird im Umgebungslicht gekappt, damit die Sonne nicht doppelt wirkt.
 - **Planare Spiegel:** Reflector-Knoten für alle Spiegel (Bad-Spiegelwände, Dielenspiegel) in der Begehung, gerendert nur wenn sichtbar; im Dollhouse Lightprobe-Spiegelung.
-- **Lichtstimmungen:** *Tageslicht* (Sonne aus Südost; fensterlose Räume beleuchtet), *Goldene Stunde*, *Abend* (alle Leuchten, 2700 K, Bad 3000 K). Leuchtenwerte photometrisch (Lumen → Candela/Nits).
+- **Lichtstimmungen:** *Tageslicht* (Sonne aus Südost, Himmel Poly Haven *Kloofendal 48d*; fensterlose Räume beleuchtet), *Goldene Stunde* (tief stehende Sonne, *Qwantani Late Afternoon*), *Abend* (Dämmerung, *Qwantani Dusk 2* (alle Leuchten, 2700 K, Bad 3000 K). Leuchtenwerte photometrisch (Lumen → Candela/Nits).
 
 ### Performance
 
@@ -157,7 +157,7 @@ Stand dieser Planung: **alle vier Stilwelten bestehen sämtliche Prüfungen** (j
 
 ## Maße und Genauigkeit
 
-Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf drei Maßketten kalibriert (Arbeiten/Gäste-Breite 3,48 m, Innentür 0,885 m, Badtür 0,76 m). Raumhöhe 2,56 m, Türen 2,135 m, bodentiefe Fenster (BRH 0,00). Sanitärobjekte, Vorwände (Ablage 1,18 m) und Heizkörper folgen den Angaben des HLS-Plans.
+Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf drei Maßketten kalibriert (Arbeiten/Gäste-Breite 3,48 m, Innentür 0,885 m, Badtür 0,76 m). Raumhöhe 2,56 m, Türen 2,135 m, bodentiefe Fenster (BRH 0,00). Sanitärobjekte, Vorwände (Ablage 1,18 m) und Heizkörper folgen den Angaben des HLS-Plans. Die Wandstärken werden aus den Abständen benachbarter Raumkonturen abgeleitet; dünne Trennwände innerhalb eines Raums (z. B. die 10-cm-Wand zwischen Waschtrockner-Nische und WC-Vorwand im Bad) werden als solche erkannt und nicht als 36-cm-Außenwand gebaut. Fertigfußboden +9,28 m (3. OG), Geschosshöhe darunter 3,09 m.
 
 > **Wichtig:** Planungs- und Visualisierungswerkzeug, kein Bestandsaufmaß und keine Fertigungsgrundlage. Vor Möbelkauf, Einbau oder Montage lichte Maße, Türanschläge, Heizkörper, Elektro- und Sanitäranschlüsse vor Ort prüfen – insbesondere die Spiegelmaße gegen die ausgeführten Vorwände und die Nischenmaße gegen den gewählten Waschtrockner.
 
@@ -192,7 +192,8 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   │   └── builders/             # parametrische Modelle
 │   │       ├── architecture.js   # Wände, Laibungen, Böden, Decken, Fenster, Türen, Balkone
 │   │       ├── catalog.js        # Westwing-/IKEA-Modelle (inkl. Zumi, Hilda, PAX, BESTÅ …)
-│   │       ├── furniture.js      # Maßmöbel (Lamellenwand, Lowboard, Einbaubank, Bibliothekswand …)
+│   │       ├── furniture.js      # Maßmöbel (Lamellenwand, Lowboard, Bibliothekswand …)
+│   │       ├── surroundings.js   # Park (9,28 m tiefer), Bäume, Straße, Stadtkante, Gebäude unter/über WE 13
 │   │       ├── bath.js           # Vorwände 1,18 m, Maßspiegel, Waschtrockner-Nische, Laufen VAL/Meda, V&B Collaro, Duravit Tulum
 │   │       └── kitchen.js · decor.js · textiles.js · common.js
 │   └── ui/plan2d.js              # SVG-Grundriss
@@ -216,7 +217,7 @@ Nach Änderungen an einem Textur-Generator (`PROCEDURAL` in `src/engine/material
 
 ### Neue Stilwelt anlegen
 
-Ein Eintrag in `STYLES` (`src/data/styles.js`) genügt: `theme`, `wallOverride`, `decor`, Texte (`palette`, `materials`, `walls`, `lightPlan`, `notes`) und `furnish(ctx)` mit den Raum-Helfern `living` (inkl. `bench` für die Einbaubank), `dining`, `bedroom`, `office` (inkl. `library`). Die Stilwelt-Leiste und Taste 5 ff. entstehen automatisch; die Planungsprüfung zeigt sofort, ob alles passt.
+Ein Eintrag in `STYLES` (`src/data/styles.js`) genügt: `theme`, `wallOverride`, `decor`, Texte (`palette`, `materials`, `walls`, `lightPlan`, `notes`) und `furnish(ctx)` mit den Raum-Helfern `living`, `dining`, `bedroom`, `office` (inkl. `library`). Die Stilwelt-Leiste und Taste 5 ff. entstehen automatisch; die Planungsprüfung zeigt sofort, ob alles passt.
 
 ## Quellen der Produkt- und Gestaltungsrecherche (09/2026)
 

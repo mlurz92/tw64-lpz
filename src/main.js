@@ -3,6 +3,7 @@ import { Viewer, MOODS, STATIONS, RENDER_MODES } from './engine/viewer.js';
 import { createMaterials } from './engine/materials.js';
 import { ModelLibrary } from './engine/models.js';
 import { ApartmentScene } from './engine/scene.js';
+import { buildSurroundings } from './engine/builders/surroundings.js';
 import { PlanView } from './ui/plan2d.js';
 import { ROOMS, WALLS, BALCONIES } from './core/geometry.js';
 import { STYLES, DEFAULT_STYLE } from './data/design.js';
@@ -52,6 +53,7 @@ async function boot() {
   mark('assets');
   const styleId = initialStyle();
   const apartment = new ApartmentScene(M, lib, styleId).build();
+  viewer.setSurroundings(buildSurroundings(M));
   mark('build');
   progress(0.72, 'Shader werden kompiliert, Licht und Umgebung berechnet …');
   viewer.setMode('orbit');

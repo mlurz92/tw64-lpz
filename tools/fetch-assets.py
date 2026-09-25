@@ -19,8 +19,13 @@ TEXTURES = {  # id: (resolution, [maps])
     'rough_linen': ('1k', ['nor_gl']),
     'poly_wool_herringbone': ('1k', ['nor_gl']),
     'velour_velvet': ('1k', ['nor_gl']),
+    # surroundings (park 9.28 m below the flat)
+    'leafy_grass': ('1k', ['Diffuse', 'nor_gl']),
+    'gravel_floor': ('1k', ['Diffuse']),
 }
-HDRIS = {'urban_courtyard_02': '2k', 'the_sky_is_on_fire': '2k'}
+# Pure skies (no ground scenery): the park and the lower floors are real geometry, so the
+# view from the 3rd floor has the correct height and parallax.
+HDRIS = {'kloofendal_48d_partly_cloudy_puresky': '2k', 'qwantani_late_afternoon_puresky': '2k', 'qwantani_dusk_2_puresky': '1k'}
 MODELS = ['potted_plant_02', 'potted_plant_04', 'pachira_aquatica_01', 'calathea_orbifolia_01',
           'ceramic_vase_01', 'ceramic_vase_02', 'ceramic_vase_04', 'dry_branches_medium_01', 'fern_02']
 UA = {'User-Agent': 'we13-raumatelier-asset-fetch/1.0'}

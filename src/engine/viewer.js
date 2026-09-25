@@ -28,9 +28,12 @@ import { createPipelines } from './render.js';
 export { LAMP_SCALE };
 
 export const MOODS = {
-  day: { label: 'Tageslicht', hdri: 'urban_courtyard_02', env: 1.0, bg: 1.0, sun: 3.2, sunColor: '#fff4e6', sunDir: [0.62, 0.62, 0.48], lamps: 0, exposure: 1.0, key: 0.2, maxExp: 4.5, fill: [0.85, 0.12], rot: 0.6 },
-  golden: { label: 'Goldene Stunde', hdri: 'the_sky_is_on_fire', env: 0.5, bg: 0.9, sun: 2.0, sunColor: '#ffbf85', sunDir: [-0.35, 0.28, 0.89], lamps: 0.35, exposure: 0.95, key: 0.17, maxExp: 3.5, fill: [0.45, 0.06], rot: 2.4 },
-  evening: { label: 'Abend', hdri: 'the_sky_is_on_fire', env: 0.05, bg: 0.1, sun: 0, sunColor: '#ffffff', sunDir: [0, 1, 0], lamps: 1, exposure: 0.95, key: 0.1, maxExp: 3, fill: [0.12, 0.015], rot: 2.4 },
+  // Pure-sky panoramas (no ground scenery – park and city are real geometry 9.28 m below).
+  // sunAz: world azimuth of the sun (°, atan2(z, x)); the panorama is rotated so that its sun
+  // disc sits exactly there, the elevation is measured from the panorama (minEl = lower bound).
+  day: { label: 'Tageslicht', hdri: 'kloofendal_48d_partly_cloudy_puresky', env: 0.9, bg: 1.0, sun: 3.2, sunColor: '#fff4e6', sunAz: 38, minEl: 20, maxEl: 90, lamps: 0, exposure: 1.0, key: 0.2, maxExp: 4.5, fill: [0.85, 0.12], fog: '#c3cdd6' },
+  golden: { label: 'Goldene Stunde', hdri: 'qwantani_late_afternoon_puresky', env: 0.8, bg: 0.95, sun: 2.4, sunColor: '#ffc690', sunAz: 112, minEl: 6, maxEl: 90, lamps: 0.35, exposure: 0.95, key: 0.17, maxExp: 3.5, fill: [0.45, 0.06], fog: '#d8b99a' },
+  evening: { label: 'Abend', hdri: 'qwantani_dusk_2_puresky', env: 0.35, bg: 0.45, sun: 0, sunColor: '#ffffff', sunAz: 112, minEl: 0, maxEl: 90, lamps: 1, exposure: 0.95, key: 0.1, maxExp: 3, fill: [0.12, 0.015], fog: '#3a4152' },
 };
 
 export const RENDER_MODES = {
@@ -117,6 +120,9 @@ export class Viewer {
 
     // backdrop for the dollhouse view
     this.studioBg = new THREE.Color('#e9e5de');
+    // aerial perspective for the park and the city edge; starts beyond the apartment (50 m)
+    this.fog = new THREE.Fog('#c3cdd6', 50, 520);
+    this.outdoorEmissive = new Set();
     const ground = this.ground = new THREE.Mesh(new THREE.CircleGeometry(40, 64), new THREE.ShadowMaterial({ opacity: 0.18 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.29; ground.receiveShadow = true;
     this.scene.add(ground);
@@ -213,8 +219,9 @@ export class Viewer {
     if (this.hdris.has(name)) return this.hdris.get(name);
     const p = new HDRLoader().loadAsync(`./assets/lib/hdri/${name}.hdr`).then((tex) => {
       tex.mapping = THREE.EquirectangularReflectionMapping;
+      const sun = analyseSky(tex);
       const env = this.pmrem.fromEquirectangular(tex).texture;
-      return { tex, env };
+      return { tex, env, sun };
     });
     this.hdris.set(name, p);
     return p;
@@ -222,15 +229,21 @@ export class Viewer {
 
   async applyMood(name) {
     const m = MOODS[name]; this.mood = name;
-    const { tex, env } = await this.loadHDRI(m.hdri);
+    const { tex, env, sun } = await this.loadHDRI(m.hdri);
     this.hdriEnv = env;
     this.hdriTex = tex;
-    this.scene.backgroundRotation.set(0, m.rot, 0);
+    // rotate the panorama so that its sun disc lies at the mood's azimuth (verified by render:
+    // a positive rotation moves the panorama's content to larger world azimuths … inverse)
+    const az = THREE.MathUtils.degToRad(m.sunAz);
+    this.rot = sun.phi - az;
+    const el = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(THREE.MathUtils.radToDeg(sun.el), m.minEl, m.maxEl));
+    this.sunDir = new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el));
+    this.scene.backgroundRotation.set(0, this.rot, 0);
+    this.fog.color.set(m.fog);
     this.sun.intensity = m.sun;
     this.sun.visible = m.sun > 0;
     this.sun.color.set(m.sunColor);
-    const d = new THREE.Vector3(...m.sunDir).normalize().multiplyScalar(30);
-    this.sun.position.copy(this.center).add(d);
+    this.sun.position.copy(this.center).addScaledVector(this.sunDir, 30);
     this.setLamps(m.lamps);
     this.sceneChanged();
     this.applyEnvironment();
@@ -244,7 +257,7 @@ export class Viewer {
     // In the realistic mode SSGI adds short-range bounce light itself → slightly less probe light.
     const giTrim = this.renderMode === 'realistic' ? 0.82 : 1;
     if (probe) { s.environment = this.probeEnv; s.environmentIntensity = giTrim; s.environmentRotation.set(0, 0, 0); }
-    else { s.environment = this.hdriEnv; s.environmentIntensity = m.env * giTrim; s.environmentRotation.set(0, m.rot, 0); }
+    else { s.environment = this.hdriEnv; s.environmentIntensity = m.env * giTrim; s.environmentRotation.set(0, this.rot ?? 0, 0); }
     this.fill.intensity = m.fill[probe ? 1 : 0];
     this.renderer.toneMappingExposure = (probe ? this.autoExposure : m.exposure) * (this.exposureTrim ?? 1);
     this.invalidate();
@@ -255,6 +268,7 @@ export class Viewer {
   setLamps(level) {
     if (!this.apartment) return;
     this.rig.setLevel(level);
+    for (const m of this.outdoorEmissive) m.emissiveIntensity = m.userData.emissiveOn * level;
     for (const m of this.emissive) m.emissiveIntensity = m.userData.emissiveOn * (m.userData.interior ? Math.max(level, INTERIOR_LEVEL) : level);
     this.invalidate();
   }
@@ -270,7 +284,20 @@ export class Viewer {
       s.backgroundBlurriness = 0.0;
     }
     this.ground.visible = this.mode === 'orbit';
+    // outdoor scene (park 9.28 m below, building, city) and aerial perspective: walk mode only
+    const walk = this.mode === 'walk';
+    if (this.surroundings) this.surroundings.visible = walk;
+    s.fog = walk ? this.fog : null;
     this.invalidate();
+  }
+
+  /** Adds the outdoor scene (built once, independent of the furnishing style). */
+  setSurroundings(group) {
+    this.surroundings = group;
+    this.scene.add(group);
+    group.traverse((o) => { if (o.isMesh && o.material?.userData?.emissiveOn) this.outdoorEmissive.add(o.material); });
+    this.updateBackground();
+    this.sceneChanged();
   }
 
   setMode(mode) {
@@ -606,4 +633,42 @@ export class Viewer {
       this.invalidate();
     }
   }
+}
+
+/**
+ * Finds the sun in an equirectangular HDR (brightest texel of the upper hemisphere) and clamps
+ * the disc so that the image-based light does not add a second sun to the directional light.
+ * Returns its azimuth phi (atan2(z, x) convention of three.js) and elevation in radians.
+ */
+function analyseSky(tex) {
+  const { data, width: w, height: h } = tex.image;
+  const half = data instanceof Uint16Array, get = half ? THREE.DataUtils.fromHalfFloat : (v) => v;
+  let best = -1, bx = 0, by = 0;
+  const orig = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4, L = 0.2126 * get(data[i]) + 0.7152 * get(data[i + 1]) + 0.0722 * get(data[i + 2]);
+    orig[y * w + x] = L;
+    if (y < h / 2 && L > best) { best = L; bx = x; by = y; }
+  }
+  const cap = 40; // luminance cap for the sun disc (the DirectionalLight carries the sun)
+  for (let i = 0; i < data.length; i += 4) {
+    const L = 0.2126 * get(data[i]) + 0.7152 * get(data[i + 1]) + 0.0722 * get(data[i + 2]);
+    if (L > cap) {
+      const k = cap / L;
+      for (let c = 0; c < 3; c++) data[i + c] = half ? THREE.DataUtils.toHalfFloat(get(data[i + c]) * k) : data[i + c] * k;
+    }
+  }
+  tex.needsUpdate = true;
+  // disc centre: luminance-weighted centroid of the texels above half the peak (±3° window)
+  let sx = 0, sy = 0, sw = 0;
+  const R = Math.round(w / 120);
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    const y = by + dy, x = (bx + dx + w) % w;
+    if (y < 0 || y >= h) continue;
+    const i = (y * w + x) * 4, L = orig[y * w + x];
+    if (L > best * 0.5) { sx += dx * L; sy += dy * L; sw += L; }
+    void i;
+  }
+  const u = (bx + (sw ? sx / sw : 0) + 0.5) / w, v = (by + (sw ? sy / sw : 0) + 0.5) / h;
+  return { phi: (u - 0.5) * Math.PI * 2, el: (0.5 - v) * Math.PI, peak: best };
 }

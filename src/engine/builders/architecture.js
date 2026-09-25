@@ -265,7 +265,7 @@ const SHADOW_ONLY = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite:
 SHADOW_ONLY.name = 'shadowOnly';
 
 /** Mitred outward offset of a clockwise (y-down) room polygon. */
-function offsetPolygon(pts, d) {
+export function offsetPolygon(pts, d) {
   const n = pts.length, out = [];
   const normal = (a, b) => { const e = sub(b, a), L = len(e); return [e[1] / L, -e[0] / L]; };
   for (let i = 0; i < n; i++) {
@@ -376,7 +376,7 @@ function doorAssembly(M, w, o, tTot, entrance) {
   return consolidate(g);
 }
 
-function buildBalconies(M) {
+export function buildBalconies(M) {
   const grp = new THREE.Group(); grp.name = 'balconies';
   for (const b of BALCONIES) {
     const pts = b.points;

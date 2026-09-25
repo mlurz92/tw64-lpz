@@ -49,6 +49,11 @@ export async function createMaterials() {
     TX.photo('rough_linen_nor.jpg', { size: 0.25 }), TX.photo('poly_wool_herringbone_nor.jpg', { size: 0.3 }),
     TX.photo('velour_velvet_nor.jpg', { size: 0.25 }),
   ]);
+  // surroundings: park lawn (9.28 m below), gravel paths, foliage
+  const [grassD, grassN, gravelD, leafD] = await Promise.all([
+    TX.photo('leafy_grass_diff.jpg', { srgb: true, size: 2.5 }), TX.photo('leafy_grass_nor.jpg', { size: 2.5 }),
+    TX.photo('gravel_floor_diff.jpg', { srgb: true, size: 2.0 }), TX.photo('leafy_grass_diff.jpg', { srgb: true, size: 1.4 }),
+  ]);
   const lime = P.limewash.map;
 
   const M = {};
@@ -156,6 +161,18 @@ export async function createMaterials() {
   M.throwCognac = fabric('#8a5536', woolN, 1.0, '#b27c58', 0.3);
   M.towel = fabric('#E6DFD3', woolN, 1.3, '#f5efe6', 0.2);
   M.towelTaupe = fabric('#A59888', woolN, 1.3, '#c7baa9', 0.2);
+
+  // --- surroundings (park, street, building) --------------------------------------------
+  M.grass = uv(phys({ map: grassD, normalMap: grassN, normalScale: new THREE.Vector2(0.8, 0.8), roughness: 0.95, color: '#b4cc9c' }), 2.5);
+  M.gravelPath = uv(phys({ map: gravelD, roughness: 0.9, color: '#e9e1d2' }), 2.0);
+  M.asphalt = uv(phys({ color: '#5b5b58', roughness: 0.92, normalMap: plasterN, normalScale: new THREE.Vector2(0.6, 0.6) }), 1.6);
+  M.pavement = uv(phys({ color: '#b9b2a6', roughness: 0.9, normalMap: plasterN, normalScale: new THREE.Vector2(0.4, 0.4) }), 1.6);
+  M.bark = phys({ color: '#4d4238', roughness: 0.95 });
+  M.foliage = uv(phys({ map: leafD, normalMap: grassN, normalScale: new THREE.Vector2(0.9, 0.9), roughness: 0.95, color: '#ffffff', sheen: 0.6, sheenColor: new THREE.Color('#d6e6a4'), sheenRoughness: 0.7 }), 0.9);
+  M.facadeBand = uv(phys({ color: '#d4cec4', roughness: 0.9, normalMap: plasterN, normalScale: new THREE.Vector2(0.4, 0.4) }), 1.6);
+  M.windowDark = phys({ color: '#20262b', metalness: 0.2, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.05 });
+  M.parkLamp = phys({ color: '#f5efe4', roughness: 0.4, emissive: new THREE.Color('#ffd9a8'), emissiveIntensity: 0 });
+  M.parkLamp.userData.emissiveOn = 4;
 
   // --- ceramics / misc -----------------------------------------------------------------
   M.ceramicWhite = phys({ color: '#F4F2EE', roughness: 0.12, clearcoat: 0.6, clearcoatRoughness: 0.1 });
