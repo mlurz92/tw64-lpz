@@ -1,0 +1,2 @@
+{ "name": "we13-vendor-build", "private": true, "type": "module",
+  "dependencies": { "three": "0.182.0", "three-gpu-pathtracer": "0.0.24", "three-mesh-bvh": "0.9.1", "esbuild": "0.25.0" } }
