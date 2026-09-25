@@ -22,7 +22,7 @@ import { reflector, vec4 } from 'three/tsl';
 import { OrbitControls, HDRLoader, RectAreaLightTexturesLib } from '../../vendor/three-addons.js';
 import { OFFSET, APARTMENT_BOUNDS, ROOM_HEIGHT } from '../core/geometry.js';
 import { setMaxAnisotropy } from './textures.js';
-import { LightRig, LAMP_SCALE } from './lighting.js';
+import { LightRig, LAMP_SCALE, INTERIOR_LEVEL } from './lighting.js';
 import { createPipelines } from './render.js';
 
 export { LAMP_SCALE };
@@ -49,6 +49,7 @@ export const STATIONS = [
   { id: 'bedroom', label: 'Schlafen', mode: 'walk', pos: [6.35, 1.5, 17.6], target: [9.4, 0.9, 19.9], fov: 64 },
   { id: 'wardrobe', label: 'Schlafen · Blick zum Schrank', mode: 'walk', pos: [8.7, 1.45, 21.1], target: [6.0, 1.1, 18.9], fov: 64 },
   { id: 'office', label: 'Arbeiten / Gäste', mode: 'walk', pos: [14.05, 1.5, 10.1], target: [16.5, 0.85, 7.9], fov: 66 },
+  { id: 'library', label: 'Arbeiten · Bibliothekswand', mode: 'walk', pos: [16.45, 1.5, 9.75], target: [13.7, 1.25, 9.55], fov: 64 },
   { id: 'bath', label: 'Bad · Waschplatz & Spiegelwand', mode: 'walk', pos: [15.2, 1.6, 7.3], target: [16.1, 1.2, 5.6], fov: 72 },
   { id: 'guestbath', label: 'Dusche / Gäste-WC', mode: 'walk', pos: [10.2, 1.6, 7.35], target: [11.0, 1.2, 5.6], fov: 72 },
   { id: 'balcony', label: 'Balkon 1', mode: 'walk', pos: [13.1, 1.55, 10.4], target: [10.6, 0.8, 9.6], fov: 66 },
@@ -101,7 +102,9 @@ export class Viewer {
     const sun = this.sun = new THREE.DirectionalLight('#fff4e6', 3);
     sun.castShadow = true;
     sun.shadow.mapSize.set(4096, 4096);
-    const b = APARTMENT_BOUNDS, span = Math.max(b.maxX - b.minX, b.maxY - b.minY) * 0.62;
+    // the orthographic shadow frustum must enclose the whole plan diagonal (else corner rooms such
+    // as the bath fall outside the shadow map and are lit through the walls)
+    const b = APARTMENT_BOUNDS, span = Math.hypot(b.maxX - b.minX, b.maxY - b.minY) / 2 + 1.5;
     Object.assign(sun.shadow.camera, { left: -span, right: span, top: span, bottom: -span, near: 1, far: 80 });
     sun.shadow.bias = -0.0001; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3;
     sun.shadow.autoUpdate = false;
@@ -252,7 +255,7 @@ export class Viewer {
   setLamps(level) {
     if (!this.apartment) return;
     this.rig.setLevel(level);
-    for (const m of this.emissive) m.emissiveIntensity = m.userData.emissiveOn * level;
+    for (const m of this.emissive) m.emissiveIntensity = m.userData.emissiveOn * (m.userData.interior ? Math.max(level, INTERIOR_LEVEL) : level);
     this.invalidate();
   }
 

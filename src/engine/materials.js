@@ -101,6 +101,8 @@ export async function createMaterials() {
   M.steelBlackened = phys({ color: '#2b2a28', metalness: 0.85, roughness: 0.5 });
   M.frame = phys({ color: '#2a2a29', metalness: 0.35, roughness: 0.5 });
   M.chrome = phys({ color: '#d8d8d8', metalness: 1, roughness: 0.08 });
+  // Bath fittings (all styles): matt black PVD, satin sheen
+  M.fittingBlack = phys({ color: '#121212', metalness: 0.6, roughness: 0.36, clearcoat: 0.25, clearcoatRoughness: 0.45 });
   M.steel = phys({ color: '#9a9a98', metalness: 1, roughness: 0.3 });
   // Glass: thin transparent coat (no screen-space transmission, which would need an extra
   // opaque pass per frame); reflections come from the room probe and, in the realistic mode, SSR.
@@ -183,6 +185,8 @@ export async function createMaterials() {
   M.lampShade.userData.emissiveOn = 0.7;
   M.opal = phys({ color: '#f7f1e8', roughness: 0.4, emissive: new THREE.Color('#ffdcb0'), emissiveIntensity: 0 });
   M.opal.userData.emissiveOn = 2.2;
+  // opal of lamps in windowless rooms (bath pendants): glows in daylight as well
+  M.opalInterior = M.opal.clone(); M.opalInterior.userData = { emissiveOn: 2.2, interior: true };
   M.ledStrip = phys({ color: '#fff3e0', roughness: 0.5, emissive: new THREE.Color('#ffcf94'), emissiveIntensity: 0 });
   M.ledStrip.userData.emissiveOn = 2.5;
   M.downlight = phys({ color: '#fbf6ec', roughness: 0.3, emissive: new THREE.Color('#fff0dc'), emissiveIntensity: 0 });

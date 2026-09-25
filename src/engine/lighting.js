@@ -10,6 +10,9 @@
 import { ROOMS, pointInPolygon, OFFSET } from '../core/geometry.js';
 
 export const LAMP_SCALE = 0.08;
+/** Windowless rooms: their lamps stay on (dimmed) even in daylight, as they would in reality. */
+export const INTERIOR_ROOMS = new Set(['bath', 'guestbath', 'utility']);
+export const INTERIOR_LEVEL = 0.8;
 const SLOTS = { point: 8, spot: 8 };
 const OPEN = { living: ['kitchen'], kitchen: ['living'] };
 
@@ -41,11 +44,17 @@ export class LightRig {
     return this.apply();
   }
 
+  /** Effective dimming level of one lamp (windowless rooms keep their light in daylight). */
+  levelOf(l) {
+    if (this.level > 0) return this.level;
+    return INTERIOR_ROOMS.has(l.userData.room) ? INTERIOR_LEVEL : 0;
+  }
+
   apply() {
-    const on = this.level > 0;
     const sig = [];
     for (const type of ['point', 'spot']) {
-      const list = this.byType[type];
+      const list = this.byType[type].filter((l) => this.levelOf(l) > 0);
+      const on = list.length > 0;
       let chosen;
       if (!on) chosen = [];
       else if (this.all) chosen = list;
@@ -54,17 +63,18 @@ export class LightRig {
       // fixed slot count: fill with unused lights at zero intensity
       const slots = !on ? 0 : this.all ? list.length : Math.min(SLOTS[type], list.length);
       let filler = slots - chosen.length;
-      for (const l of list) {
+      for (const l of this.byType[type]) {
         const active = set.has(l);
-        const visible = active || (filler > 0 && !set.has(l) && filler--);
+        const visible = active || (filler > 0 && list.includes(l) && filler--);
         l.visible = !!visible;
-        l.intensity = active ? l.userData.candela * this.level * LAMP_SCALE : 0;
+        l.intensity = active ? l.userData.candela * this.levelOf(l) * LAMP_SCALE : 0;
         if (active) sig.push(l.uuid);
       }
     }
     for (const l of this.byType.rect) {
-      const active = on && (this.all || this.mode !== 'walk' || this.relevant(l));
-      l.visible = on; l.intensity = active ? l.userData.candela * this.level * LAMP_SCALE : 0;
+      const lv = this.levelOf(l);
+      const active = lv > 0 && (this.all || this.mode !== 'walk' || this.relevant(l));
+      l.visible = lv > 0; l.intensity = active ? l.userData.candela * lv * LAMP_SCALE : 0;
     }
     const s = sig.join();
     const changed = s !== this.sig; this.sig = s;

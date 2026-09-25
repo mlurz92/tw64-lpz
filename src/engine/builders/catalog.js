@@ -400,3 +400,26 @@ function flutedOutline(r, flutes = 28, depth = 0.012, seg = 288) {
   });
 }
 void mesh;
+
+/**
+ * Westwing Collection TV-Lowboard Zumi: B 180 × T 45 × H 55 cm, Beinhöhe 25 cm, Korpus Eichenfurnier
+ * mit abgerundeten Ecken, sechs Fächer hinter Türen, Griffe goldfarben, Platte Travertin.
+ */
+export function zumiLowboard(M, { w = 1.8, d = 0.45, h = 0.55, legH = 0.25, mat = 'oakNatural', top = 'travertine', handle = 'brassBrushed' } = {}) {
+  const g = new THREE.Group(), W = M[mat];
+  for (const x of [-w / 2 + 0.1, w / 2 - 0.1]) for (const z of [-d / 2 + 0.08, d / 2 - 0.08]) cyl(g, W, 0.022, 0.016, legH, [x, 0, z], 24);
+  const bodyH = h - legH - 0.03;
+  rboxOn(g, W, [w, bodyH, d - 0.02], [0, legH, -0.01], 0.05, 4);
+  for (let i = 1; i < 3; i++) box(g, M.matteBlack, [0.003, bodyH - 0.03, 0.003], [-w / 2 + (w * i) / 3, legH + bodyH / 2, d / 2 - 0.009]);
+  for (let i = 0; i < 3; i++) cyl(g, M[handle], 0.012, 0.012, 0.012, [-w / 2 + (w * (i + 0.5)) / 3, legH + bodyH * 0.7, d / 2 - 0.006], 16).rotation.x = Math.PI / 2;
+  rboxOn(g, M[top], [w + 0.01, 0.03, d + 0.005], [0, h - 0.03, 0], 0.012, 3);
+  return g;
+}
+
+/** Westwing Collection Couchtisch Hilda: rund Ø 102 × H 35 cm, Eiche massiv, breite Rundbeine. */
+export function hildaTable(M, { dia = 1.02, h = 0.35, mat = 'oakNatural' } = {}) {
+  const g = new THREE.Group(), W = M[mat];
+  for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2 + 0.3; cyl(g, W, 0.075, 0.075, h - 0.035, [Math.cos(a) * dia * 0.28, 0, Math.sin(a) * dia * 0.28], 40); }
+  extrudePlan(g, W, circle(dia / 2, 96), 0.035, h - 0.035, 0.008);
+  return g;
+}

@@ -5,6 +5,7 @@ import { artMaterial } from '../materials.js';
 import { bookSpines } from '../textures.js';
 
 const WARM = new THREE.Color('#ffd6a8'); // 2700 K, white-balanced for interior photography
+export const NEUTRAL_WARM = new THREE.Color('#ffe6cc'); // 3000 K (bathrooms)
 
 /** Registers a light source that the viewer can dim per mood. lumens → candela. */
 export function lampLight(kind, lumens, { color = WARM, distance = 0, angle = 0.9, penumbra = 0.8, decay = 2, shadow = false } = {}) {
@@ -108,11 +109,11 @@ export function linearSconce(M, { h = 0.6, mat = 'bronze' } = {}) {
 }
 
 /** Recessed downlight (visual only unless light=true). */
-export function downlight(M, { light = true, lumens = 450, angle = 1.0 } = {}) {
+export function downlight(M, { light = true, lumens = 450, angle = 1.0, color = WARM } = {}) {
   const g = new THREE.Group();
   const ring = cyl(g, M.matteBlack, 0.045, 0.045, 0.004, [0, -0.004, 0], 24); ring.castShadow = false;
   const lens = cyl(g, M.downlight, 0.03, 0.03, 0.002, [0, -0.0055, 0], 24); lens.castShadow = false;
-  if (light) { const l = lampLight('spot', lumens, { angle, penumbra: 0.6, distance: 7 }); l.position.set(0, -0.02, 0); g.add(l); }
+  if (light) { const l = lampLight('spot', lumens, { angle, penumbra: 0.6, distance: 7, color }); l.position.set(0, -0.02, 0); g.add(l); }
   return g;
 }
 

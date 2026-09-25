@@ -4,7 +4,7 @@
 //  fast       Standard view while the camera moves: one scene pass + bloom + SMAA.
 //  refined    Standard view at rest: normal pre-pass → SSAO (denoised, half resolution) fed into
 //             the ambient term only (builtinAOContext: direct sun/lamp light is not darkened),
-//             scene pass, bloom, SMAA. One frame, then the GPU idles.
+//             4× MSAA scene pass, bloom, SMAA. One frame, then the GPU idles.
 //  realistic  "Realistisch": screen-space global illumination (SSGI, visibility-bitmask GI incl.
 //             AO and colour bleeding), screen-space reflections on glossy/metal surfaces (SSR),
 //             bloom and temporal reprojection anti-aliasing (TRAA). Converges over ≈ 40 frames
@@ -40,7 +40,7 @@ export function createPipelines(renderer, scene, camera) {
   aoNode.radius.value = 0.32;
   aoNode.intensity.value = 1.35;
   aoNode.samples.value = 16;
-  const refPass = pass(scene, camera);
+  const refPass = pass(scene, camera, { samples: 4 }); // MSAA: fine slats and edges without moiré
   refPass.contextNode = builtinAOContext(aoNode.getTextureNode().sample(screenUV).r);
   const refColor = refPass.getTextureNode();
   refined.outputNode = smaa(refColor.add(bloom(refColor, BLOOM.strength, BLOOM.radius, BLOOM.threshold)));

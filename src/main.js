@@ -6,7 +6,7 @@ import { ApartmentScene } from './engine/scene.js';
 import { PlanView } from './ui/plan2d.js';
 import { ROOMS, WALLS, BALCONIES } from './core/geometry.js';
 import { STYLES, DEFAULT_STYLE } from './data/design.js';
-import { roomNotes } from './data/styles.js';
+import { roomNotes, LUXURY_PRINCIPLES } from './data/styles.js';
 import PLAN from './data/plan.js';
 import { validateLayout } from './core/validate.js';
 
@@ -127,7 +127,7 @@ class UI {
     $$('#stationList button').forEach((b) => b.addEventListener('click', () => {
       this.v.goto(b.dataset.id);
       const st = STATIONS.find((s) => s.id === b.dataset.id);
-      const room = { living: 'living', sofa: 'living', dining: 'living', hall: 'living', kitchen: 'kitchen', bedroom: 'bedroom', wardrobe: 'bedroom', office: 'office', bath: 'bath', guestbath: 'guestbath', balcony: 'balcony1' }[st.id];
+      const room = { living: 'living', sofa: 'living', dining: 'living', hall: 'living', kitchen: 'kitchen', bedroom: 'bedroom', wardrobe: 'bedroom', office: 'office', library: 'office', bath: 'bath', guestbath: 'guestbath', balcony: 'balcony1' }[st.id];
       if (room) this.showRoom(room);
     }));
   }
@@ -231,6 +231,8 @@ class UI {
         <div><div class="eyebrow">Wandgestaltung</div><div class="materials-list">${st.walls.map(([m, u]) => `<div>${esc(m)}<small>${esc(u)}</small></div>`).join('')}</div></div>
         <div><div class="eyebrow">Lichtplanung</div><div class="materials-list">${st.lightPlan.map((l) => `<div>${esc(l)}</div>`).join('')}</div></div>
       </div>
+      <div class="eyebrow" style="margin-top:28px">Luxus-Prinzipien · angewendet in allen Stilwelten</div>
+      <div class="materials-list luxury">${LUXURY_PRINCIPLES.map(([t, d]) => `<div>${esc(t)}<small>${esc(d)}</small></div>`).join('')}</div>
       ${this.auditHtml()}
       <div class="cards">${Object.entries(this.notes).map(([id, n]) => `<div class="card"><div class="eyebrow">${esc(roomName(id))}</div><h4>${esc(n.title)}</h4><p>${esc(n.zoning)}</p>${n.points.length ? `<ul>${n.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}</div>`).join('')}</div>
       <div class="eyebrow">Möbel- und Ausstattungsliste · ${esc(st.label)}</div><h3 style="margin:6px 0 14px">${items.length} Positionen</h3>
