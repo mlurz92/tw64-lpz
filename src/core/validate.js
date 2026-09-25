@@ -11,7 +11,7 @@ const ALLOWED = [
   ['task-chair', 'desk'], ['floorlamp-living', 'lounge'], ['floorlamp-bed', 'reading-chair'],
   ['bed', 'nightstand-n'], ['bed', 'nightstand-s'], ['b1-table', 'b1-lounge-a'], ['b1-table', 'b1-lounge-b'],
 ];
-const allowed = (a, b) => ALLOWED.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+const allowed = (a, b) => ALLOWED.some(([x, y]) => (x === a.id && y === b.id) || (x === b.id && y === a.id)) || a.allow?.includes(b.id) || b.allow?.includes(a.id);
 
 function distToSegment(p, a, b) {
   const ab = sub(b, a), t = Math.max(0, Math.min(1, dot(sub(p, a), ab) / dot(ab, ab)));
@@ -69,7 +69,7 @@ export function validateLayout(items) {
   // 2 · collisions (same room)
   for (let i = 0; i < floorItems.length; i++) for (let j = i + 1; j < floorItems.length; j++) {
     const a = floorItems[i], b = floorItems[j];
-    if (a.room !== b.room || allowed(a.id, b.id)) continue;
+    if (a.room !== b.room || allowed(a, b)) continue;
     checks.collisions++;
     const d = overlap(a.footprint, b.footprint);
     if (d > 0.015) issues.push({ type: 'Kollision', item: a.id, other: b.id, room: a.room, msg: `${a.name} ↔ ${b.name}: ${Math.round(d * 100)} cm Überschneidung`, severity: 'error' });

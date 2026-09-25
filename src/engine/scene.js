@@ -5,11 +5,14 @@ import { OFFSET, ROOM_HEIGHT } from '../core/geometry.js';
 import { buildArchitecture } from './builders/architecture.js';
 import { consolidate } from './builders/common.js';
 import { applyMetricUVs } from './uv.js';
-import { furnish } from '../data/design.js';
+import { furnish, STYLES, DEFAULT_STYLE } from '../data/design.js';
+import { themeMaterials } from './materials.js';
 
 export class ApartmentScene {
-  constructor(M, lib) {
-    this.M = M; this.lib = lib;
+  constructor(M, lib, styleId = DEFAULT_STYLE) {
+    this.style = STYLES[styleId] ?? STYLES[DEFAULT_STYLE];
+    this.baseM = M;
+    this.M = themeMaterials(M, this.style.theme); this.lib = lib;
     this.root = new THREE.Group(); this.root.name = 'apartment';
     this.items = [];
     this.byRoom = new Map();
@@ -17,14 +20,14 @@ export class ApartmentScene {
   }
 
   build() {
-    const arch = buildArchitecture(this.M, { cut: ROOM_HEIGHT });
+    const arch = buildArchitecture(this.M, { cut: ROOM_HEIGHT, finish: this.style.finish, wallOverride: this.style.wallOverride });
     this.architecture = arch.root;
     this.wallInfo = arch.info;
     this.root.add(arch.root);
 
     this.furniture = new THREE.Group(); this.furniture.name = 'furniture';
     this.root.add(this.furniture);
-    furnish({ M: this.M, lib: this.lib, add: (meta, obj, place) => this.add(meta, obj, place) });
+    furnish({ M: this.M, lib: this.lib, style: this.style, add: (meta, obj, place) => this.add(meta, obj, place) });
 
     // Safety net: the path tracer requires one material per mesh.
     const multi = [];
@@ -47,7 +50,7 @@ export class ApartmentScene {
     }
 
     this.root.traverse((o) => {
-      if (o.isLight && o.userData.lamp) this.lights.push(o);
+      if (o.isLight && o.userData.lamp) { o.userData.room = this.items.find((i) => i.id === o.userData.itemId)?.room ?? null; this.lights.push(o); }
       if (o.isMesh && o.material?.userData?.glass) { o.castShadow = false; }
     });
     return this;
@@ -78,6 +81,15 @@ export class ApartmentScene {
   }
 
   setCeilingsVisible(v) { this.architecture.getObjectByName('ceilings').visible = v; }
+
+  /** Frees GPU geometry (materials/textures are shared between styles and stay cached). */
+  dispose() {
+    this.root.traverse((o) => {
+      if (o.isMesh && !o.geometry.userData.shared) o.geometry.dispose();
+      if (o.isLight && o.shadow?.map) o.shadow.map.dispose();
+    });
+    this.root.removeFromParent();
+  }
 }
 
 /** Footprint polygon (plan metres) of an item: local x = width, local z = depth. */

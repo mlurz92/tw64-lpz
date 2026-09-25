@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Texture bake</title><base href="../">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script></head>
+<body><script type="module">
+// Runs every procedural texture generator once and hands the canvases to tools/bake-textures.mjs.
+import * as TX from './src/engine/textures.js';
+import { PROCEDURAL } from './src/engine/materials.js';
+TX.setBakeMode(true);
+const out = {};
+for (const [key, gen] of Object.entries(PROCEDURAL)) {
+  const set = await gen();
+  const entry = { maps: {}, extra: {} };
+  for (const [slot, v] of Object.entries(set)) {
+    if (v && v.isTexture) {
+      const c = v.image, srgb = v.colorSpace === 'srgb';
+      entry.maps[slot] = { data: c.toDataURL('image/webp', slot === 'map' ? 0.9 : 0.95), srgb, size: v.userData.size };
+    } else entry.extra[slot] = v;
+  }
+  out[key] = entry;
+}
+window.__baked = out;
+</script></body></html>

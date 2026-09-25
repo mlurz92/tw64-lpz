@@ -4,7 +4,7 @@ import { box, boxOn, rbox, cyl, sphere, lathe, mesh, tube, rng, extrudePlan, cir
 import { artMaterial } from '../materials.js';
 import { bookSpines } from '../textures.js';
 
-const WARM = new THREE.Color('#ffc890');
+const WARM = new THREE.Color('#ffd6a8'); // 2700 K, white-balanced for interior photography
 
 /** Registers a light source that the viewer can dim per mood. lumens → candela. */
 export function lampLight(kind, lumens, { color = WARM, distance = 0, angle = 0.9, penumbra = 0.8, decay = 2, shadow = false } = {}) {
@@ -25,8 +25,9 @@ export function lampLight(kind, lumens, { color = WARM, distance = 0, angle = 0.
 
 // ------------------------------------------------------------------ lamps
 /** Bronze mushroom table lamp (moodboard key piece). */
-export function mushroomLamp(M, { h = 0.42, r = 0.17 } = {}) {
+export function mushroomLamp(M, { h = 0.42, r = 0.17, mat = 'bronze' } = {}) {
   const g = new THREE.Group();
+  M = { bronze: M[mat], opal: M.opal };
   cyl(g, M.bronze, 0.07, 0.075, 0.018, [0, 0, 0]);
   cyl(g, M.bronze, 0.018, 0.018, h - 0.1, [0, 0.018, 0], 24);
   lathe(g, M.bronze, [[0.012, 0], [r * 0.55, 0.01], [r * 0.9, 0.035], [r, 0.07], [r * 0.85, 0.11], [r * 0.45, 0.135], [0, 0.14]], [0, h - 0.14, 0]);
@@ -58,8 +59,9 @@ export function floorLamp(M, { h = 1.6 } = {}) {
 }
 
 /** Large flat saucer pendant in brushed bronze (dining). */
-export function saucerPendant(M, { dia = 0.8, drop = 0.95, ceiling = 2.56 } = {}) {
+export function saucerPendant(M, { dia = 0.8, drop = 0.95, ceiling = 2.56, mat = 'bronze' } = {}) {
   const g = new THREE.Group();
+  M = { bronze: M[mat], blackMetal: M.blackMetal, opal: M.opal };
   const y = ceiling - drop;
   cyl(g, M.bronze, 0.06, 0.06, 0.02, [0, ceiling - 0.02, 0]);
   cyl(g, M.blackMetal, 0.002, 0.002, drop - 0.08, [0, y + 0.08, 0], 6).castShadow = false;
@@ -94,8 +96,9 @@ export function globePendant(M, { r = 0.1, drop = 1.0, ceiling = 2.56 } = {}) {
 }
 
 /** Slim vertical bronze wall sconce with opal tube (moodboard: linear sconce). */
-export function linearSconce(M, { h = 0.6 } = {}) {
+export function linearSconce(M, { h = 0.6, mat = 'bronze' } = {}) {
   const g = new THREE.Group();
+  M = { bronze: M[mat], opal: M.opal };
   box(g, M.bronze, [0.05, h + 0.04, 0.02], [0, 0, -0.04]);
   const t = cyl(g, M.opal, 0.018, 0.018, h, [0, -h / 2, -0.012], 20); t.castShadow = false;
   box(g, M.bronze, [0.04, 0.02, 0.05], [0, h / 2 + 0.02, -0.02]);

@@ -36,12 +36,12 @@ function flutedCircle(r, flutes = 28, depth = 0.012, seg = 360) {
 
 // ------------------------------------------------------------------ living
 /** Sculptural curved sofa in ivory bouclé (moodboard key piece). */
-export function curvedSofa(M, { w = 2.5, d = 1.0, h = 0.72, fabric = 'boucle', pillows = ['velvetSage', 'velvetSage', 'linenIvory'] } = {}) {
+export function curvedSofa(M, { w = 2.5, d = 1.0, h = 0.72, fabric = 'boucle', pillows = ['velvetSage', 'velvetSage', 'linenIvory'], plinth = 'bronzeDark', throwMat = 'throwSage' } = {}) {
   const g = new THREE.Group();
   const bev = 0.045, armW = 0.2, backW = 0.24, front = d / 2 - 0.02;
   const a = w / 2 - bev, b = d / 2 - bev;
   // plinth
-  extrudePlan(g, M.bronzeDark, roundedRect(w - 0.3, d - 0.3, 0.25), 0.07, 0);
+  extrudePlan(g, M[plinth], roundedRect(w - 0.3, d - 0.3, 0.25), 0.07, 0);
   // back + arms band
   const outer = [[a, front - bev], [a, 0], ...superEllipseHalf(a, b, 5).slice(1, -1), [-a, 0], [-a, front - bev]];
   const ia = a - armW + bev * 2, ib = b - backW + bev * 2;
@@ -66,9 +66,11 @@ export function curvedSofa(M, { w = 2.5, d = 1.0, h = 0.72, fabric = 'boucle', p
     c.rotation.set(-0.3, (i === 2 ? -1 : 1) * 0.35, (i - 1) * 0.08);
     g.add(c);
   });
-  const t = throwBlanket(M, 'throwSage', 0.55, 0.42, 0.32);
-  t.position.set(ia - 0.02, 0.5, 0.05); t.rotation.y = 0;
-  g.add(t);
+  if (throwMat) {
+    const t = throwBlanket(M, throwMat, 0.55, 0.42, 0.32);
+    t.position.set(ia - 0.02, 0.5, 0.05); t.rotation.y = 0;
+    g.add(t);
+  }
   return g;
 }
 
@@ -91,20 +93,22 @@ export function sideTable(M, { dia = 0.42, h = 0.52, top = 'travertine' } = {}) 
 }
 
 /** Floating media lowboard, smoked oak with fluted doors and marble top. Origin: floor. */
-export function lowboard(M, { w = 2.2, d = 0.42, h = 0.4, lift = 0.22 } = {}) {
+export function lowboard(M, { w = 2.2, d = 0.42, h = 0.4, lift = 0.22, mat = 'smokedOak', top = 'marbleFine', fronts = 'fluted' } = {}) {
   const g = new THREE.Group();
-  boxOn(g, M.smokedOak, [w, h - 0.03, d - 0.02], [0, lift, -0.01]);
-  fluting(g, M.smokedOak, w - 0.04, h - 0.07, { y0: lift + 0.02, z: d / 2 - 0.02 });
-  boxOn(g, M.marbleFine, [w + 0.01, 0.03, d], [0, lift + h - 0.03, 0]);
+  boxOn(g, M[mat], [w, h - 0.03, d - 0.02], [0, lift, -0.01]);
+  if (fronts === 'fluted') fluting(g, M[mat], w - 0.04, h - 0.07, { y0: lift + 0.02, z: d / 2 - 0.02 });
+  else for (let i = 1; i < 4; i++) box(g, M.matteBlack, [0.003, h - 0.05, 0.003], [-w / 2 + (w * i) / 4, lift + (h - 0.03) / 2, d / 2 - 0.009]);
+  boxOn(g, M[top ?? mat], [w + 0.01, 0.03, d], [0, lift + h - 0.03, 0]);
   const led = boxOn(g, M.ledStrip, [w - 0.2, 0.006, 0.01], [0, lift - 0.008, 0]); led.castShadow = false;
   return g;
 }
 
 /** Samsung The Frame style TV in art mode: thin panel with light oak bezel. */
-export function frameTV(M, { inch = 65 } = {}) {
+export function frameTV(M, { inch = 65, bezel = 'oakLight', art: artMode = true } = {}) {
   const g = new THREE.Group();
   const diag = inch * 0.0254, w = diag * 0.8716, h = diag * 0.4903;
-  box(g, M.oakLight, [w + 0.05, h + 0.05, 0.028], [0, 0, 0]);
+  box(g, M[bezel], [w + 0.05, h + 0.05, 0.028], [0, 0, 0]);
+  if (!artMode) { const s = mesh(new THREE.PlaneGeometry(w, h), M.screen, [0, 0, 0.0145]); s.userData.keepUV = true; g.add(s); return g; }
   const scr = new THREE.Group();
   const art = frameArt(M);
   const p = mesh(new THREE.PlaneGeometry(w - 0.1, h - 0.1), art, [0, 0, 0.0145]); p.userData.keepUV = true; scr.add(p);
@@ -368,8 +372,9 @@ export function taskChair(M, { fabric = 'velvetSage' } = {}) {
 }
 
 /** Built-in shelving with backlit shelves (smoked oak). */
-export function shelving(M, { w = 1.3, d = 0.35, h = 2.3, shelves = [0.42, 0.82, 1.22, 1.62, 2.0] } = {}) {
+export function shelving(M, { w = 1.3, d = 0.35, h = 2.3, shelves = [0.42, 0.82, 1.22, 1.62, 2.0], mat = 'smokedOak' } = {}) {
   const g = new THREE.Group();
+  M = { smokedOak: M[mat], wallDeep: M.wallDeep, ledStrip: M.ledStrip };
   boxOn(g, M.smokedOak, [w, 0.4, d], [0, 0, 0]);
   boxOn(g, M.smokedOak, [0.03, h, d], [-w / 2 + 0.015, 0, 0]);
   boxOn(g, M.smokedOak, [0.03, h, d], [w / 2 - 0.015, 0, 0]);

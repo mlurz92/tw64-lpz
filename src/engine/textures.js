@@ -26,6 +26,38 @@ function loadBitmap(name) {
   return cache.get(name);
 }
 
+// ------------------------------------------------------------------ baked procedural textures
+// Procedural textures are generated once by tools/bake-textures.mjs and shipped as WebP files
+// (assets/lib/textures/baked/). At runtime they load in parallel and decode off the main thread;
+// the generators below stay as fallback (and as the single source of truth for baking).
+let manifestPromise = null;
+export let BAKE_MODE = false;
+export const setBakeMode = (v) => { BAKE_MODE = v; };
+function manifest() {
+  manifestPromise ??= fetch(LIB + 'baked/manifest.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  return manifestPromise;
+}
+
+/** Returns the baked texture set `key` if available, otherwise runs the generator. */
+export async function procedural(key, gen) {
+  const man = BAKE_MODE ? null : await manifest();
+  const entry = man?.[key];
+  if (entry) {
+    try {
+      const out = { ...(entry.extra ?? {}) };
+      await Promise.all(Object.entries(entry.maps).map(async ([slot, m]) => {
+        const tex = new THREE.Texture(await loadBitmap('baked/' + m.file));
+        tex.flipY = false;
+        out[slot] = finish(tex, { srgb: m.srgb, size: m.size });
+      }));
+      return out;
+    } catch (e) {
+      console.warn('Baked texture unavailable, generating:', key, e);
+    }
+  }
+  return gen();
+}
+
 /** Loads a Poly Haven map as texture. */
 export async function photo(name, opts) {
   const bmp = await loadBitmap(name);
@@ -282,6 +314,50 @@ export async function plankFloor({ veneer = 'oak_veneer_01', plankL = 1.9, plank
   };
 }
 
+/**
+ * Limewash / Kalkputz albedo: neutral, near-white cloudy mottling with crossed brush strokes.
+ * The material colour tints it, so one texture serves every wall colour of every style.
+ */
+export function limewash({ seed = 51, size = 2.4, res = 1024 } = {}) {
+  const noise = makeNoise(seed), W = res;
+  const c = canvas(W), ctx = c.getContext('2d'), img = ctx.createImageData(W, W), d = img.data;
+  for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+    const u = x / W, v = y / W;
+    const cloud = fbm(noise, u * 3 + 1.3, v * 3 + 7.1, 3, 5);
+    const fine = fbm(noise, u * 24 + 4, v * 24 + 9, 24, 3);
+    // crossed strokes: noise stretched along both diagonals
+    const s1 = fbm(noise, (u + v) * 20, (u - v) * 3 + 5, 20, 3), s2 = fbm(noise, (u - v) * 3 + 11, (u + v) * 20 + 2, 20, 3);
+    const k = 238 + (cloud - 0.5) * 34 + (fine - 0.5) * 8 + (Math.max(s1, s2) - 0.55) * 14;
+    const i = (y * W + x) * 4;
+    d[i] = k; d[i + 1] = k - 0.6; d[i + 2] = k - 1.5; d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return { map: canvasTexture(c, { srgb: true, size }) };
+}
+
+/** Honed dark stone (Pietra grey / basalt) with soft cloudy veils and fine calcite threads. */
+export function darkStone({ seed = 61, size = 1.2, res = 1024 } = {}) {
+  return marble({ seed, size, res, base: [74, 71, 67], vein: [128, 122, 114], goldish: [110, 98, 84], veins: 0.8 });
+}
+
+/** Light, veined travertine (Travertino Classico, cross-cut). */
+export function travertineVein({ seed = 23, size = 1.1, res = 1024 } = {}) {
+  const noise = makeNoise(seed), W = res;
+  const c = canvas(W), ctx = c.getContext('2d'), img = ctx.createImageData(W, W), d = img.data;
+  const hf = new Float32Array(W * W);
+  for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+    const u = x / W, v = y / W;
+    const warp = fbm(noise, u * 2, v * 2, 2, 4) * 1.8;
+    const bands = fbm(noise, u * 2 + warp, v * 14, 2, 5);
+    const pores = Math.pow(Math.max(0, fbm(noise, u * 50 + 7, v * 120 + 3, 50, 2) - 0.64), 1.4) * 4;
+    const i = (y * W + x) * 4;
+    d[i] = 226 + (bands - 0.5) * 34 - pores * 55; d[i + 1] = 214 + (bands - 0.5) * 32 - pores * 55; d[i + 2] = 196 + (bands - 0.5) * 30 - pores * 50; d[i + 3] = 255;
+    hf[y * W + x] = -pores + bands * 0.02;
+  }
+  ctx.putImageData(img, 0, 0);
+  return { map: canvasTexture(c, { srgb: true, size }), normalMap: canvasTexture(heightToNormal(hf, W, W, 3), { size }) };
+}
+
 // ------------------------------------------------------------------ textiles / art
 /** Tileable rug: heathered wool with a subtle tone-in-tone border handled by geometry. */
 export function wool({ seed = 31, size = 0.5, res = 512, color = [200, 190, 175], spread = 18 } = {}) {
@@ -298,20 +374,34 @@ export function wool({ seed = 31, size = 0.5, res = 512, color = [200, 190, 175]
   return canvasTexture(c, { srgb: true, size });
 }
 
+let _grainTile = null;
+function grainTile() {
+  if (_grainTile) return _grainTile;
+  const W = 256, c = canvas(W), ctx = c.getContext('2d'), img = ctx.createImageData(W, W), d = img.data;
+  const noise = makeNoise(77), rnd = mulberry32(78);
+  for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+    const v = 128 + (fbm(noise, (x / W) * 16, (y / W) * 16, 16, 3) - 0.5) * 120 + (rnd() - 0.5) * 50;
+    const i = (y * W + x) * 4; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return (_grainTile = c);
+}
+
 /**
  * Abstract artwork in the moodboard language (misty sage landscapes, stone colour fields,
  * bronze accents). Returns a CanvasTexture; UVs of the canvas plane are 0..1.
  */
 export function artwork(kind = 'landscape', { seed = 1, w = 1200, h = 900 } = {}) {
   const c = canvas(w, h), ctx = c.getContext('2d'), rnd = mulberry32(seed), noise = makeNoise(seed + 3);
+  // canvas grain: one small tileable noise tile, composited as a pattern (fast)
   const grain = () => {
-    const img = ctx.getImageData(0, 0, w, h), d = img.data;
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4, n = (fbm(noise, (x / w) * 60, (y / h) * 45, 60, 3) - 0.5) * 22 + (rnd() - 0.5) * 8;
-      d[i] += n; d[i + 1] += n; d[i + 2] += n;
-    }
-    ctx.putImageData(img, 0, 0);
+    ctx.save();
+    ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = 0.22;
+    ctx.fillStyle = ctx.createPattern(grainTile(), 'repeat');
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
   };
+  void noise;
   const stroke = (x, y, len, width, col, ang) => {
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
     const g = ctx.createLinearGradient(0, -width, 0, width);
@@ -361,6 +451,32 @@ export function artwork(kind = 'landscape', { seed = 1, w = 1200, h = 900 } = {}
     for (let i = 0; i < 400; i++) stroke(rnd() * w, rnd() * h, 80 + rnd() * 300, 6 + rnd() * 24, `rgba(${110 + rnd() * 90},${120 + rnd() * 80},${100 + rnd() * 70},${0.05 + rnd() * 0.1})`, rnd() * Math.PI);
     ctx.fillStyle = 'rgba(232,226,214,0.85)';
     ctx.beginPath(); ctx.arc(w * 0.62, h * 0.4, h * 0.16, 0, Math.PI * 2); ctx.fill();
+  } else if (kind === 'arch') {
+    // Soft Brutalism: sand ground, terracotta arch and a cognac sun
+    ctx.fillStyle = '#ddd2c1'; ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 220; i++) stroke(rnd() * w, rnd() * h, 120 + rnd() * 400, 8 + rnd() * 30, `rgba(${200 + rnd() * 40},${185 + rnd() * 40},${160 + rnd() * 40},${0.05 + rnd() * 0.08})`, (rnd() - 0.5) * 0.4);
+    ctx.fillStyle = '#b77a55';
+    ctx.beginPath(); ctx.moveTo(w * 0.3, h * 0.86); ctx.lineTo(w * 0.3, h * 0.5); ctx.arc(w * 0.46, h * 0.5, w * 0.16, Math.PI, 0); ctx.lineTo(w * 0.62, h * 0.86); ctx.fill();
+    ctx.fillStyle = 'rgba(122,132,106,0.9)'; ctx.fillRect(w * 0.55, h * 0.62, w * 0.2, h * 0.24);
+    ctx.fillStyle = '#8e5a3a'; ctx.beginPath(); ctx.arc(w * 0.7, h * 0.28, h * 0.07, 0, Math.PI * 2); ctx.fill();
+  } else if (kind === 'botanical') {
+    // Quiet Luxury: overlapping round sage leaves on warm paper (moodboard "Cool Quiet Luxury")
+    ctx.fillStyle = '#ebe6dc'; ctx.fillRect(0, 0, w, h);
+    const leaves = [[0.45, 0.35, 0.2, '#6f7d63'], [0.58, 0.55, 0.17, '#8a9582'], [0.38, 0.62, 0.13, '#4f5c47'], [0.55, 0.28, 0.1, '#a3ad96']];
+    for (const [x, y, r, col] of leaves) {
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(w * x, h * y, h * r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(235,230,220,0.35)'; ctx.lineWidth = 3;
+      for (let k = 0; k < 7; k++) { const a = (k / 7) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(w * x, h * y); ctx.lineTo(w * x + Math.cos(a) * h * r * 0.92, h * y + Math.sin(a) * h * r * 0.92); ctx.stroke(); }
+    }
+    ctx.strokeStyle = 'rgba(60,64,52,0.8)'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(w * 0.47, h * 0.95); ctx.quadraticCurveTo(w * 0.5, h * 0.7, w * 0.45, h * 0.35); ctx.stroke();
+  } else if (kind === 'monolith') {
+    // Refined Brutalism: stone ground, off-white square, muted sage block (moodboard)
+    ctx.fillStyle = '#b9ae9f'; ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 300; i++) stroke(rnd() * w, rnd() * h, 60 + rnd() * 260, 6 + rnd() * 20, `rgba(${150 + rnd() * 60},${140 + rnd() * 60},${125 + rnd() * 60},${0.06 + rnd() * 0.1})`, rnd() * Math.PI);
+    ctx.fillStyle = '#ddd5c7'; ctx.fillRect(w * 0.2, h * 0.14, w * 0.6, h * 0.72);
+    ctx.fillStyle = '#7b8570'; ctx.fillRect(w * 0.2, h * 0.5, w * 0.3, h * 0.36);
+    for (let i = 0; i < 120; i++) stroke(w * 0.2 + rnd() * w * 0.6, h * 0.14 + rnd() * h * 0.72, 80 + rnd() * 200, 5 + rnd() * 14, `rgba(255,255,255,${0.03 + rnd() * 0.05})`, (rnd() - 0.5) * 0.6);
   } else if (kind === 'relief') {
     // plaster relief (off-white), relies mostly on normal map
     ctx.fillStyle = '#e4ddd1'; ctx.fillRect(0, 0, w, h);

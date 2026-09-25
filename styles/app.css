@@ -182,3 +182,25 @@ dialog::backdrop { background: rgba(38, 34, 28, .35); backdrop-filter: blur(3px)
   .swatches { grid-template-columns: repeat(4, 1fr); row-gap: 42px; }
   .export-grid { grid-template-columns: 1fr; }
 }
+
+/* --- Stilwelten ---------------------------------------------------------------------- */
+.dots { display: inline-flex; gap: 2px; }
+.dots i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.style-btn { display: flex; align-items: center; gap: 8px; background: var(--paper); color: var(--ink); border: 1px solid #e0d8cc; }
+.style-btn:hover { background: #fff; }
+.style-pop { position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%) translateY(8px); width: min(560px, calc(100% - 24px)); padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.6); border-radius: var(--r); box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 5; }
+.style-pop.open { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+.style-pop .eyebrow { grid-column: 1 / -1; }
+.style-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; padding: 12px; background: rgba(255,255,255,.55); color: var(--ink); border: 1px solid transparent; border-radius: 12px; white-space: normal; }
+.style-card:hover { background: #fff; }
+.style-card.active { border-color: var(--bronze); background: #fff; }
+.style-card strong { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 500; }
+.style-card small { color: var(--muted); font-size: 12px; }
+.switch-overlay { position: absolute; inset: 0; display: none; place-items: center; background: rgba(240,236,229,.55); backdrop-filter: blur(3px); font-family: 'Cormorant Garamond', serif; font-size: 26px; color: var(--ink); z-index: 6; }
+body.is-switching .switch-overlay { display: grid; }
+.style-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+.style-tabs button { display: flex; align-items: center; gap: 10px; background: var(--paper); color: var(--muted); border: 1px solid #e0d8cc; }
+.style-tabs button.active { color: var(--ink); border-color: var(--bronze); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.concept-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 36px; }
+.concept-cols .materials-list { grid-template-columns: 1fr; }
+@media (max-width: 900px) { .concept-cols { grid-template-columns: 1fr; } .style-pop { grid-template-columns: 1fr; } }
