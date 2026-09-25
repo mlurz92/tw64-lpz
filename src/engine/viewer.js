@@ -123,7 +123,7 @@ export class Viewer {
 
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.controls.addEventListener('change', () => this.onCameraChange());
-    window.addEventListener('keydown', (e) => { if (!e.target.closest('input,textarea,select')) { this.keys.add(e.key.toLowerCase()); this.invalidate(); } });
+    window.addEventListener('keydown', (e) => { if (!e.target.closest?.('input,textarea,select')) { this.keys.add(e.key.toLowerCase()); this.invalidate(); } });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('blur', () => this.keys.clear());
     r.domElement.addEventListener('pointerdown', (e) => { this._down = [e.clientX, e.clientY]; });

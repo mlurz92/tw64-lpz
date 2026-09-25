@@ -257,7 +257,7 @@ class UI {
     this.renderStylePicker = render;
     render();
     window.addEventListener('keydown', (e) => {
-      if (e.target.closest('input,textarea,select') || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.target.closest?.('input,textarea,select') || e.ctrlKey || e.metaKey || e.altKey) return;
       const i = +e.key - 1;
       if (ids[i] && $('#view-3d').classList.contains('active')) this.setStyle(ids[i]);
     });

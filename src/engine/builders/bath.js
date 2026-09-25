@@ -218,6 +218,7 @@ export function bathPendant(M, lampLight, { r = 0.07, y = 1.62, ceiling = 2.56 }
   cyl(g, M.fittingBlack, 0.0018, 0.0018, ceiling - y - r, [0, y + r * 0.8, 0], 6).castShadow = false;
   cyl(g, M.fittingBlack, 0.02, 0.024, 0.05, [0, y + r * 0.75, 0]);
   const s = sphere(g, M.opalInterior, r, [0, y, 0], 32); s.castShadow = false;
-  const l = lampLight('point', 220, { distance: 4, color: new THREE.Color('#ffe6cc') }); // 3000 K l.position.set(0, y, 0); g.add(l);
+  const l = lampLight('point', 220, { distance: 4, color: new THREE.Color('#ffe6cc') }); // 3000 K
+  l.position.set(0, y, 0); g.add(l);
   return g;
 }
