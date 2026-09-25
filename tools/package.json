@@ -3,9 +3,7 @@
  "private": true,
  "type": "module",
  "dependencies": {
-  "three": "0.182.0",
-  "three-gpu-pathtracer": "0.0.24",
-  "three-mesh-bvh": "0.9.1",
+  "three": "0.186.1",
   "esbuild": "0.25.0"
  },
  "devDependencies": {
