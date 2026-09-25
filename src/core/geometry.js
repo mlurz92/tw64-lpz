@@ -7,6 +7,10 @@ export const ROOM_HEIGHT = 2.56;          // RH laut Raumstempel
 export const DOOR_HEIGHT = 2.135;         // lichte Türhöhe laut Plan (2,13⁵)
 export const WINDOW_HEAD = 2.40;          // bodentiefe Fenster (BRH 0,00), Sturz mit Vorhangnische
 export const EXTERIOR_WALL = 0.36;
+/** Finished floor of WE 13 above ground level ("+9,28 OK FFB" laut Ausführungsplan, 3. OG). */
+export const FLOOR_LEVEL = 9.28;
+/** Storey height of the building (3 storeys below WE 13). */
+export const STOREY = FLOOR_LEVEL / 3;
 
 const m = (p) => [p[0] / SCALE, p[1] / SCALE];
 export const OFFSET = { x: 10.2, y: 13.4 };

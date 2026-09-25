@@ -25,7 +25,7 @@ TEXTURES = {  # id: (resolution, [maps])
 }
 # Pure skies (no ground scenery): the park and the lower floors are real geometry, so the
 # view from the 3rd floor has the correct height and parallax.
-HDRIS = {'kloofendal_48d_partly_cloudy_puresky': '2k', 'kloppenheim_06_puresky': '2k', 'qwantani_dusk_2_puresky': '1k'}
+HDRIS = {'kloofendal_48d_partly_cloudy_puresky': '2k', 'qwantani_late_afternoon_puresky': '2k', 'qwantani_dusk_2_puresky': '1k'}
 MODELS = ['potted_plant_02', 'potted_plant_04', 'pachira_aquatica_01', 'calathea_orbifolia_01',
           'ceramic_vase_01', 'ceramic_vase_02', 'ceramic_vase_04', 'dry_branches_medium_01', 'fern_02']
 UA = {'User-Agent': 'we13-raumatelier-asset-fetch/1.0'}
