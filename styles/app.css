@@ -72,15 +72,15 @@ main { position: relative; height: calc(100% - 64px); }
 .seg { display: flex; background: #e6dfd4; border-radius: 999px; padding: 3px; }
 .seg button { background: transparent; border: 0; color: var(--muted); padding: 6px 13px; font-size: 13px; }
 .seg button.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-.pt { display: flex; align-items: center; gap: 8px; background: var(--bronze); border-color: var(--bronze); }
-.pt:hover { background: var(--bronze-d); }
-.pt .dot { width: 8px; height: 8px; border-radius: 50%; background: #f2d8b5; }
-.pt.on .dot { background: #9fe0a6; box-shadow: 0 0 0 4px rgba(159,224,166,.25); animation: pulse 1.6s infinite; }
+.seg.render button.active[data-render="realistic"] { background: var(--bronze); color: #fbf6ee; }
+.converge { width: 34px; height: 4px; border-radius: 4px; background: #e6dfd4; overflow: hidden; display: none; }
+.converge i { display: block; height: 100%; width: 0; background: var(--bronze); transition: width .15s; }
+body.is-realistic .converge { display: block; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(159,224,166,0); } }
 .exposure { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 15px; }
 .exposure input { width: 90px; accent-color: var(--bronze); }
 select { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; }
-.hint { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); font-size: 12px; color: var(--muted); background: rgba(247,244,238,.8); padding: 6px 12px; border-radius: 999px; white-space: nowrap; transition: opacity 1s; pointer-events: none; }
+.hint { position: absolute; left: 50%; top: 70px; transform: translateX(-50%); font-size: 12px; color: var(--muted); background: rgba(247,244,238,.8); padding: 6px 12px; border-radius: 999px; white-space: nowrap; transition: opacity 1s; pointer-events: none; }
 .hint.off { opacity: 0; }
 .details.hidden { display: none; }
 .details .close { position: absolute; right: 8px; top: 8px; }
@@ -204,3 +204,17 @@ body.is-switching .switch-overlay { display: grid; }
 .concept-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 36px; }
 .concept-cols .materials-list { grid-template-columns: 1fr; }
 @media (max-width: 900px) { .concept-cols { grid-template-columns: 1fr; } .style-pop { grid-template-columns: 1fr; } }
+
+/* Stilwelt-Leiste direkt im 3D-Viewer */
+.style-bar { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); display: flex; gap: 4px; padding: 5px; background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.6); border-radius: 999px; box-shadow: var(--shadow); max-width: calc(100% - 600px); overflow-x: auto; scrollbar-width: none; z-index: 4; }
+.style-bar::-webkit-scrollbar { display: none; }
+.style-bar button { display: flex; align-items: center; gap: 8px; background: transparent; border: 0; color: var(--muted); padding: 7px 14px 7px 10px; font-size: 13px; white-space: nowrap; border-radius: 999px; }
+.style-bar button:hover { color: var(--ink); background: rgba(255,255,255,.45); }
+.style-bar button.active { background: var(--ink); color: #f4efe7; }
+.style-bar button.active .dots i { box-shadow: 0 0 0 1px rgba(255,255,255,.35); }
+.style-bar kbd { font: 500 10px/1 'Jost', sans-serif; opacity: .55; border: 1px solid currentColor; border-radius: 4px; padding: 2px 4px; }
+.engine-badge { position: absolute; right: 16px; bottom: 16px; font-size: 11px; letter-spacing: .06em; color: var(--muted); background: rgba(247,244,238,.8); padding: 5px 10px; border-radius: 999px; pointer-events: none; }
+@media (max-width: 1480px) { .style-bar kbd { display: none; } .style-bar button { padding: 7px 11px 7px 9px; } }
+@media (max-width: 1180px) { .style-bar { max-width: calc(100% - 32px); top: auto; bottom: 78px; } .hint { top: 16px; } }
+@media (max-width: 1100px) { .engine-badge { display: none; } }
+@media (max-width: 700px) { .style-bar { bottom: 120px; } .style-bar button { padding: 6px 10px; } }

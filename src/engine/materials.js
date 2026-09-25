@@ -1,7 +1,7 @@
 // Physically based material library. One base library (Refined Metallic Japandi) plus style
 // themes that remap or re-tint slots (see themeMaterials). All materials are MeshPhysicalMaterial
-// so that the WebGL renderer and the GPU path tracer share one description (sheen for textiles,
-// clearcoat for lacquer, transmission for glass).
+// (sheen for textiles, clearcoat for lacquer and stone); the WebGPU renderer turns them into node
+// materials automatically.
 import * as THREE from 'three';
 import * as TX from './textures.js';
 
@@ -101,15 +101,17 @@ export async function createMaterials() {
   M.steelBlackened = phys({ color: '#2b2a28', metalness: 0.85, roughness: 0.5 });
   M.frame = phys({ color: '#2a2a29', metalness: 0.35, roughness: 0.5 });
   M.chrome = phys({ color: '#d8d8d8', metalness: 1, roughness: 0.08 });
+  // Bath fittings (all styles): matt black PVD, satin sheen
+  M.fittingBlack = phys({ color: '#121212', metalness: 0.6, roughness: 0.36, clearcoat: 0.25, clearcoatRoughness: 0.45 });
   M.steel = phys({ color: '#9a9a98', metalness: 1, roughness: 0.3 });
-  // Glass: the raster view uses a thin transparent coat (no screen-space transmission, which
-  // conflicts with post-processing targets); the path tracer switches to true refraction.
+  // Glass: thin transparent coat (no screen-space transmission, which would need an extra
+  // opaque pass per frame); reflections come from the room probe and, in the realistic mode, SSR.
   M.glass = phys({ color: '#f4f7f6', metalness: 0, roughness: 0.03, ior: 1.52, transparent: true, opacity: 0.1, depthWrite: false, envMapIntensity: 1.2 });
-  M.glass.userData = { glass: true, pt: { transmission: 1, opacity: 1, transparent: false, thickness: 0.008 } };
+  M.glass.userData = { glass: true };
   M.smokedGlass = phys({ color: '#3a3836', metalness: 0, roughness: 0.06, ior: 1.52, transparent: true, opacity: 0.55, depthWrite: false });
-  M.smokedGlass.userData = { glass: true, pt: { transmission: 0.8, opacity: 1, transparent: false, thickness: 0.01, color: '#8f8a84' } };
+  M.smokedGlass.userData = { glass: true };
   M.amberGlass = phys({ color: '#9a6a36', metalness: 0, roughness: 0.08, ior: 1.52, transparent: true, opacity: 0.6, depthWrite: false, emissive: new THREE.Color('#ffb265'), emissiveIntensity: 0 });
-  M.amberGlass.userData = { glass: true, emissiveOn: 0.6, pt: { transmission: 0.85, opacity: 1, transparent: false, thickness: 0.004, color: '#d9a060' } };
+  M.amberGlass.userData = { glass: true, emissiveOn: 0.6 };
   M.mirror = phys({ color: '#f4f4f4', metalness: 1, roughness: 0.015 });
   M.mirror.userData.mirror = true;
 
@@ -174,17 +176,17 @@ export async function createMaterials() {
   M.soil = phys({ color: '#3b3026', roughness: 1 });
   M.pebbles = phys({ color: '#bdb6aa', roughness: 0.7 });
   M.candle = phys({ color: '#efe8dc', roughness: 0.6 });
-  M.candle.userData.pt = { transmission: 0.2, thickness: 0.05 };
   M.leaf = phys({ color: '#56643f', roughness: 0.6, side: THREE.DoubleSide, sheen: 0.4, sheenColor: new THREE.Color('#9fb07f') });
   M.lemon = phys({ color: '#d9b43c', roughness: 0.55 });
   M.apple = phys({ color: '#8a2f22', roughness: 0.35, clearcoat: 0.5 });
 
   // --- emissive ------------------------------------------------------------------------
   M.lampShade = phys({ color: '#f3ebdd', roughness: 0.9, emissive: new THREE.Color('#ffd9a6'), emissiveIntensity: 0, side: THREE.DoubleSide });
-  M.lampShade.userData.pt = { transmission: 0.35, thickness: 0.01 };
   M.lampShade.userData.emissiveOn = 0.7;
   M.opal = phys({ color: '#f7f1e8', roughness: 0.4, emissive: new THREE.Color('#ffdcb0'), emissiveIntensity: 0 });
   M.opal.userData.emissiveOn = 2.2;
+  // opal of lamps in windowless rooms (bath pendants): glows in daylight as well
+  M.opalInterior = M.opal.clone(); M.opalInterior.userData = { emissiveOn: 2.2, interior: true };
   M.ledStrip = phys({ color: '#fff3e0', roughness: 0.5, emissive: new THREE.Color('#ffcf94'), emissiveIntensity: 0 });
   M.ledStrip.userData.emissiveOn = 2.5;
   M.downlight = phys({ color: '#fbf6ec', roughness: 0.3, emissive: new THREE.Color('#fff0dc'), emissiveIntensity: 0 });

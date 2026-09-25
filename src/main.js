@@ -1,12 +1,12 @@
 // Application bootstrap and UI wiring.
-import { Viewer, MOODS, STATIONS } from './engine/viewer.js';
+import { Viewer, MOODS, STATIONS, RENDER_MODES } from './engine/viewer.js';
 import { createMaterials } from './engine/materials.js';
 import { ModelLibrary } from './engine/models.js';
 import { ApartmentScene } from './engine/scene.js';
 import { PlanView } from './ui/plan2d.js';
 import { ROOMS, WALLS, BALCONIES } from './core/geometry.js';
 import { STYLES, DEFAULT_STYLE } from './data/design.js';
-import { roomNotes } from './data/styles.js';
+import { roomNotes, LUXURY_PRINCIPLES } from './data/styles.js';
 import PLAN from './data/plan.js';
 import { validateLayout } from './core/validate.js';
 
@@ -35,9 +35,9 @@ function toast(msg) {
 async function boot() {
   let viewer;
   try {
-    viewer = new Viewer($('#stage'));
+    viewer = await new Viewer($('#stage')).init();
   } catch (e) {
-    progress(1, 'WebGL 2 ist nicht verfügbar – bitte Hardwarebeschleunigung aktivieren.');
+    progress(1, 'Weder WebGPU noch WebGL 2 verfügbar – bitte Hardwarebeschleunigung aktivieren.');
     console.error(e);
     return;
   }
@@ -82,12 +82,11 @@ class UI {
       if (type === 'station') $$('#stationList button').forEach((b) => b.classList.toggle('active', b.dataset.id === data));
       if (type === 'mode') $$('#modeSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mode === data));
       if (type === 'mood') $$('#moodSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mood === data));
-      if (type === 'samples') $('#ptLabel').textContent = `Pathtracing · ${data} Samples`;
-      if (type === 'pathtracer') {
-        $('#btnPT').classList.toggle('on', data.active);
-        if (!data.active) $('#ptLabel').textContent = 'Fotorealistisch rendern';
-        else if (data.building) $('#ptLabel').textContent = `BVH wird aufgebaut ${data.progress ? Math.round(data.progress * 100) + ' %' : '…'}`;
+      if (type === 'render') {
+        $$('#renderSeg button').forEach((b) => b.classList.toggle('active', b.dataset.render === data));
+        document.body.classList.toggle('is-realistic', data === 'realistic');
       }
+      if (type === 'converge') $('#converge i').style.width = `${Math.round(data * 100)}%`;
     });
     this.showRoom('living');
     if (window.matchMedia('(max-width: 700px)').matches) { $('#details').classList.add('hidden'); $('#stations').classList.add('collapsed'); $('[data-collapse="stations"]').textContent = '+'; }
@@ -111,14 +110,15 @@ class UI {
     }));
     $('#moodSeg').innerHTML = Object.entries(MOODS).map(([k, m]) => `<button data-mood="${k}" class="${k === v.mood ? 'active' : ''}">${m.label}</button>`).join('');
     $$('#moodSeg button').forEach((b) => b.addEventListener('click', () => v.applyMood(b.dataset.mood)));
-    $('#btnPT').addEventListener('click', async () => {
-      if (v.pathTracer.active) { v.pathTracer.stop(); return; }
-      toast('Pathtracer startet – das Bild verfeinert sich mit jedem Sample. Kamera ruhig halten.');
-      try { await v.pathTracer.start(); } catch (e) { console.error(e); v.pathTracer.stop(); toast('Pathtracing wird von diesem Gerät nicht unterstützt.'); }
-    });
+    $('#renderSeg').innerHTML = Object.entries(RENDER_MODES).map(([k, m]) => `<button data-render="${k}" title="${esc(m.title)}" class="${k === v.renderMode ? 'active' : ''}">${esc(m.label)}</button>`).join('');
+    $$('#renderSeg button').forEach((b) => b.addEventListener('click', () => {
+      v.setRenderMode(b.dataset.render);
+      if (b.dataset.render === 'realistic') toast('Realistisch: globale Beleuchtung und Spiegelungen in Echtzeit – das Bild beruhigt sich nach ≈ 1 s Stillstand.');
+    }));
+    $('#engineBadge').textContent = `${v.backend} · three.js r186`;
     $('#exposure').addEventListener('input', (e) => v.setExposure(+e.target.value));
     $('#quality').addEventListener('change', (e) => v.setQuality(e.target.value));
-    $('#btnShot').addEventListener('click', () => this.download(v.screenshot(), `WE13_${this.style.id}_${v.station ?? 'ansicht'}.png`));
+    $('#btnShot').addEventListener('click', async () => this.download(await v.screenshot(), this.shotName()));
     $('[data-collapse="stations"]').addEventListener('click', (e) => { const p = $('#stations'); p.classList.toggle('collapsed'); e.target.textContent = p.classList.contains('collapsed') ? '+' : '–'; });
   }
 
@@ -127,7 +127,7 @@ class UI {
     $$('#stationList button').forEach((b) => b.addEventListener('click', () => {
       this.v.goto(b.dataset.id);
       const st = STATIONS.find((s) => s.id === b.dataset.id);
-      const room = { living: 'living', sofa: 'living', dining: 'living', hall: 'living', kitchen: 'kitchen', bedroom: 'bedroom', wardrobe: 'bedroom', office: 'office', bath: 'bath', guestbath: 'guestbath', balcony: 'balcony1' }[st.id];
+      const room = { living: 'living', sofa: 'living', dining: 'living', hall: 'living', kitchen: 'kitchen', bedroom: 'bedroom', wardrobe: 'bedroom', office: 'office', library: 'office', bath: 'bath', guestbath: 'guestbath', balcony: 'balcony1' }[st.id];
       if (room) this.showRoom(room);
     }));
   }
@@ -231,6 +231,8 @@ class UI {
         <div><div class="eyebrow">Wandgestaltung</div><div class="materials-list">${st.walls.map(([m, u]) => `<div>${esc(m)}<small>${esc(u)}</small></div>`).join('')}</div></div>
         <div><div class="eyebrow">Lichtplanung</div><div class="materials-list">${st.lightPlan.map((l) => `<div>${esc(l)}</div>`).join('')}</div></div>
       </div>
+      <div class="eyebrow" style="margin-top:28px">Luxus-Prinzipien · angewendet in allen Stilwelten</div>
+      <div class="materials-list luxury">${LUXURY_PRINCIPLES.map(([t, d]) => `<div>${esc(t)}<small>${esc(d)}</small></div>`).join('')}</div>
       ${this.auditHtml()}
       <div class="cards">${Object.entries(this.notes).map(([id, n]) => `<div class="card"><div class="eyebrow">${esc(roomName(id))}</div><h4>${esc(n.title)}</h4><p>${esc(n.zoning)}</p>${n.points.length ? `<ul>${n.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}</div>`).join('')}</div>
       <div class="eyebrow">Möbel- und Ausstattungsliste · ${esc(st.label)}</div><h3 style="margin:6px 0 14px">${items.length} Positionen</h3>
@@ -244,20 +246,21 @@ class UI {
     $$('#concept .style-tabs button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
   }
 
+  /** Stilwelt-Leiste direkt im 3D-Viewer (plus Tasten 1–4). */
   stylePicker() {
-    const pop = $('#stylePop');
+    const bar = $('#styleBar'), ids = Object.keys(STYLES);
     const render = () => {
-      $('#styleLabel').textContent = this.style.short;
-      $('#styleDots').innerHTML = this.style.palette.slice(1, 6).map(([, c]) => `<i style="background:${c}"></i>`).join('');
-      pop.innerHTML = `<div class="eyebrow">Stilwelt wählen</div>` + Object.values(STYLES).map((x) => `<button data-style="${x.id}" class="style-card${x.id === this.style.id ? ' active' : ''}">
-        <span class="dots">${x.palette.map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span>
-        <strong>${esc(x.label)}</strong><small>${esc(x.claim)}</small></button>`).join('');
-      $$('#stylePop button').forEach((b) => b.addEventListener('click', () => { pop.classList.remove('open'); this.setStyle(b.dataset.style); }));
+      bar.innerHTML = Object.values(STYLES).map((x, i) => `<button role="tab" data-style="${x.id}" aria-selected="${x.id === this.style.id}" class="${x.id === this.style.id ? 'active' : ''}" title="${esc(x.label)} – ${esc(x.claim)}">
+        <span class="dots">${x.palette.slice(1, 6).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span>${esc(x.short)}<kbd>${i + 1}</kbd></button>`).join('');
+      $$('#styleBar button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
     };
     this.renderStylePicker = render;
     render();
-    $('#btnStyle').addEventListener('click', (e) => { e.stopPropagation(); pop.classList.toggle('open'); });
-    document.addEventListener('click', (e) => { if (!e.target.closest('#stylePop')) pop.classList.remove('open'); });
+    window.addEventListener('keydown', (e) => {
+      if (e.target.closest?.('input,textarea,select') || e.ctrlKey || e.metaKey || e.altKey) return;
+      const i = +e.key - 1;
+      if (ids[i] && $('#view-3d').classList.contains('active')) this.setStyle(ids[i]);
+    });
   }
 
   /** Switches the furnishing style: rebuilds the apartment, keeps camera, mood and selection context. */
@@ -268,7 +271,6 @@ class UI {
     $('#switching').textContent = `${STYLES[id].label} wird eingerichtet …`;
     try {
       await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 20)));
-      const wasPT = this.v.pathTracer.active;
       const a = new ApartmentScene(this.M, this.lib, id).build();
       const cam = { pos: this.v.camera.position.clone(), target: this.v.controls.target.clone() };
       await this.v.setApartment(a);
@@ -282,7 +284,6 @@ class UI {
       this.renderStylePicker();
       this.showRoom(ROOMS.some((r) => r.id === this.lastRoom) ? this.lastRoom : 'living');
       document.title = `WE 13 · ${STYLES[id].short} · Raumatelier`;
-      if (wasPT) this.v.pathTracer.start();
       toast(`Stilwelt: ${STYLES[id].label}`);
     } catch (e) {
       console.error(e); toast('Stilwechsel fehlgeschlagen: ' + e.message);
@@ -316,6 +317,8 @@ class UI {
       <p><a href="assets/TWL62-64_WE%2013_AP%20ELT%20HLS_M100_A4_20260601.pdf" target="_blank" rel="noopener">Architektenplan (PDF) öffnen ↗</a></p>`;
   }
 
+  shotName(suffix = '') { return `WE13_${this.style.id}_${this.v.station ?? 'ansicht'}_${this.v.renderMode}${suffix}.png`; }
+
   download(url, name) {
     const a = document.createElement('a'); a.href = url; a.download = name; a.click();
     if (url.startsWith('blob:')) setTimeout(() => URL.revokeObjectURL(url), 2000);
@@ -323,13 +326,12 @@ class UI {
 
   blob(text, type) { return URL.createObjectURL(new Blob([text], { type })); }
 
-  export(kind) {
+  async export(kind) {
     const v = this.v;
-    if (kind === 'png') this.download(v.screenshot(), `WE13_${this.style.id}_${v.station ?? 'ansicht'}${v.pathTracer.active ? '_pathtraced' : ''}.png`);
+    if (kind === 'png') this.download(await v.screenshot(), this.shotName());
     if (kind === 'png4k') {
       const pr = v.renderer.getPixelRatio(); v.renderer.setPixelRatio(pr * 2); v.resize();
-      v.renderNow(); this.download(v.renderer.domElement.toDataURL('image/png'), `WE13_${this.style.id}_ansicht_2x.png`);
-      v.renderer.setPixelRatio(pr); v.resize();
+      try { this.download(await v.screenshot(), this.shotName('_2x')); } finally { v.renderer.setPixelRatio(pr); v.resize(); }
     }
     if (kind === 'svg') this.download(this.blob(this.plan.svg({ forExport: true }), 'image/svg+xml'), `WE13_grundriss_${this.style.id}.svg`);
     if (kind === 'csvWalls') {

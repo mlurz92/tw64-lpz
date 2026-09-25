@@ -62,37 +62,50 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
     grp([K.kitchenBlock(M)], [D.bowl(M, 'stonewareCharcoal', 0.16, 0.08), -0.25, 0.92, 0], [lemons(M), -0.25, 0.94, 0], [D.bookStack(M, 2, { seed: 21, w: 0.26, d: 0.2 }), 0.3, 0.92, 0.02, -0.2]),
     at(fr.W16, 0.85, 0.32));
 
-  // ======================================================================== BAD
-  const front = S.bathFront ?? 'Räuchereiche';
-  add({ id: 'laundry', room: 'bath', name: 'Waschturm WM/TR hinter Fronten', cat: 'Möbel', spec: `Fronten ${front}, 72 × 62 × 210 cm`, size: [0.72, 0.62] },
+  // ======================================================================== BAD (nach HLS-Plan)
+  // Vorwand mit Ablage 1,18 m hinter dem Waschtisch (W37) und entlang der Wanne (W38); darüber
+  // raumbreite Maßspiegel. Armaturen durchgehend schwarz matt (Duravit Tulum).
+  const front = S.bathFront ?? 'Räuchereiche', top = S.bathTop ?? 'Calacatta';
+  const BLACK = 'schwarz matt';
+  add({ id: 'laundry', room: 'bath', name: 'Waschturm WM/TR hinter Fronten', cat: 'Möbel', spec: `Waschmaschine + Trockner übereinander in der Nische, Fronten ${front}, Griffe ${BLACK} · 72 × 62 × 210 cm`, size: [0.72, 0.62] },
     B.laundryTower(M), abs(14.076, 5.883 + 0.315, 0));
-  add({ id: 'wc-bath', room: 'bath', name: 'Wand-WC spülrandlos', cat: 'Sanitär', spec: `Drückerplatte ${S.metal ?? 'Bronze'}`, size: [0.37, 0.57], anchor: 'back' },
+  add({ id: 'wc-bath', room: 'bath', name: 'Wand-WC Laufen Meda, spülrandlos', cat: 'Sanitär', spec: `Tiefspüler, Vorwand W35, Drückerplatte ${BLACK}`, size: [0.36, 0.56], anchor: 'back' },
     B.wc(M), abs(14.956, 5.883, 0));
-  add({ id: 'vanity-bath', room: 'bath', name: 'Waschtisch 80 schwebend', cat: 'Sanitär', spec: `${S.bathTop ?? 'Calacatta'} mit integriertem Becken, Unterschrank ${front}, Wandarmatur ${S.metal ?? 'Bronze'}`, size: [0.8, 0.46] },
-    grp([B.vanity(M)], [D.rectMirror(M, 0.7, 0.9), 0, 1.55, -0.22], [B.bathProps(M), 0.25, 0.86, -0.12]),
-    abs(15.87, 5.634 + 0.23, 0));
-  add({ id: 'tub', room: 'bath', name: 'Einbauwanne 180 × 80', cat: 'Sanitär', spec: `Kalkstein-Verkleidung, Glas-Duschwand, Regenbrause ${S.metal ?? 'Bronze'}`, size: [1.8, 0.8] },
-    B.bathtub(M), abs(16.776, 6.554, -Math.PI / 2));
-  add({ id: 'towel-bath', room: 'bath', name: 'Handtuchheizkörper', cat: 'Sanitär', spec: `${S.metal ?? 'Bronze'}, 50 × 120 cm`, size: [0.5, 0.1], anchor: 'back' },
-    B.towelRadiator(M), abs(15.2, 7.473, Math.PI));
+  add({ id: 'ledge-bath', room: 'bath', name: 'Vorwand mit Ablage H 1,18 m', cat: 'Sanitär', spec: `Installationswand hinter dem Waschtisch, Kalkstein, Ablage ${top} 2 cm · 90 × 25 cm`, size: [0.901, 0.249], anchor: 'back' },
+    grp([B.preWall(M, { w: 0.901, d: 0.249 })], [B.ledgeProps(M), -0.22, B.LEDGE_H, 0.12]), abs(15.8055, 5.634, 0));
+  add({ id: 'mirror-bath', room: 'bath', name: 'Spiegelwand nach Maß 182 × 138 cm', cat: 'Sanitär', spec: 'Maßanfertigung: Kristallspiegel über die gesamte Wand W37 oberhalb der Ablage (1,18 m) bis zur Decke, Schattenfuge 5 mm', size: [1.821, 0.01], plan: false },
+    B.wallMirror(M, 1.821, 2.56 - B.LEDGE_H), abs(16.2655, 5.634, 0, B.LEDGE_H));
+  add({ id: 'vanity-bath', room: 'bath', name: 'Waschtisch Laufen VAL 60 × 42 + Unterschrank', cat: 'Sanitär', spec: `SaphirKeramik weiß, Einhebelmischer Duravit Tulum ${BLACK}; Unterschrank schwebend 58 × 40 × 40 cm, 2 Schubkästen, Front ${front}`, size: [0.6, 0.42], anchor: 'back' },
+    grp([B.valBasin(M)], [B.vanityUnit(M, { top: 0.705 })], [B.bathProps(M), 0.2, 0.85, 0.06]), abs(15.8055, 5.883, 0));
+  for (const [k, x] of [['l', 15.47], ['r', 16.14]]) add({ id: 'pendant-bath-' + k, room: 'bath', name: 'Badpendel IP44', cat: 'Leuchte', spec: `Opalglas Ø 14, Baldachin ${BLACK}, vor der Spiegelwand (Gesichtslicht)`, size: [0.14, 0.14], round: true, plan: false },
+    B.bathPendant(M, D.lampLight), abs(x, 5.634 + 0.16, 0));
+  add({ id: 'ledge-tub', room: 'bath', name: 'Vorwand Wanne mit Ablage H 1,18 m', cat: 'Sanitär', spec: `Installationswand W38, Ablage ${top} · 180 × 10 cm`, size: [1.8, 0.1], anchor: 'back' },
+    grp([B.preWall(M, { w: 1.8, d: 0.1 })], [D.candle(M, 0.1, 0.035), 0.55, B.LEDGE_H, 0.05], [D.vase(M, 'bud', S.vase ?? 'stonewareCharcoal', 1), -0.6, B.LEDGE_H, 0.05]), abs(17.176, 6.534, -Math.PI / 2));
+  add({ id: 'tub', room: 'bath', name: 'Badewanne Villeroy & Boch Collaro 180 × 80', cat: 'Sanitär', spec: `Acryl, eingefliest (Kalkstein); Wannenthermostat Aufputz Duravit Tulum mit Handbrause ${BLACK}`, size: [1.8, 0.82] },
+    grp([B.bathtub(M)], [B.exposedThermostat(M), 0.15, 0.8, -0.41]), abs(16.666, 6.534, -Math.PI / 2));
+  add({ id: 'towel-bath', room: 'bath', name: 'Handtuchheizkörper 60 × 180', cat: 'Sanitär', spec: `${BLACK}, W39`, size: [0.6, 0.1], anchor: 'back' },
+    B.towelRadiator(M), abs(15.006, 7.473, Math.PI));
   add({ id: 'stool-bath', room: 'bath', name: 'Hocker Teak + Handtücher', cat: 'Deko', spec: 'Ø 32', size: [0.32, 0.32], round: true },
     grp([teakStool(M)], [T.foldedThrow(M, 'towel', 0.3, 0.22, 0.05), 0, 0.45, 0], [D.candle(M, 0.09, 0.04), 0.08, 0.5, 0.06]),
-    abs(16.12, 7.2, 0));
-  add({ id: 'plant-bath', room: 'bath', name: 'Farn im Steinzeugtopf', cat: 'Pflanze', spec: '', size: [0.3, 0.3], round: true },
-    D.pottedPlant(M, lib, 'fern', { height: 0.6, potR: 0.14, potH: 0.28, potMat: 'stonewareCharcoal', shape: 'cylinder', maxR: 0.22 }), abs(14.75, 7.28, 0));
+    abs(15.62, 7.25, 0));
+  add({ id: 'plant-bath', room: 'bath', name: 'Farn im Steinzeugtopf', cat: 'Pflanze', spec: '', size: [0.28, 0.28], round: true },
+    D.pottedPlant(M, lib, 'fern', { height: 0.6, potR: 0.13, potH: 0.28, potMat: 'stonewareCharcoal', shape: 'cylinder', maxR: 0.2 }), abs(16.08, 7.28, 0));
 
   // ======================================================================== DUSCHE / GÄSTE-WC
-  add({ id: 'shower-guest', room: 'guestbath', name: 'Walk-in-Dusche 105 × 80', cat: 'Sanitär', spec: `bodengleich, Linienrinne, Regenbrause ${S.metal ?? 'Bronze'}, Nische beleuchtet`, size: [1.05, 0.8] },
+  add({ id: 'shower-guest', room: 'guestbath', name: 'Walk-in-Dusche 105 × 80', cat: 'Sanitär', spec: `bodengleich, Linienrinne ${BLACK}, Duschsystem Aufputz Duravit Tulum (Thermostat, Kopfbrause Ø 25, Handbrause) ${BLACK}, Glas mit Profil ${BLACK}, beleuchtete Nische`, size: [1.05, 0.8] },
     B.walkInShower(M), abs(9.884, 6.132, 0));
-  add({ id: 'vanity-guest', room: 'guestbath', name: 'Waschtisch mit Aufsatzbecken', cat: 'Sanitär', spec: `${front}/${S.bathTop ?? 'Calacatta'}, Becken Steinzeug`, size: [0.7, 0.42] },
-    grp([B.vesselVanity(M)], [D.roundMirror(M, 0.6, { led: true }), 0, 1.5, -0.19], [B.bathProps(M), -0.24, 0.825, -0.1]),
-    abs(11.1, 5.583 + 0.21, 0));
-  add({ id: 'wc-guest', room: 'guestbath', name: 'Wand-WC', cat: 'Sanitär', spec: `Drückerplatte ${S.metal ?? 'Bronze'}`, size: [0.37, 0.57], anchor: 'back' },
+  add({ id: 'ledge-guest', room: 'guestbath', name: 'Vorwand mit Ablage H 1,18 m', cat: 'Sanitär', spec: `über die gesamte Wand W43, Kalkstein, Ablage ${top} · 131 × 15 cm`, size: [1.307, 0.149], anchor: 'back' },
+    grp([B.preWall(M, { w: 1.307, d: 0.149 })], [B.ledgeProps(M), 0.22, B.LEDGE_H, 0.075]), abs(11.0625, 5.583, 0));
+  add({ id: 'mirror-guest', room: 'guestbath', name: 'Spiegelwand nach Maß 131 × 138 cm', cat: 'Sanitär', spec: 'Maßanfertigung: Kristallspiegel über die gesamte Wand W43 oberhalb der Ablage (1,18 m) bis zur Decke, Schattenfuge 5 mm', size: [1.307, 0.01], plan: false },
+    B.wallMirror(M, 1.307, 2.56 - B.LEDGE_H), abs(11.0625, 5.583, 0, B.LEDGE_H));
+  add({ id: 'vanity-guest', room: 'guestbath', name: 'Waschtisch Laufen VAL 60 × 42 + Unterschrank', cat: 'Sanitär', spec: `SaphirKeramik weiß, Einhebelmischer Duravit Tulum ${BLACK}; Unterschrank schwebend 58 × 40 × 40 cm, Front ${front}`, size: [0.6, 0.42], anchor: 'back' },
+    grp([B.valBasin(M)], [B.vanityUnit(M, { top: 0.705 })], [B.bathProps(M), -0.2, 0.85, 0.06]), abs(11.058, 5.732, 0));
+  for (const [k, x] of [['l', 10.6], ['r', 11.52]]) add({ id: 'pendant-guest-' + k, room: 'guestbath', name: 'Badpendel IP44', cat: 'Leuchte', spec: `Opalglas Ø 14, Baldachin ${BLACK}`, size: [0.14, 0.14], round: true, plan: false },
+    B.bathPendant(M, D.lampLight), abs(x, 5.583 + 0.075, 0));
+  add({ id: 'wc-guest', room: 'guestbath', name: 'Wand-WC Laufen Meda', cat: 'Sanitär', spec: `Tiefspüler, Drückerplatte ${BLACK}`, size: [0.36, 0.56], anchor: 'back' },
     B.wc(M), abs(9.359, 7.05, Math.PI / 2));
-  add({ id: 'towel-guest', room: 'guestbath', name: 'Handtuchheizkörper', cat: 'Sanitär', spec: '50 × 100 cm', size: [0.5, 0.1], anchor: 'back' },
-    B.towelRadiator(M, { h: 1.0, y0: 0.35 }), abs(11.716, 6.75, -Math.PI / 2));
-  add({ id: 'sconce-guest', room: 'guestbath', name: 'Wandleuchte linear', cat: 'Leuchte', spec: `${S.metal ?? 'Bronze'}/Opal`, size: [0.05, 0.05], plan: false },
-    D.linearSconce(M, { h: 0.45 }), abs(10.62, 5.583 + 0.05, 0, 1.5));
+  add({ id: 'towel-guest', room: 'guestbath', name: 'Handtuchheizkörper 60 × 180', cat: 'Sanitär', spec: `${BLACK}, W44`, size: [0.6, 0.1], anchor: 'back' },
+    B.towelRadiator(M), abs(11.716, 7.04, -Math.PI / 2));
 
   // ======================================================================== HWR
   add({ id: 'utility-tall', room: 'utility', name: 'Hochschrank Vorräte/Sauger', cat: 'Möbel', spec: `IKEA PAX 75 × 58 × 201 bzw. Maßkorpus, Front ${front}, in der Nische W50 · 80 × 45 × 220 cm (Türschwenk frei)`, size: [0.8, 0.45] },
@@ -137,8 +150,8 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
     ['kitchen', 4.55, 16.15], ['kitchen', 4.35, 17.6], ['bath', 14.95, 6.85], ['bath', 16.0, 6.7], ['guestbath', 10.9, 6.95],
     ['utility', 5.1, 14.55], ['living', 7.3, 9.95], ['living', 6.0, 10.2 + 3.2],
   ];
-  spots.forEach(([room, x, y], i) => add({ id: 'spot-' + i, room, name: 'Einbaustrahler', cat: 'Leuchte', spec: 'LED 2700 K, CRI > 95, entblendet', size: [0.09, 0.09], round: true, plan: false, ceiling: true },
-    D.downlight(M, { light: true, lumens: room === 'living' ? 260 : 320, angle: 1.2 }), abs(x, y, 0, 2.56)));
+  spots.forEach(([room, x, y], i) => add({ id: 'spot-' + i, room, name: 'Einbaustrahler', cat: 'Leuchte', spec: /bath/.test(room) ? 'LED 3000 K, CRI > 95, IP44, entblendet' : 'LED 2700 K, CRI > 95, entblendet', size: [0.09, 0.09], round: true, plan: false, ceiling: true },
+    D.downlight(M, { light: true, lumens: room === 'living' ? 260 : 320, angle: 1.2, color: /bath/.test(room) ? D.NEUTRAL_WARM : undefined }), abs(x, y, 0, 2.56)));
 
   add({ id: 'sconce-hall', room: 'living', name: 'Wandleuchte linear', cat: 'Leuchte', spec: `${S.metal ?? 'Bronze'}/Opal`, size: [0.05, 0.05], plan: false },
     D.linearSconce(M), at(fr.W13, 1.3, 0.05, 0, 1.6));

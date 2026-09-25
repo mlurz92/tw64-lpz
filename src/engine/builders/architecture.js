@@ -150,7 +150,8 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT, finish = FINISH, wallO
     m.userData.room = f.id; floors.add(m);
   }
   for (const r of ROOMS) {
-    const c = ceilingMesh(r.points, M.ceiling, H);
+    // 3 cm overlap into the walls: no hairline crack (sky showing through) at wall/ceiling joints
+    const c = ceilingMesh(offsetPolygon(r.points, 0.03), M.ceiling, H);
     c.userData.room = r.id; ceilings.add(c);
     // Roof slab over the room incl. its walls: closes wall/ceiling joints and corner notches
     // for the sun's shadow map (no light leaks in walk mode). Shadow-only, never drawn.

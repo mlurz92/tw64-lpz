@@ -29,7 +29,7 @@ export class ApartmentScene {
     this.root.add(this.furniture);
     furnish({ M: this.M, lib: this.lib, style: this.style, add: (meta, obj, place) => this.add(meta, obj, place) });
 
-    // Safety net: the path tracer requires one material per mesh.
+    // Safety net: one material per mesh (picking, mirrors and the light budget rely on it).
     const multi = [];
     this.root.traverse((o) => { if (o.isMesh && Array.isArray(o.material)) multi.push(o); });
     for (const m of multi) {

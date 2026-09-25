@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><title>Texture bake</title><base href="../">
-<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script></head>
+<script type="importmap">{ "imports": { "three": "./vendor/three.webgpu.min.js", "three/webgpu": "./vendor/three.webgpu.min.js", "three/tsl": "./vendor/three.tsl.min.js" } }</script></head>
 <body><script type="module">
 // Runs every procedural texture generator once and hands the canvases to tools/bake-textures.mjs.
 import * as TX from './src/engine/textures.js';

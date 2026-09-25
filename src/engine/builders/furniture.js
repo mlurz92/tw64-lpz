@@ -411,3 +411,56 @@ export function bistroSet(M) {
 }
 
 export { foldedThrow };
+
+// ------------------------------------------------------------------ storage joinery
+/**
+ * Floating built-in bench/lowboard (continues the media wall joinery round the corner):
+ * drawers with shadow gaps or fluting, stone/wood top, LED under-light, optional seat cushions.
+ * Origin: floor centre, back at z = −d/2.
+ */
+export function builtInBench(M, { w = 2.2, d = 0.4, h = 0.44, lift = 0.12, mat = 'smokedOak', top = null, fronts = 'plain', drawers = 3, cushionMat = null, pillows = [] } = {}) {
+  const g = new THREE.Group(), W = M[mat];
+  const bodyH = h - lift - 0.03;
+  boxOn(g, W, [w, bodyH, d - 0.02], [0, lift, -0.01]);
+  const dw = w / drawers;
+  if (fronts === 'fluted') fluting(g, W, w - 0.04, bodyH - 0.04, { y0: lift + 0.02, z: d / 2 - 0.02 });
+  for (let i = 1; i < drawers; i++) box(g, M.matteBlack, [0.003, bodyH - 0.02, 0.003], [-w / 2 + dw * i, lift + bodyH / 2, d / 2 - 0.009]);
+  boxOn(g, M[top ?? mat], [w + 0.01, 0.03, d], [0, h - 0.03, 0]);
+  const led = boxOn(g, M.ledStrip, [w - 0.2, 0.006, 0.01], [0, lift - 0.008, 0]); led.castShadow = false;
+  if (cushionMat) {
+    rboxOn(g, M[cushionMat], [w * 0.62, 0.07, d - 0.04], [-w * 0.17, h, 0.0], 0.03, 3);
+    pillows.forEach((p, i) => { const k = cushion(M, p, [0.46, 0.42, 0.14]); k.position.set(-w * 0.45 + i * 0.5, h + 0.27, -d / 2 + 0.08); k.rotation.x = -0.12; g.add(k); });
+  }
+  return g;
+}
+
+/**
+ * Floor-to-ceiling library wall: closed base cabinets (d) with fronts, open shelves above
+ * (0.3 deep) with LED per shelf. Returns the group; userData.shelves = shelf top heights.
+ */
+export function libraryWall(M, { w = 1.5, d = 0.4, h = 2.52, baseH = 0.76, mat = 'smokedOak', front = null, fronts = 'plain', doors = 2, shelfD = 0.3, shelves = 4, pull = null } = {}) {
+  const g = new THREE.Group(), W = M[mat], F = M[front ?? mat], t = 0.025;
+  boxOn(g, W, [w, 0.06, d - 0.04], [0, 0, -0.02]);
+  boxOn(g, W, [w, baseH - 0.06, d - 0.02], [0, 0.06, -0.01]);
+  const dw = w / doors;
+  for (let i = 0; i < doors; i++) {
+    const cx = -w / 2 + dw * (i + 0.5);
+    if (fronts === 'fluted') { const s = new THREE.Group(); s.position.x = cx; g.add(s); fluting(s, F, dw - 0.008, baseH - 0.1, { y0: 0.08, z: d / 2 - 0.02 }); }
+    else box(g, F, [dw - 0.004, baseH - 0.08, 0.018], [cx, 0.07 + (baseH - 0.08) / 2, d / 2 - 0.009]);
+    if (pull) box(g, M[pull], [0.012, 0.16, 0.015], [cx + (i % 2 ? -1 : 1) * (dw / 2 - 0.05), baseH - 0.14, d / 2 + 0.006]);
+  }
+  boxOn(g, W, [w + 0.01, t, d], [0, baseH, 0]);
+  const z0 = -d / 2 + shelfD / 2;
+  for (const s of [-1, 1]) boxOn(g, W, [t, h - baseH - t, shelfD], [s * (w / 2 - t / 2), baseH + t, z0]);
+  boxOn(g, M.wallDeep ?? W, [w - 2 * t, h - baseH - t, 0.01], [0, baseH + t, -d / 2 + 0.005]);
+  const ys = [];
+  for (let i = 1; i <= shelves; i++) {
+    const y = baseH + t + ((h - baseH - t) * i) / (shelves + 1);
+    boxOn(g, W, [w - 2 * t, t, shelfD], [0, y, z0]); ys.push(y + t);
+    const led = box(g, M.ledStrip, [w - 0.1, 0.004, 0.008], [0, y - 0.004, z0 + shelfD / 2 - 0.04]); led.castShadow = false;
+  }
+  boxOn(g, W, [w, t, shelfD], [0, h - t, z0]);
+  g.userData.shelves = [baseH + t, ...ys];
+  g.userData.shelfZ = z0;
+  return g;
+}

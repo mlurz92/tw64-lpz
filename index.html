@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>WE 13 · Raumatelier</title>
-  <meta name="description" content="WE 13 Täubchenweg 62–64, Leipzig – maßstäbliche, fotorealistische Einrichtungsplanung in vier Stilwelten (Refined Metallic Japandi, Japandi × Soft Brutalism, Refined Brutalism, Cool Quiet Luxury) mit Westwing- und IKEA-Möbeln.">
+  <meta name="description" content="WE 13 Täubchenweg 62–64, Leipzig – maßstäbliche, fotorealistische Einrichtungsplanung (WebGPU) in vier Stilwelten (Refined Metallic Japandi, Japandi × Soft Brutalism, Refined Brutalism, Cool Quiet Luxury) mit Westwing- und IKEA-Möbeln.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%232f2e2b%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-size=%2214%22 text-anchor=%22middle%22 fill=%22%23efe7da%22 font-family=%22serif%22%3E13%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles/app.css">
   <script type="importmap">
-    { "imports": { "three": "./vendor/three.module.min.js" } }
+    { "imports": { "three": "./vendor/three.webgpu.min.js", "three/webgpu": "./vendor/three.webgpu.min.js", "three/tsl": "./vendor/three.tsl.min.js" } }
   </script>
 </head>
 <body>
@@ -53,23 +53,22 @@
         <button class="icon close" id="detailClose" aria-label="Details schließen">✕</button>
         <div id="detailBody"></div>
       </aside>
-      <div class="style-pop" id="stylePop" role="dialog" aria-label="Stilwelt wählen"></div>
+      <nav class="style-bar" id="styleBar" role="tablist" aria-label="Stilwelt direkt im 3D-Modell umschalten (Tasten 1–4)"></nav>
       <div class="switch-overlay" id="switching" role="status" aria-live="polite"></div>
       <div class="toolbar" id="toolbar">
-        <button id="btnStyle" class="style-btn" title="Stilwelt / Möblierungsvariante wählen" aria-haspopup="dialog"><span id="styleDots" class="dots"></span><span id="styleLabel">Stil</span><span aria-hidden="true">▾</span></button>
         <div class="seg" id="modeSeg" role="group" aria-label="Kameramodus">
           <button data-mode="orbit" class="active" title="Modellansicht ohne Decke">Dollhouse</button>
           <button data-mode="walk" title="Augenhöhe, W A S D zum Gehen">Begehung</button>
         </div>
         <div class="seg" id="moodSeg" role="group" aria-label="Lichtstimmung"></div>
-        <button id="btnPT" class="pt" title="Progressives Pathtracing mit globaler Beleuchtung">
-          <span class="dot"></span><span id="ptLabel">Fotorealistisch rendern</span>
-        </button>
+        <div class="seg render" id="renderSeg" role="group" aria-label="Darstellung"></div>
+        <span class="converge" id="converge" aria-hidden="true"><i></i></span>
         <label class="exposure" title="Belichtung">☼<input id="exposure" type="range" min="0.5" max="1.8" step="0.01" value="1"></label>
         <select id="quality" aria-label="Qualität" title="Renderqualität (Auflösung passt sich zusätzlich automatisch an)"><option value="high">Hoch</option><option value="medium">Mittel</option><option value="low">Schnell</option></select>
         <button id="btnShot" class="ghost" title="Aktuelle Ansicht als PNG">PNG</button>
       </div>
-      <div class="hint" id="hint">Ziehen: drehen · Rechtsklick/Umschalt: verschieben · Rad: zoomen · Klick auf Möbel: Details</div>
+      <div class="hint" id="hint">Ziehen: drehen · Rechtsklick/Umschalt: verschieben · Rad: zoomen · Klick auf Möbel: Details · 1–4: Stilwelt</div>
+      <div class="engine-badge" id="engineBadge" title="Grafik-Backend"></div>
     </section>
 
     <!-- PLAN -->
@@ -107,7 +106,7 @@
   <dialog id="dlgExport">
     <div class="dlg-head"><div><div class="eyebrow">Planungsunterlagen</div><h3>Exportieren</h3></div><button class="icon" data-close>✕</button></div>
     <div class="export-grid">
-      <button data-export="png">3D-Ansicht · PNG<small>aktueller Kamerablick, inkl. Pathtracing</small></button>
+      <button data-export="png">3D-Ansicht · PNG<small>aktueller Kamerablick, in der gewählten Darstellung</small></button>
       <button data-export="png4k">3D-Ansicht · PNG 2×<small>doppelte Auflösung (Raster)</small></button>
       <button data-export="svg">Grundriss · SVG<small>mit Möblierung und Maßen</small></button>
       <button data-export="csvWalls">Wandmaße · CSV<small>Wände, Öffnungen, Nettoabschnitte</small></button>
