@@ -414,27 +414,6 @@ export { foldedThrow };
 
 // ------------------------------------------------------------------ storage joinery
 /**
- * Floating built-in bench/lowboard (continues the media wall joinery round the corner):
- * drawers with shadow gaps or fluting, stone/wood top, LED under-light, optional seat cushions.
- * Origin: floor centre, back at z = −d/2.
- */
-export function builtInBench(M, { w = 2.2, d = 0.4, h = 0.44, lift = 0.12, mat = 'smokedOak', top = null, fronts = 'plain', drawers = 3, cushionMat = null, pillows = [] } = {}) {
-  const g = new THREE.Group(), W = M[mat];
-  const bodyH = h - lift - 0.03;
-  boxOn(g, W, [w, bodyH, d - 0.02], [0, lift, -0.01]);
-  const dw = w / drawers;
-  if (fronts === 'fluted') fluting(g, W, w - 0.04, bodyH - 0.04, { y0: lift + 0.02, z: d / 2 - 0.02 });
-  for (let i = 1; i < drawers; i++) box(g, M.matteBlack, [0.003, bodyH - 0.02, 0.003], [-w / 2 + dw * i, lift + bodyH / 2, d / 2 - 0.009]);
-  boxOn(g, M[top ?? mat], [w + 0.01, 0.03, d], [0, h - 0.03, 0]);
-  const led = boxOn(g, M.ledStrip, [w - 0.2, 0.006, 0.01], [0, lift - 0.008, 0]); led.castShadow = false;
-  if (cushionMat) {
-    rboxOn(g, M[cushionMat], [w * 0.62, 0.07, d - 0.04], [-w * 0.17, h, 0.0], 0.03, 3);
-    pillows.forEach((p, i) => { const k = cushion(M, p, [0.46, 0.42, 0.14]); k.position.set(-w * 0.45 + i * 0.5, h + 0.27, -d / 2 + 0.08); k.rotation.x = -0.12; g.add(k); });
-  }
-  return g;
-}
-
-/**
  * Floor-to-ceiling library wall: closed base cabinets (d) with fronts, open shelves above
  * (0.3 deep) with LED per shelf. Returns the group; userData.shelves = shelf top heights.
  */
