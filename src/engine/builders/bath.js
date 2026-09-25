@@ -1,8 +1,8 @@
 // Sanitary objects after the HLS plan (Ausführungsplan 01.06.2026): Laufen VAL 60 × 42 washbasins
 // on half-height pre-walls with a 1.18 m shelf ("Ablage 1,18 m"), Laufen Meda wall-hung WCs,
 // Villeroy & Boch Collaro 180 × 80 bath, Duravit Tulum exposed shower/bath sets, towel radiators
-// 60 × 180, stacked washer/dryer – all fittings in matt black. Full-wall mirrors (made to measure)
-// cover the entire wall above each pre-wall shelf.
+// 60 × 180, washer-dryer in the niche next to the bath door – all fittings in matt black. Mirrors
+// (made to measure) cover the wall above each pre-wall shelf, in the bath ending at the tub edge.
 import * as THREE from 'three';
 import { box, boxOn, rbox, rboxOn, cyl, tube, mesh, lathe, roundedRect, sphere } from './common.js';
 
@@ -181,13 +181,32 @@ export function towelRadiator(M, { w = 0.6, h = 1.8, y0 = 0.15 } = {}) {
   return g;
 }
 
-/** Tall cabinet hiding washer + dryer (stacked). */
-export function laundryTower(M, { w = 0.72, d = 0.62, h = 2.1, front = 'smokedOak' } = {}) {
-  const g = new THREE.Group();
-  boxOn(g, M[front], [w, h, d], [0, 0, 0]);
-  box(g, M.matteBlack, [w - 0.01, 0.004, 0.004], [0, h * 0.5, d / 2 + 0.001]);
-  box(g, M.fittingBlack, [0.014, 0.5, 0.02], [w / 2 - 0.06, h * 0.5 + 0.35, d / 2 + 0.012]);
-  box(g, M.fittingBlack, [0.014, 0.5, 0.02], [w / 2 - 0.06, h * 0.5 - 0.35, d / 2 + 0.012]);
+/**
+ * Laundry niche next to the bath door: front-loading washer-dryer (60 × 60 × 85) under a stone
+ * worktop, closed wall cabinet above (storage for detergent, towels). Origin: floor centre of the
+ * niche, back at z = −d/2, machine door facing +z.
+ */
+export function laundryNiche(M, { w = 0.76, d = 0.64, top = 'marble', front = 'smokedOak' } = {}) {
+  const g = new THREE.Group(), zb = -d / 2;
+  // washer-dryer (white, round porthole door, control strip)
+  rboxOn(g, M.plasticWhite, [0.598, 0.845, 0.58], [0, 0, zb + 0.3], 0.012, 2);
+  box(g, M.plasticWhite, [0.598, 0.1, 0.01], [0, 0.78, zb + 0.595]);
+  box(g, M.screen, [0.14, 0.035, 0.004], [0.12, 0.79, zb + 0.601]);
+  const knob = cyl(g, M.steel, 0.028, 0.028, 0.02, [0, 0, 0], 32); knob.rotation.x = Math.PI / 2; knob.position.set(-0.12, 0.79, zb + 0.605);
+  const rim = mesh(new THREE.TorusGeometry(0.17, 0.022, 16, 64), M.steel, [0, 0.46, zb + 0.595]); g.add(rim);
+  const glass = cyl(g, M.smokedGlass, 0.155, 0.155, 0.02, [0, 0, 0], 48); glass.rotation.x = Math.PI / 2; glass.position.set(0, 0.46, zb + 0.6);
+  glass.userData.keep = true; glass.castShadow = false;
+  box(g, M.plasticWhite, [0.58, 0.07, 0.01], [0, 0.04, zb + 0.595]);
+  // stone worktop over the machine, full niche width
+  boxOn(g, M[top], [w, 0.03, d - 0.02], [0, 0.88, zb + (d - 0.02) / 2]);
+  // wall cabinet (35 cm deep) with LED under-light
+  boxOn(g, M[front], [w - 0.004, 0.72, 0.35], [0, 1.42, zb + 0.175]);
+  box(g, M.matteBlack, [0.003, 0.7, 0.003], [0, 1.78, zb + 0.351]);
+  const led = boxOn(g, M.ledStrip, [w - 0.08, 0.006, 0.01], [0, 1.412, zb + 0.3]); led.castShadow = false;
+  // styling on the worktop: basket + folded towels
+  rboxOn(g, M.linenTaupe, [0.3, 0.2, 0.26], [-0.17, 0.91, zb + 0.28], 0.02, 2);
+  rboxOn(g, M.towel, [0.26, 0.05, 0.2], [0.18, 0.91, zb + 0.3], 0.015, 3);
+  rboxOn(g, M.towelTaupe, [0.26, 0.05, 0.2], [0.18, 0.96, zb + 0.3], 0.015, 3);
   return g;
 }
 

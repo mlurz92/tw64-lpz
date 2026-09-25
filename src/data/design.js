@@ -67,14 +67,14 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
   // raumbreite Maßspiegel. Armaturen durchgehend schwarz matt (Duravit Tulum).
   const front = S.bathFront ?? 'Räuchereiche', top = S.bathTop ?? 'Calacatta';
   const BLACK = 'schwarz matt';
-  add({ id: 'laundry', room: 'bath', name: 'Waschturm WM/TR hinter Fronten', cat: 'Möbel', spec: `Waschmaschine + Trockner übereinander in der Nische, Fronten ${front}, Griffe ${BLACK} · 72 × 62 × 210 cm`, size: [0.72, 0.62] },
-    B.laundryTower(M), abs(14.076, 5.883 + 0.315, 0));
+  add({ id: 'laundry', room: 'bath', name: 'Waschtrockner in der Nische neben der Tür', cat: 'Möbel', spec: `Waschtrockner (Frontlader) 60 × 60 × 85 cm in der ersten Nische direkt neben der Badtür, Arbeitsplatte ${top} über die volle Nischenbreite, Hängeschrank ${front} 76 × 35 × 72 cm mit LED darunter · Nische 76 × 65 cm`, size: [0.758, 0.62] },
+    B.laundryNiche(M), abs(14.076, 5.883 + 0.32, 0));
   add({ id: 'wc-bath', room: 'bath', name: 'Wand-WC Laufen Meda, spülrandlos', cat: 'Sanitär', spec: `Tiefspüler, Vorwand W35, Drückerplatte ${BLACK}`, size: [0.36, 0.56], anchor: 'back' },
     B.wc(M), abs(14.956, 5.883, 0));
   add({ id: 'ledge-bath', room: 'bath', name: 'Vorwand mit Ablage H 1,18 m', cat: 'Sanitär', spec: `Installationswand hinter dem Waschtisch, Kalkstein, Ablage ${top} 2 cm · 90 × 25 cm`, size: [0.901, 0.249], anchor: 'back' },
     grp([B.preWall(M, { w: 0.901, d: 0.249 })], [B.ledgeProps(M), -0.22, B.LEDGE_H, 0.12]), abs(15.8055, 5.634, 0));
-  add({ id: 'mirror-bath', room: 'bath', name: 'Spiegelwand nach Maß 182 × 138 cm', cat: 'Sanitär', spec: 'Maßanfertigung: Kristallspiegel über die gesamte Wand W37 oberhalb der Ablage (1,18 m) bis zur Decke, Schattenfuge 5 mm', size: [1.821, 0.01], plan: false },
-    B.wallMirror(M, 1.821, 2.56 - B.LEDGE_H), abs(16.2655, 5.634, 0, B.LEDGE_H));
+  add({ id: 'mirror-bath', room: 'bath', name: 'Spiegel nach Maß 90 × 138 cm', cat: 'Sanitär', spec: 'Maßanfertigung: Kristallspiegel über die volle Breite des Waschtisch-Vorsprungs (W36 bis Wannenkante) oberhalb der Ablage (1,18 m) bis zur Decke, Schattenfuge 5 mm; über der Wanne bleibt die Wand gefliest', size: [0.901, 0.01], plan: false },
+    B.wallMirror(M, 0.901, 2.56 - B.LEDGE_H), abs(15.8055, 5.634, 0, B.LEDGE_H));
   add({ id: 'vanity-bath', room: 'bath', name: 'Waschtisch Laufen VAL 60 × 42 + Unterschrank', cat: 'Sanitär', spec: `SaphirKeramik weiß, Einhebelmischer Duravit Tulum ${BLACK}; Unterschrank schwebend 58 × 40 × 40 cm, 2 Schubkästen, Front ${front}`, size: [0.6, 0.42], anchor: 'back' },
     grp([B.valBasin(M)], [B.vanityUnit(M, { top: 0.705 })], [B.bathProps(M), 0.2, 0.85, 0.06]), abs(15.8055, 5.883, 0));
   for (const [k, x] of [['l', 15.47], ['r', 16.14]]) add({ id: 'pendant-bath-' + k, room: 'bath', name: 'Badpendel IP44', cat: 'Leuchte', spec: `Opalglas Ø 14, Baldachin ${BLACK}, vor der Spiegelwand (Gesichtslicht)`, size: [0.14, 0.14], round: true, plan: false },
