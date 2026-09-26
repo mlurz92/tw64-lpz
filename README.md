@@ -10,7 +10,7 @@ Ein Build-Schritt ist nicht nötig; die Anwendung besteht aus ES-Modulen und mus
 
 ```bash
 python3 -m http.server 8000
-# oder: npx serve .
+# oder: node tools/dev-server.mjs
 ```
 
 Danach <http://localhost:8000> öffnen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten rechts im 3D-Viewer. Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
@@ -35,9 +35,13 @@ Umschalten **direkt im 3D-Viewer** über die Stilwelt-Leiste oben (oder die Tast
 
 Gemeinsam für alle Stilwelten: Bestandsküche (Nussbaum/Granit), **Bäder nach HLS-Plan** (siehe unten), Einbaugarderobe Diele (PAX 35 cm tief), HWR, Vorhänge (Verdunkelung IKEA **MAJGULL** im Schlafzimmer), Grundlicht.
 
+Die **Grundwände bleiben weiß**. Nur die in der jeweiligen Stilwelt benannten Medien-, Ess- oder Bettwände erhalten einen Material- oder Farbakzent. Großformatige Kunst (im Wohnbereich bis 160 × 120 cm) ist auf die Wandabschnitte und die Breite der Möbel abgestimmt.
+
 > **Produktangaben:** Artikelnamen und Maße stammen aus den Herstellerangaben (Recherche 09/2026, u. a. Westwing-Neuheiten Zumi, Hilda, Alain; IKEA BJÖRKÖVIKEN, STOENSE 240 × 350). Westwing **Abby** ist derzeit nicht lieferbar und wurde durch **Sahra** Ø 116 ersetzt. Maßanfertigungen und reine Stilreferenzen sind in der Möbelliste gekennzeichnet. Vor Bestellung Verfügbarkeit, Bezug/Farbe, Liefer- und Montagemaße prüfen.
 
 ### Bäder (nach Ausführungsplan HLS)
+
+Bad, Dusche/Gäste-WC und HWR sind an Wand und Boden mit mattem Feinsteinzeug **Iron 60 × 60 cm** dargestellt.
 
 | | **Bad** | **Dusche / Gäste-WC** |
 |---|---|---|
@@ -51,7 +55,7 @@ Gemeinsam für alle Stilwelten: Bestandsküche (Nussbaum/Granit), **Bäder nach 
 | Licht | 2 IP44-Pendel vor der Spiegelwand + Einbaustrahler, 3000 K | 2 IP44-Pendel + Einbaustrahler, 3000 K |
 | Heizkörper | Handtuchheizkörper 60 × 180 schwarz (W39) | Handtuchheizkörper 60 × 180 schwarz (W44) |
 
-Die Spiegel werden als **echte planare Spiegelungen** gerendert (Reflector-Knoten), sobald man im Raum steht. Fensterlose Räume (Bäder, HWR) bleiben auch bei „Tageslicht“ beleuchtet.
+Die Spiegel nutzen auf WebGPU die lokale Raum-Lightprobe für stabile Reflexionen ohne zusätzliche Vollbildpässe; im WebGL-2-Backend werden in der Begehung planare Reflector-Knoten verwendet. Fensterlose Räume (Bäder, HWR) bleiben auch bei „Tageslicht“ beleuchtet.
 
 ### Luxus-Prinzipien (angewendet in allen Stilwelten)
 
@@ -115,13 +119,13 @@ Der bisherige Weg (WebGL-Renderer + progressiver GPU-Pathtracer) war für die fo
 | Darstellung | Pipeline (TSL-Nodes, `src/engine/render.js`) | Einsatz |
 |---|---|---|
 | **Standard** | Normal-Prepass → **SSAO** (entrauscht, halbe Auflösung) nur im Umgebungslicht (`builtinAOContext`) → Szenen-Pass mit **4× MSAA** → Bloom → SMAA; in Bewegung schlanke Variante ohne AO/MSAA | schnelles Planen, schwächere Geräte |
-| **Realistisch** | MRT-Szenen-Pass (Farbe, Albedo, Normalen, Bewegungsvektoren, Metall/Rauheit) → **SSGI** (Screen-Space Global Illumination: Lichtbounce, Farbbluten, Kontaktschatten) → **SSR** (Spiegelungen auf Boden, Stein, Metall) → Bloom → **TRAA** (temporales Anti-Aliasing, konvergiert in ≈ 40 Bildern) | fotorealistische Ansichten und Exporte, bleibt interaktiv |
+| **Realistisch** | Vier MRT-Renderziele (Farbe, Albedo/Metall, Normalen/Rauheit, Bewegungsvektoren) → **SSGI** (Screen-Space Global Illumination: Lichtbounce, Farbbluten, Kontaktschatten) → **SSR** (Spiegelungen auf Boden, Stein, Metall) → Bloom → **TRAA** (temporales Anti-Aliasing, konvergiert in ≈ 40 Bildern) | während der Kamerabewegung schnelle Vorschau, danach fotorealistische Konvergenz |
 
 Gemeinsame Grundlagen:
 
 - **PBR-Materialien** (`MeshPhysicalMaterial`, automatisch in Node-Materialien übersetzt): Sheen für Textilien, Clearcoat für Lack/Stein; CC0-Fotoscans (Poly Haven) und vorberechnete prozedurale Texturen.
-- **Weiche Sonnenschatten** (4K Shadow Map, Frustum deckt die gesamte Plandiagonale ab – keine Lichtlecks in Eckräumen).
-- **Lokale Raum-Lightprobe:** In der Begehung wird der Raum um die Kamera in eine Cubemap aufgenommen und in zwei Durchgängen (zwei Lichtbounces) als bildbasiertes Licht verwendet; im Modus *Realistisch* ergänzt SSGI den Nahbereich.
+- **Weiche Sonnenschatten** (Schattenkarte 3072/2048/1536 Pixel nach Qualitätsstufe, Frustum deckt die gesamte Plandiagonale ab). Ein geschlossenes Dach und vereinfachte Schattencaster verhindern die hellen Streifen auf den Böden; Möbelkontakt entsteht über AO/SSGI.
+- **Lokale Raum-Lightprobe:** In der Begehung wird der Raum um die Kamera in eine Cubemap mit 256 oder 128 Pixeln je Fläche aufgenommen. *Hoch* berechnet zwei Lichtdurchgänge, *Mittel/Schnell* einen; auf WebGPU liefert sie auch die Spiegelreflexion, auf WebGL 2 werden planare Spiegel während der Aufnahme ausgesetzt. Im Modus *Realistisch* ergänzt SSGI den Nahbereich.
 - **Belichtungsautomatik:** log. Mittelwert der Leuchtdichte der Lightprobe (asynchrones GPU-Readback) → Zielwert der Lichtstimmung; der Belichtungsregler wirkt als Korrektur.
 - **Außenraum 3. OG mit Blick in den Park** (`builders/surroundings.js`, nur in der Begehung): Der Blick aus den Fenstern ist echte Geometrie statt eines Panoramafotos auf Straßenniveau – Parkrasen mit Kieswegen und Parkleuchten **9,28 m unter dem Fertigfußboden** (laut Plan „+9,28 OK FFB“), rund 150 Laubbäume (instanziert, 10–17 m hoch, spätsommerliche Grüntöne) mit freier Rasenfläche vor den Fensterfassaden, Eingangsstraße mit Gründerzeit-Häuserzeile, Stadtkante am Horizont, Luftperspektive ab 50 m. Das Gebäude selbst ist mit Erdgeschoss bis 2. OG, Geschossbändern, Fenstern und gestapelten Balkonen darunter sowie dem 4. OG darüber modelliert. Die Himmel sind reine Himmelspanoramen ohne Bodenkulisse; ihre Sonnenscheibe wird automatisch vermessen (Schwerpunkt der Scheibe) und exakt auf die Richtung des Schattenwurfs gedreht (Abweichung < 0,5°), die Scheibe selbst wird im Umgebungslicht gekappt, damit die Sonne nicht doppelt wirkt.
 - **Planare Spiegel:** Reflector-Knoten für alle Spiegel (Bad-Spiegelwände, Dielenspiegel) in der Begehung, gerendert nur wenn sichtbar; im Dollhouse Lightprobe-Spiegelung.
@@ -131,16 +135,16 @@ Gemeinsame Grundlagen:
 
 | Maßnahme | Wirkung |
 |---|---|
-| **Rendern bei Bedarf** | Standard: nur bei Änderungen; Realistisch: bis zur Konvergenz (≈ 40 Bilder), danach Ruhe |
+| **Rendern bei Bedarf** | Standard: nur bei Änderungen; Realistisch: schnelle Vorschau beim Bewegen, bis zur Konvergenz (≈ 40 Bilder) im Stillstand, danach Ruhe |
 | **Zweistufige Qualität** | Standard in Bewegung ohne AO/MSAA, nach 160 ms Stillstand ein verfeinertes Bild |
 | **Statische Schatten** | Sonnen-Shadow-Map nur nach Szenen-, Stil-, Modus- oder Stimmungswechsel |
 | **Licht-Budget** (`lighting.js`) | Feste Punkt-/Spot-Slots, belegt mit den Leuchten des aktuellen Raums – kein Lichtdurchschlag durch Wände |
 | **Adaptive Auflösung** | Pixel-Ratio sinkt stufenweise bei < 28 fps in Bewegung und steigt bei Reserve |
-| **Halbe Auflösung für AO/SSR** | SSAO und SSR in halber Auflösung, Normal-/Albedo-/Metall-Puffer als 8-Bit-Texturen |
+| **Halbe Auflösung für AO/SSR** | SSAO und SSR in halber Auflösung; Metall/Rauheit liegen in den Alphakanälen der 8-Bit-Albedo-/Normalenpuffer. Vier Renderziele halten das WebGPU-Basislimit ein. |
 | **Vorberechnete Texturen** | prozedurale Texturen als WebP (3,7 MB), Dekodierung außerhalb des Hauptthreads |
 | **Asynchrone Shader-Kompilierung** | `compileAsync` vor dem ersten Bild; WebGPU-Pipelines werden gecacht |
 
-Qualitätsstufen *Hoch/Mittel/Schnell* steuern Pixel-Ratio, Schattenauflösung und die Sample-Zahlen von SSAO, SSGI und SSR.
+Qualitätsstufen *Hoch/Mittel/Schnell* steuern Pixel-Ratio (maximal 1,5/1,2/1), Schattenauflösung, Raum-Lightprobe und die Sample-Zahlen von SSAO, SSGI und SSR.
 
 ## Automatische Planungsprüfung
 

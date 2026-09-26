@@ -154,8 +154,8 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT, finish = FINISH, wallO
     const c = ceilingMesh(offsetPolygon(r.points, 0.03), M.ceiling, H);
     c.userData.room = r.id; ceilings.add(c);
   }
-  // One watertight shadow cover avoids cracks and self-intersections at the many concave
-  // room junctions. It sits above the visible ceilings and is hidden with them in dollhouse mode.
+  // A single cover avoids shadow-map seams between room roofs. The visible ceilings retain
+  // their exact outlines; this cover is hidden together with them in the dollhouse view.
   const roofPts = ROOMS.flatMap((r) => r.points);
   const roofX = roofPts.map((p) => p[0]), roofZ = roofPts.map((p) => p[1]);
   const x0 = Math.min(...roofX) - 0.05, x1 = Math.max(...roofX) + 0.05;
