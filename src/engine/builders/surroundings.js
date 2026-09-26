@@ -4,7 +4,7 @@
 // out of the windows has the correct height and parallax. Shown in walk mode only.
 // Plan coordinates (metres, y down) → world X = x − OFFSET.x, Z = y − OFFSET.y, Y = height.
 import * as THREE from 'three';
-import { ROOMS, WALLS, OFFSET, EXTERIOR_WALL, FLOOR_LEVEL, STOREY, APARTMENT_BOUNDS, WINDOW_HEAD, ROOM_HEIGHT, wallThickness, add, mul } from '../../core/geometry.js';
+import { ROOMS, WALLS, BALCONIES, OFFSET, EXTERIOR_WALL, FLOOR_LEVEL, STOREY, APARTMENT_BOUNDS, WINDOW_HEAD, ROOM_HEIGHT, wallThickness, add, mul } from '../../core/geometry.js';
 import { BufferGeometryUtils } from '../../../vendor/three-addons.js';
 import { metricUV } from '../uv.js';
 import { offsetPolygon, buildBalconies } from './architecture.js';
@@ -57,7 +57,9 @@ function crownGeo(seed) {
   const r = rng(seed), parts = [];
   const k = 10 + Math.floor(r() * 4);
   for (let i = 0; i < k; i++) {
-    const g = new THREE.IcosahedronGeometry(0.3 + r() * 0.2, 2);
+    // detail 1 (80 faces per lobe): the crowns are ≥ 7 m away and seen at most a few hundred
+    // pixels large; detail 2 quadrupled the park to 420 k triangles for no visible gain
+    const g = new THREE.IcosahedronGeometry(0.3 + r() * 0.2, 1);
     const p = g.attributes.position, nrm = new Float32Array(p.count * 3), ph = r() * 10;
     for (let j = 0; j < p.count; j++) {
       const x = p.getX(j), y = p.getY(j), z = p.getZ(j), l = Math.hypot(x, y, z);
@@ -163,7 +165,11 @@ function buildBuilding(M) {
   g.add(meshOf(uvGeo(merge(facade), M.facade), M.facade, { cast: true }));
   g.add(meshOf(uvGeo(merge(bands), M.facadeBand), M.facadeBand));
   const gl = meshOf(merge(glass), M.windowDark); gl.material = M.windowDark; g.add(gl);
-  // stacked balconies (same outline and balustrade as WE 13) below and above
+  // stacked balconies (same outline and balustrade as WE 13) below and above, each on its own
+  // cantilevered slab (without it the balcony above floated as a bare railing over WE 13's own)
+  const soffits = [];
+  for (const y of [-3 * STOREY, -2 * STOREY, -STOREY, STOREY]) for (const b of BALCONIES) soffits.push(prismGeo(b.points, y - 0.28, y - 0.06));
+  g.add(meshOf(uvGeo(merge(soffits), M.facadeBand), M.facadeBand, { cast: true }));
   for (const y of [-3 * STOREY, -2 * STOREY, -STOREY, STOREY]) {
     const b = buildBalconies(M); b.position.y = y; g.add(b);
     b.traverse((o) => { if (o.isMesh) o.geometry.userData.shared = true; });

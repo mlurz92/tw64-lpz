@@ -13,12 +13,17 @@ export const LAMP_SCALE = 0.08;
 /** Windowless rooms: their lamps stay on (dimmed) even in daylight, as they would in reality. */
 export const INTERIOR_ROOMS = new Set(['bath', 'guestbath', 'utility']);
 export const INTERIOR_LEVEL = 0.8;
-const SLOTS = { point: 8, spot: 8 };
+/**
+ * Light slots per quality preset. Every slot costs a full BRDF evaluation in every shaded pixel,
+ * so integrated GPUs ("Mittel") get fewer; walk mode only needs the lamps of one room anyway.
+ */
+const SLOTS = { high: { point: 8, spot: 8 }, medium: { point: 5, spot: 5 }, low: { point: 3, spot: 3 } };
 const OPEN = { living: ['kitchen'], kitchen: ['living'] };
 
 export class LightRig {
-  constructor(apartment) {
+  constructor(apartment, quality = 'high') {
     this.lights = apartment.lights;
+    this.slots = SLOTS[quality] ?? SLOTS.high;
     this.level = 0;
     this.mode = 'orbit';
     this.room = null;
@@ -35,6 +40,8 @@ export class LightRig {
 
   setLevel(level) { this.level = level; return this.apply(); }
   setAll(all) { this.all = all; return this.apply(); }
+  /** Changes the slot count (one shader recompile, only on a preset change). */
+  setQuality(q) { this.slots = SLOTS[q] ?? SLOTS.high; return this.apply(); }
 
   /** Updates the selection for a camera; returns true if anything changed. */
   update(mode, camPos) {
@@ -58,10 +65,10 @@ export class LightRig {
       let chosen;
       if (!on) chosen = [];
       else if (this.all) chosen = list;
-      else chosen = this.pick(list, SLOTS[type]);
+      else chosen = this.pick(list, this.slots[type]);
       const set = new Set(chosen);
       // fixed slot count: fill with unused lights at zero intensity
-      const slots = !on ? 0 : this.all ? list.length : Math.min(SLOTS[type], list.length);
+      const slots = !on ? 0 : this.all ? list.length : Math.min(this.slots[type], list.length);
       let filler = slots - chosen.length;
       for (const l of this.byType[type]) {
         const active = set.has(l);

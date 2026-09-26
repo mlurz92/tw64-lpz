@@ -1,12 +1,20 @@
 // Assembles architecture + furnishing into one scene graph and keeps an item registry that the
 // 2D plan, the inventory and picking use.
 import * as THREE from 'three';
-import { OFFSET, ROOM_HEIGHT } from '../core/geometry.js';
+import { OFFSET, ROOM_HEIGHT, WALLS } from '../core/geometry.js';
 import { buildArchitecture } from './builders/architecture.js';
 import { consolidate } from './builders/common.js';
 import { applyMetricUVs } from './uv.js';
 import { furnish, STYLES, DEFAULT_STYLE } from '../data/design.js';
 import { themeMaterials } from './materials.js';
+import { BufferGeometryUtils } from '../../vendor/three-addons.js';
+
+/**
+ * Layer of the per-item furniture meshes once they are merged for rendering: cameras (view,
+ * probe, shadow) only see layer 0, the picking ray enables this layer as well.
+ */
+export const PICK_LAYER = 1;
+const MERGE_ATTRS = ['normal', 'position', 'uv'];
 
 export class ApartmentScene {
   constructor(M, lib, styleId = DEFAULT_STYLE) {
@@ -52,6 +60,8 @@ export class ApartmentScene {
       m.removeFromParent();
     }
 
+    this.mergeStatic();
+
     this.root.traverse((o) => {
       if (o.isLight && o.userData.lamp) { o.userData.room = this.items.find((i) => i.id === o.userData.itemId)?.room ?? null; this.lights.push(o); }
       if (o.isMesh && o.material?.userData?.glass) { o.castShadow = false; }
@@ -83,6 +93,55 @@ export class ApartmentScene {
     this.byRoom.get(meta.room).push(rec);
   }
 
+  /**
+   * Draw-call reduction: the static, opaque furniture, window and door meshes are merged per
+   * room and material (≈ 600 meshes → ≈ 200 draws). Per-object CPU work of the renderer (matrices, uniforms,
+   * bindings) dominates on integrated GPUs; grouping by room keeps frustum culling and the
+   * front-to-back order (early depth rejection) per room. The per-item originals stay in the
+   * scene graph for picking, selection boxes and footprints, on PICK_LAYER only. Lights, glass,
+   * mirrors and transparent parts stay individual objects; emissive lamp parts merge as well
+   * (their glow is set on the shared material).
+   */
+  mergeStatic() {
+    this.root.updateMatrixWorld(true);
+    const toRoot = new THREE.Matrix4().copy(this.root.matrixWorld).invert(), mtx = new THREE.Matrix4();
+    const buckets = new Map();
+    const roomOfWall = new Map(WALLS.map((w) => [w.id, w.room]));
+    const sources = [
+      ...this.items.map((i) => [i.object, i.room]),
+      ...this.architecture.getObjectByName('openings').children.map((g) => [g, roomOfWall.get(g.name.replace(/^(window|door)-/, '')) ?? '-']),
+    ];
+    for (const [object, room] of sources) {
+      object.traverse((o) => {
+        if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.visible) return;
+        const mat = o.material, ud = mat?.userData ?? {};
+        if (!mat || Array.isArray(mat) || mat.transparent || ud.glass || ud.mirror || o.userData.mirrorMats) return;
+        const g = o.geometry;
+        if (g.morphAttributes.position || !g.attributes.position || !g.attributes.normal || mat.vertexColors || mat.aoMap || mat.lightMap) return;
+        for (let p = o.parent; p; p = p.parent) if (!p.visible) return;
+        mtx.multiplyMatrices(toRoot, o.matrixWorld);
+        const part = g.index ? g.toNonIndexed() : g.clone();
+        for (const k of Object.keys(part.attributes)) if (!MERGE_ATTRS.includes(k)) part.deleteAttribute(k);
+        if (!part.attributes.uv) part.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(part.attributes.position.count * 2), 2));
+        part.applyMatrix4(mtx);
+        if (mtx.determinant() < 0) flipWinding(part); // mirrored placement: keep front faces outward
+        const key = `${room}|${mat.uuid}|${o.castShadow ? 1 : 0}|${o.receiveShadow ? 1 : 0}`;
+        if (!buckets.has(key)) buckets.set(key, { mat, cast: o.castShadow, receive: o.receiveShadow, room, parts: [] });
+        buckets.get(key).parts.push(part);
+        o.layers.set(PICK_LAYER);
+      });
+    }
+    const merged = this.merged = new THREE.Group(); merged.name = 'furniture-merged';
+    for (const { mat, cast, receive, room, parts } of buckets.values()) {
+      const m = new THREE.Mesh(parts.length > 1 ? BufferGeometryUtils.mergeGeometries(parts, false) : parts[0], mat);
+      if (parts.length > 1) parts.forEach((p) => p.dispose());
+      m.castShadow = cast; m.receiveShadow = receive;
+      m.userData.room = room; m.userData.keepUV = true;
+      merged.add(m);
+    }
+    this.root.add(merged);
+  }
+
   setCeilingsVisible(v) { this.architecture.getObjectByName('ceilings').visible = v; }
 
   /** Frees GPU geometry (materials/textures are shared between styles and stay cached). */
@@ -92,6 +151,17 @@ export class ApartmentScene {
       if (o.isLight && o.shadow?.map) o.shadow.map.dispose();
     });
     this.root.removeFromParent();
+  }
+}
+
+/** Reverses the triangle winding of a non-indexed geometry (after a mirroring transform). */
+function flipWinding(g) {
+  for (const a of Object.values(g.attributes)) {
+    const n = a.itemSize, arr = a.array, tmp = new arr.constructor(n);
+    for (let t = 0; t < a.count; t += 3) {
+      const i1 = (t + 1) * n, i2 = (t + 2) * n;
+      tmp.set(arr.subarray(i1, i1 + n)); arr.copyWithin(i1, i2, i2 + n); arr.set(tmp, i2);
+    }
   }
 }
 

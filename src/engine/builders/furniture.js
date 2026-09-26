@@ -103,17 +103,25 @@ export function lowboard(M, { w = 2.2, d = 0.42, h = 0.4, lift = 0.22, mat = 'sm
   return g;
 }
 
-/** Samsung The Frame style TV in art mode: thin panel with light oak bezel. */
+/**
+ * Samsung The Frame style TV (art mode) or plain flat TV. The panel is modelled as a body with a
+ * raised bezel and a recessed screen: every visible layer lies ≥ 2.5 mm from the next. Before,
+ * screen, passe-partout and bezel front were 0.2–0.5 mm apart – below the depth-buffer
+ * resolution at viewing distance, so the image z-fought (flickered) with the frame.
+ */
 export function frameTV(M, { inch = 65, bezel = 'oakLight', art: artMode = true } = {}) {
   const g = new THREE.Group();
-  const diag = inch * 0.0254, w = diag * 0.8716, h = diag * 0.4903;
-  box(g, M[bezel], [w + 0.05, h + 0.05, 0.028], [0, 0, 0]);
-  if (!artMode) { const s = mesh(new THREE.PlaneGeometry(w, h), M.screen, [0, 0, 0.0145]); s.userData.keepUV = true; g.add(s); return g; }
-  const scr = new THREE.Group();
-  const art = frameArt(M);
-  const p = mesh(new THREE.PlaneGeometry(w - 0.1, h - 0.1), art, [0, 0, 0.0145]); p.userData.keepUV = true; scr.add(p);
-  const mat = mesh(new THREE.PlaneGeometry(w, h), M.paper, [0, 0, 0.0142]); mat.userData.keepUV = true; scr.add(mat);
-  g.add(scr);
+  const diag = inch * 0.0254, w = diag * 0.8716, h = diag * 0.4903, b = 0.025, d = 0.028;
+  // body behind the screen (front at z = +0.004), bezel bars around it (front at z = +0.014)
+  box(g, M[bezel], [w, h, d - 0.01], [0, 0, -0.005]);
+  box(g, M[bezel], [w + 2 * b, b, d], [0, h / 2 + b / 2, 0]);
+  box(g, M[bezel], [w + 2 * b, b, d], [0, -h / 2 - b / 2, 0]);
+  box(g, M[bezel], [b, h, d], [-w / 2 - b / 2, 0, 0]);
+  box(g, M[bezel], [b, h, d], [w / 2 + b / 2, 0, 0]);
+  const plane = (mat, pw, ph, z) => { const s = mesh(new THREE.PlaneGeometry(pw, ph), mat, [0, 0, z]); s.userData.keepUV = true; s.castShadow = false; g.add(s); return s; };
+  if (!artMode) { plane(M.screen, w, h, 0.0065); return g; }
+  plane(M.paper, w, h, 0.0065);                       // passe-partout
+  plane(frameArt(M), w - 0.1, h - 0.1, 0.0095);       // picture, 3 mm in front of the mat
   return g;
 }
 let _frameArt = null;

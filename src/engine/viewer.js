@@ -11,11 +11,16 @@
 // Performance model
 //  · Static shadows: the sun's shadow map is re-rendered only after scene/mood/style changes.
 //  · Light budget (lighting.js): fixed slot count, only lamps relevant for the current room.
+//  · Quality presets (auto-detected from the GPU, integrated graphics → "Mittel"): pixel budget,
+//    shadow-map size, light slots, probe size and post-processing sample counts.
+//  · Pixel budget: the drawing buffer never exceeds the preset's megapixels, however large the
+//    display or its scaling (a 4K screen at 150 % would otherwise render 8.3 MP per frame).
 //  · Adaptive resolution: if frames during motion stay slow, the pixel ratio steps down.
 //  · Local room probe: in walk mode the room around the camera is captured into a cube map
 //    (two bounces) and used as image-based light → indirect light and reflections of the actual
 //    room instead of the outdoor sky; its luminance drives the automatic exposure. The capture
-//    is spread over frames (one bounce per frame, no scene frame in the same tick) → no hitches.
+//    is spread over frames – one cube face (or the prefilter) per tick, only while the camera
+//    rests – so it never adds a hitch to an interactive frame.
 //  · Frame cap: at most 60 rendered frames per second, also on 120/144 Hz displays.
 //  · Mirrors: room-probe reflections on WebGPU; planar reflectors on WebGL 2 in walk mode.
 import * as THREE from 'three/webgpu';
@@ -25,6 +30,7 @@ import { OFFSET, APARTMENT_BOUNDS, ROOM_HEIGHT } from '../core/geometry.js';
 import { setMaxAnisotropy } from './textures.js';
 import { LightRig, LAMP_SCALE, INTERIOR_LEVEL } from './lighting.js';
 import { createPipelines } from './render.js';
+import { PICK_LAYER } from './scene.js';
 
 export { LAMP_SCALE };
 
@@ -60,6 +66,14 @@ export const STATIONS = [
 ];
 
 const PROBE_SIZE = { high: 256, medium: 128, low: 128 };
+/** Upper limit of the drawing buffer per preset (pixels): ≈ 1440p / 1080p / 720p+. */
+const MAX_PIXELS = { high: 3.7e6, medium: 2.1e6, low: 1.1e6 };
+const MAX_DPR = { high: 1.5, medium: 1.25, low: 1 };
+const SHADOW_SIZE = { high: 3072, medium: 2048, low: 1536 };
+/** Near/far planes per camera mode: the dollhouse view (≥ 2 m away) gets a 5× finer depth
+ *  buffer; walk mode needs a close near plane and a far plane beyond the city edge (≤ 260 m). */
+const CLIP = { orbit: [0.25, 200], walk: [0.05, 700] };
+const QUALITY_KEY = 'we13-quality';
 const PROBE_MOVE = 1.0;         // re-capture the room probe after this many metres
 const SETTLE_MS = 160;          // camera must be still this long before the refined frame
 const CONVERGE_FRAMES = 40;     // realistic mode: temporal accumulation frames at rest
@@ -71,9 +85,7 @@ export class Viewer {
   constructor(container) {
     this.container = container;
     const r = this.renderer = new THREE.WebGPURenderer({ antialias: false, powerPreference: 'high-performance' });
-    this.basePR = Math.min(window.devicePixelRatio, 1.5);
     this.prScale = 1;
-    r.setPixelRatio(this.basePR);
     r.shadowMap.enabled = true;
     // r186 WebGPU: PCFSoftShadowMap was removed; PCF with a sampling radius gives the soft edge.
     r.shadowMap.type = THREE.PCFShadowMap;
@@ -85,13 +97,14 @@ export class Viewer {
     r.domElement.style.height = '100%';
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.05, 200);
+    this.camera = new THREE.PerspectiveCamera(40, 1, ...CLIP.orbit);
     this.controls = new OrbitControls(this.camera, r.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.mode = 'orbit';
     this.mood = 'day';
     this.quality = 'high';
+    this.qualityAuto = true;
     this.renderMode = 'standard';
     this.keys = new Set();
     this.timer = new THREE.Timer();
@@ -108,7 +121,7 @@ export class Viewer {
     // Sun shadow map is updated on demand; its size follows the quality preset.
     const sun = this.sun = new THREE.DirectionalLight('#fff4e6', 3);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(3072, 3072);
+    sun.shadow.mapSize.set(SHADOW_SIZE.high, SHADOW_SIZE.high);
     // the orthographic shadow frustum must enclose the whole plan diagonal (else corner rooms such
     // as the bath fall outside the shadow map and are lit through the walls)
     const b = APARTMENT_BOUNDS, span = Math.hypot(b.maxX - b.minX, b.maxY - b.minY) / 2 + 1.5;
@@ -151,9 +164,11 @@ export class Viewer {
     THREE.RectAreaLightNode.setLTC(RectAreaLightTexturesLib.init());
     this.pmrem = new THREE.PMREMGenerator(r);
     this.pipelines = createPipelines(r, this.scene, this.camera);
-    this.pipelines.setQuality(this.quality);
+    this.gpu = gpuName(r);
+    const stored = readStoredQuality();
+    this.qualityAuto = !stored;
+    this.setQuality(stored ?? suggestQuality(this.gpu), { persist: false });
     this.resizeObserver.observe(this.container);
-    this.resize();
     r.setAnimationLoop(() => this.loop());
     return this;
   }
@@ -174,7 +189,7 @@ export class Viewer {
       this.apartment = apartment;
       this.scene.add(apartment.root);
       this.setupMirrors(apartment);
-      this.rig = new LightRig(apartment);
+      this.rig = new LightRig(apartment, this.quality);
       this.emissive = new Set();
       apartment.root.traverse((o) => { if (o.isMesh && o.material?.userData?.emissiveOn) this.emissive.add(o.material); });
       const m = MOODS[this.mood];
@@ -312,6 +327,8 @@ export class Viewer {
 
   setMode(mode) {
     this.mode = mode;
+    [this.camera.near, this.camera.far] = CLIP[mode] ?? CLIP.orbit;
+    this.camera.updateProjectionMatrix();
     this.apartment?.setCeilingsVisible(mode === 'walk');
     const c = this.controls;
     if (mode === 'orbit') {
@@ -346,9 +363,11 @@ export class Viewer {
   }
 
   /**
-   * One bounce of the probe capture (six cube faces + prefilter). Returns true once the probe is
-   * complete. The render loop calls it once per frame, so a two-bounce capture is spread over two
-   * frames instead of rendering the scene twelve times plus a view in a single frame.
+   * One step of the probe capture: a single cube face, or – after the sixth face – the prefilter
+   * of that bounce. Returns true once the probe is complete. The render loop calls it once per
+   * tick while the camera rests, so a two-bounce capture is spread over 14 short ticks instead
+   * of rendering the scene twelve times in one or two long frames (a visible hitch on
+   * integrated GPUs).
    */
   probeStep() {
     if (!this.apartment || this.mode !== 'walk') { this.cancelProbe(); return true; }
@@ -365,29 +384,18 @@ export class Viewer {
       pos.y = THREE.MathUtils.clamp(pos.y, 0.9, 1.6);
       // the lamps of the room the probe is taken in must be active before the first face renders
       this.rig?.update(this.mode, this.camera.position);
-      job = this.probeJob = { pos, camPos: this.camera.position.clone(), pass: 0, passes: this.quality === 'high' ? 2 : 1, target: null };
+      job = this.probeJob = { pos, camPos: this.camera.position.clone(), pass: 0, face: 0, passes: this.quality === 'low' ? 1 : 2, target: null };
     }
-    this.probeCam.position.copy(job.pos);
-    this.probeCam.updateMatrixWorld();
-    const sel = this.selHelper?.visible; if (this.selHelper) this.selHelper.visible = false;
-    // A cube probe renders the scene six times per bounce. Planar reflectors would add
-    // full-screen passes to each face and can feed a render target back into itself.
-    const liveMirrors = (this.mirrors ?? []).filter((mirror) => mirror.material === mirror.userData.mirrorMats?.live);
-    for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.still;
-    // pass 0: direct light only (sun, lamps, faint fill) + sky through the windows;
-    // pass 1: lit additionally by pass 0 → the stored probe carries two bounces.
-    s.environment = job.target?.texture ?? this.blackEnv();
-    s.environmentIntensity = 1;
-    s.environmentRotation.set(0, 0, 0);
-    this.fill.intensity = m.fill[1];
-    this.probeCam.update(r, s);
+    if (job.face < 6) {
+      this.probeFace(job, job.face++, m);
+      return false;
+    }
+    // all six faces of this bounce are in the cube map: prefilter it for image-based light
     const next = this.pmrem.fromCubemap(this.probeRT.texture);
     job.target?.dispose();
     job.target = next;
-    job.pass++;
-    if (this.selHelper) this.selHelper.visible = sel;
-    for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.live;
-    if (job.pass < job.passes) { this.applyEnvironment(); return false; }
+    job.pass++; job.face = 0;
+    if (job.pass < job.passes) return false;
 
     this.probeJob = null;
     this.probeTarget?.dispose();
@@ -401,6 +409,36 @@ export class Viewer {
     this.applyEnvironment();
     this.metering = this.meter(m, this.probeRT).then((exp) => { if (exp) { this.autoExposure = exp; this.applyEnvironment(); } });
     return true;
+  }
+
+  /** Renders one face of the probe cube (same face order and orientation as CubeCamera.update). */
+  probeFace(job, face, m) {
+    const r = this.renderer, s = this.scene, cam = this.probeCam, rt = this.probeRT;
+    if (cam.coordinateSystem !== r.coordinateSystem) { cam.coordinateSystem = r.coordinateSystem; cam.updateCoordinateSystem(); }
+    cam.position.copy(job.pos);
+    cam.updateMatrixWorld();
+    const sel = this.selHelper?.visible; if (this.selHelper) this.selHelper.visible = false;
+    // A cube probe renders the scene six times per bounce. Planar reflectors would add
+    // full-screen passes to each face and can feed a render target back into itself.
+    const liveMirrors = (this.mirrors ?? []).filter((mirror) => mirror.material === mirror.userData.mirrorMats?.live);
+    for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.still;
+    // pass 0: direct light only (sun, lamps, faint fill) + sky through the windows;
+    // pass 1: lit additionally by pass 0 → the stored probe carries two bounces.
+    s.environment = job.target?.texture ?? this.blackEnv();
+    s.environmentIntensity = 1;
+    s.environmentRotation.set(0, 0, 0);
+    this.fill.intensity = m.fill[1];
+    const prevRT = r.getRenderTarget(), prevFace = r.getActiveCubeFace(), prevMip = r.getActiveMipmapLevel();
+    const mips = rt.texture.generateMipmaps;
+    rt.texture.generateMipmaps = face === 5 && mips; // mip chain once, after the last face
+    r.setRenderTarget(rt, face, 0);
+    r.render(s, cam.children[face]);
+    rt.texture.generateMipmaps = mips;
+    r.setRenderTarget(prevRT, prevFace, prevMip);
+    if (face === 5) rt.texture.needsPMREMUpdate = true;
+    if (this.selHelper) this.selHelper.visible = sel;
+    for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.live;
+    this.applyEnvironment(); // the view keeps its own environment between the steps
   }
 
   /** Drops an unfinished probe capture (scene, mood or mode changed in between). */
@@ -516,22 +554,35 @@ export class Viewer {
 
   resize() {
     const w = this.container.clientWidth || 1, h = this.container.clientHeight || 1;
+    this.renderer.setPixelRatio(this.pixelRatio(w, h));
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
     this.invalidate();
   }
 
-  setQuality(q) {
+  /** Device pixel ratio capped by the preset and by its pixel budget, times the adaptive scale. */
+  pixelRatio(w, h) {
+    const q = this.quality, dpr = window.devicePixelRatio || 1;
+    const base = Math.min(dpr, MAX_DPR[q], Math.sqrt(MAX_PIXELS[q] / Math.max(1, w * h)));
+    return Math.max(0.5, base) * this.prScale;
+  }
+
+  /** 'high' | 'medium' | 'low'. An explicit choice is remembered; the default follows the GPU. */
+  setQuality(q, { persist = true } = {}) {
+    if (!MAX_PIXELS[q]) return;
     this.quality = q;
-    this.basePR = q === 'high' ? Math.min(window.devicePixelRatio, 1.5) : q === 'medium' ? Math.min(window.devicePixelRatio, 1.2) : 1;
+    if (persist) { this.qualityAuto = false; try { localStorage.setItem(QUALITY_KEY, q); } catch { /* storage unavailable */ } }
     this.prScale = 1;
-    this.renderer.setPixelRatio(this.basePR);
-    const s = q === 'low' ? 1536 : q === 'medium' ? 2048 : 3072;
-    this.sun.shadow.mapSize.set(s, s);
-    this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
+    const s = SHADOW_SIZE[q];
+    if (this.sun.shadow.mapSize.x !== s) {
+      this.sun.shadow.mapSize.set(s, s);
+      this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
+    }
     this.pipelines?.setQuality(q);
+    this.rig?.setQuality(q);
     this.sceneChanged();
     this.resize();
+    this.emit('quality', q);
   }
 
   /** Steps the pixel ratio down/up from measured frame times during motion (hysteresis). */
@@ -543,7 +594,7 @@ export class Viewer {
     const min = this.renderMode === 'realistic' ? 0.5 : 0.55;
     if (avg > 1 / 28 && s > min) s = Math.max(min, s - 0.15);
     else if (avg < 1 / 55 && s < 1) s = Math.min(1, s + 0.15);
-    if (s !== this.prScale) { this.prScale = s; this.renderer.setPixelRatio(this.basePR * s); this.resize(); }
+    if (s !== this.prScale) { this.prScale = s; this.resize(); }
   }
 
   walkUpdate(dt) {
@@ -572,6 +623,7 @@ export class Viewer {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
     const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, this.camera);
+    ray.layers.enable(PICK_LAYER); // per-item originals of the merged furniture
     const hits = ray.intersectObject(this.apartment.furniture, true).filter((h) => h.object.visible && !h.object.material?.userData?.glass);
     const id = hits[0]?.object.userData.itemId ?? null;
     this.select(id);
@@ -618,7 +670,8 @@ export class Viewer {
     const still = now - this.lastMove > SETTLE_MS;
     // light budget follows the camera (walk mode: room of the camera)
     if (this.rig?.update(this.mode, this.camera.position)) this.invalidate();
-    // Load distribution: a probe bounce takes this whole tick; the view renders in the next one.
+    // Load distribution: one probe step (a cube face or the prefilter) per tick while the camera
+    // rests; the view renders once the probe is complete.
     if (still && this.probeStale()) { this.probeStep(); this.needsRender = true; return; }
     // Frame cap: controls/animations keep running every tick, the GPU draws at most ~60 fps.
     if (now - this.lastFrame < FRAME_MS) return;
@@ -730,4 +783,31 @@ function analyseSky(tex) {
   }
   const u = (bx + (sw ? sx / sw : 0) + 0.5) / w, v = (by + (sw ? sy / sw : 0) + 0.5) / h;
   return { phi: (u - 0.5) * Math.PI * 2, el: (0.5 - v) * Math.PI, peak: best };
+}
+
+/** GPU identification for the quality default (WebGPU adapter info, else the WebGL renderer). */
+function gpuName(renderer) {
+  const info = renderer.backend.device?.adapterInfo;
+  if (info && (info.vendor || info.architecture || info.description)) return [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(' ');
+  try {
+    const gl = renderer.backend.gl ?? document.createElement('canvas').getContext('webgl2');
+    const ext = gl?.getExtension('WEBGL_debug_renderer_info');
+    return String((ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl?.getParameter(gl.RENDERER)) ?? '');
+  } catch { return ''; }
+}
+
+/**
+ * Default preset from the GPU: software rasterisers and phones → "Schnell"; integrated graphics
+ * (Intel Iris Xe / UHD as in NUC 11–13, AMD APUs, Apple M base chips) → "Mittel"; discrete → "Hoch".
+ */
+export function suggestQuality(gpu = '') {
+  const g = gpu.toLowerCase();
+  if (/swiftshader|llvmpipe|software|basic render|mali|adreno|powervr/.test(g) || matchMedia?.('(pointer: coarse)').matches) return 'low';
+  if (/\barc\b|xe-hpg|geforce|nvidia|quadro|rtx|radeon rx|radeon pro|apple m\d (pro|max|ultra)/.test(g)) return 'high';
+  if (/intel|iris|uhd|xe-lp|gen-1\d|radeon\(tm\) graphics|radeon graphics|vega \d+ graphics|apple/.test(g)) return 'medium';
+  return 'high';
+}
+
+function readStoredQuality() {
+  try { const q = localStorage.getItem(QUALITY_KEY); return MAX_PIXELS[q] ? q : null; } catch { return null; }
 }

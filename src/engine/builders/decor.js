@@ -213,7 +213,7 @@ export function bookRow(M, w = 0.6, { h = 0.24, d = 0.18, seed = 1 } = {}) {
   const g = new THREE.Group();
   spineTex ??= bookSpines({ seed: 5 });
   const r = rng(seed);
-  const mat = (bookRow.mat ??= new THREE.MeshPhysicalMaterial({ map: spineTex, roughness: 0.8 }));
+  const mat = (bookRow.mat ??= new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.8 }));
   // single-material meshes only (multi-material groups break the path tracer's material table)
   boxOn(g, M.paper, [w, h, d - 0.004], [0, 0, -0.002]);
   const geo = new THREE.PlaneGeometry(w, h);
@@ -232,8 +232,9 @@ export function artwork(M, kind, w, h, { seed = 1, frame = 'oakLight', float = t
   const art = artMaterial(kind, seed);
   const d = 0.035, fw = 0.018;
   const cw = w - fw * 2 - (float ? 0.02 : 0), ch = h - fw * 2 - (float ? 0.02 : 0);
-  box(g, M.paper, [cw, ch, 0.024], [0, 0, 0.01]);
-  const canvas = mesh(new THREE.PlaneGeometry(cw, ch), art, [0, 0, 0.0225]);
+  // stretcher front at z = 0.017; the painted canvas 3 mm in front of it (was 0.5 mm → z-fighting)
+  box(g, M.paper, [cw, ch, 0.018], [0, 0, 0.008]);
+  const canvas = mesh(new THREE.PlaneGeometry(cw, ch), art, [0, 0, 0.02]);
   canvas.userData.keepUV = true;
   g.add(canvas);
   // frame (shadow gap floater)
