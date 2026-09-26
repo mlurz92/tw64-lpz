@@ -15,8 +15,7 @@
 //  · Local room probe: in walk mode the room around the camera is captured into a cube map
 //    (two bounces) and used as image-based light → indirect light and reflections of the actual
 //    room instead of the outdoor sky; its luminance drives the automatic exposure.
-//  · Mirrors: true planar reflections (reflector nodes) in walk mode, only rendered when a mirror
-//    is in view; in the dollhouse view they fall back to the room probe.
+//  · Mirrors: room-probe reflections on WebGPU; planar reflectors on WebGL 2 in walk mode.
 import * as THREE from 'three/webgpu';
 import { reflector, vec4 } from 'three/tsl';
 import { OrbitControls, HDRLoader, RectAreaLightTexturesLib } from '../../vendor/three-addons.js';
@@ -31,8 +30,8 @@ export const MOODS = {
   // Pure-sky panoramas (no ground scenery – park and city are real geometry 9.28 m below).
   // sunAz: world azimuth of the sun (°, atan2(z, x)); the panorama is rotated so that its sun
   // disc sits exactly there, the elevation is measured from the panorama (minEl = lower bound).
-  day: { label: 'Tageslicht', hdri: 'kloofendal_48d_partly_cloudy_puresky', env: 0.9, bg: 1.0, sun: 3.2, sunColor: '#fff4e6', sunAz: 38, minEl: 20, maxEl: 90, lamps: 0, exposure: 1.0, key: 0.2, maxExp: 4.5, fill: [0.85, 0.12], fog: '#c3cdd6' },
-  golden: { label: 'Goldene Stunde', hdri: 'qwantani_late_afternoon_puresky', env: 0.8, bg: 0.95, sun: 2.4, sunColor: '#ffc690', sunAz: 112, minEl: 6, maxEl: 90, lamps: 0.35, exposure: 0.95, key: 0.17, maxExp: 3.5, fill: [0.45, 0.06], fog: '#d8b99a' },
+  day: { label: 'Tageslicht', hdri: 'kloofendal_48d_partly_cloudy_puresky', env: 0.9, bg: 1.0, sun: 3.2, sunColor: '#fff4e6', sunAz: 38, minEl: 20, maxEl: 90, lamps: 0, exposure: 1.0, key: 0.28, maxExp: 4.5, fill: [0.85, 0.18], fog: '#c3cdd6' },
+  golden: { label: 'Goldene Stunde', hdri: 'qwantani_late_afternoon_puresky', env: 0.8, bg: 0.95, sun: 2.4, sunColor: '#ffc690', sunAz: 112, minEl: 6, maxEl: 90, lamps: 0.35, exposure: 0.95, key: 0.21, maxExp: 3.5, fill: [0.45, 0.09], fog: '#d8b99a' },
   evening: { label: 'Abend', hdri: 'qwantani_dusk_2_puresky', env: 0.35, bg: 0.45, sun: 0, sunColor: '#ffffff', sunAz: 112, minEl: 0, maxEl: 90, lamps: 1, exposure: 0.95, key: 0.1, maxExp: 3, fill: [0.12, 0.015], fog: '#3a4152' },
 };
 
@@ -58,7 +57,7 @@ export const STATIONS = [
   { id: 'balcony', label: 'Balkon 1', mode: 'walk', pos: [13.1, 1.55, 10.4], target: [10.6, 0.8, 9.6], fov: 66 },
 ];
 
-const ENV_SIZE = 256;           // cube size of the room probe
+const PROBE_SIZE = { high: 256, medium: 128, low: 128 };
 const PROBE_MOVE = 1.0;         // re-capture the room probe after this many metres
 const SETTLE_MS = 160;          // camera must be still this long before the refined frame
 const CONVERGE_FRAMES = 40;     // realistic mode: temporal accumulation frames at rest
@@ -69,11 +68,11 @@ export class Viewer {
   constructor(container) {
     this.container = container;
     const r = this.renderer = new THREE.WebGPURenderer({ antialias: false, powerPreference: 'high-performance' });
-    this.basePR = Math.min(window.devicePixelRatio, 2);
+    this.basePR = Math.min(window.devicePixelRatio, 1.5);
     this.prScale = 1;
     r.setPixelRatio(this.basePR);
     r.shadowMap.enabled = true;
-    r.shadowMap.type = THREE.PCFShadowMap;
+    r.shadowMap.type = THREE.PCFSoftShadowMap;
     r.toneMapping = THREE.NeutralToneMapping;
     r.toneMappingExposure = 1;
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -101,15 +100,15 @@ export class Viewer {
     this.frameTimes = [];
     this.stats = { frames: 0, refined: 0, probes: 0 };
 
-    // sun: static 4K shadow map, re-rendered on demand only
+    // Sun shadow map is updated on demand; its size follows the quality preset.
     const sun = this.sun = new THREE.DirectionalLight('#fff4e6', 3);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(4096, 4096);
+    sun.shadow.mapSize.set(3072, 3072);
     // the orthographic shadow frustum must enclose the whole plan diagonal (else corner rooms such
     // as the bath fall outside the shadow map and are lit through the walls)
     const b = APARTMENT_BOUNDS, span = Math.hypot(b.maxX - b.minX, b.maxY - b.minY) / 2 + 1.5;
     Object.assign(sun.shadow.camera, { left: -span, right: span, top: span, bottom: -span, near: 1, far: 80 });
-    sun.shadow.bias = -0.0001; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3;
+    sun.shadow.bias = -0.00002; sun.shadow.normalBias = 0.005; sun.shadow.radius = 1;
     sun.shadow.autoUpdate = false;
     this.center = new THREE.Vector3((b.minX + b.maxX) / 2 - OFFSET.x, 0, (b.minY + b.maxY) / 2 - OFFSET.y);
     sun.target.position.copy(this.center);
@@ -191,12 +190,16 @@ export class Viewer {
 
   // ------------------------------------------------------------------ mirrors
   /**
-   * Every mirror gets its own planar reflector (true reflection of the room, rendered only when
-   * the mirror is visible) and keeps the metallic probe material for the dollhouse view.
+   * On WebGL 2 each mirror gets a planar reflector for walk mode. On WebGPU the
+   * room probe stays active to avoid an extra full-resolution scene pass per mirror.
    */
   setupMirrors(apartment) {
     this.mirrors = [];
     apartment.root.traverse((o) => { if (o.isMesh && o.material?.userData?.mirror) this.mirrors.push(o); });
+    // r186's WebGPU reflector can bind its own full-resolution texture as a render
+    // attachment while capturing another view. The room PMREM already supplies a stable
+    // reflection and costs no extra scene passes, so use it on WebGPU.
+    if (this.renderer.backend.isWebGPUBackend) return;
     for (const m of this.mirrors) {
       const rf = reflector({ resolutionScale: this.quality === 'low' ? 0.5 : 0.75, bounces: false });
       m.add(rf.target);
@@ -211,7 +214,7 @@ export class Viewer {
 
   updateMirrors() {
     const live = this.mode === 'walk';
-    for (const m of this.mirrors ?? []) m.material = live ? m.userData.mirrorMats.live : m.userData.mirrorMats.still;
+    for (const m of this.mirrors ?? []) if (m.userData.mirrorMats) m.material = live ? m.userData.mirrorMats.live : m.userData.mirrorMats.still;
   }
 
   /** HDRI → (equirect for the background, PMREM for image-based light). */
@@ -259,7 +262,9 @@ export class Viewer {
     if (probe) { s.environment = this.probeEnv; s.environmentIntensity = giTrim; s.environmentRotation.set(0, 0, 0); }
     else { s.environment = this.hdriEnv; s.environmentIntensity = m.env * giTrim; s.environmentRotation.set(0, this.rot ?? 0, 0); }
     this.fill.intensity = m.fill[probe ? 1 : 0];
-    this.renderer.toneMappingExposure = (probe ? this.autoExposure : m.exposure) * (this.exposureTrim ?? 1);
+    // Interior metering sees bright window pixels on several cube faces. A modest
+    // camera-like exposure bias preserves readable fabrics and plaster in the room.
+    this.renderer.toneMappingExposure = (probe ? this.autoExposure * 1.2 : m.exposure) * (this.exposureTrim ?? 1);
     this.invalidate();
   }
 
@@ -334,18 +339,26 @@ export class Viewer {
   captureProbe() {
     if (!this.apartment || this.mode !== 'walk') return;
     const r = this.renderer, s = this.scene;
-    this.probeRT ??= new THREE.CubeRenderTarget(ENV_SIZE, { type: THREE.HalfFloatType });
+    const size = PROBE_SIZE[this.quality];
+    if (this.probeRT && this.probeRT.width !== size) {
+      this.probeRT.dispose(); this.probeRT = null; this.probeCam = null;
+    }
+    this.probeRT ??= new THREE.CubeRenderTarget(size, { type: THREE.HalfFloatType });
     this.probeCam ??= new THREE.CubeCamera(0.05, 60, this.probeRT);
     const pos = this.camera.position.clone();
     pos.y = THREE.MathUtils.clamp(pos.y, 0.9, 1.6);
     this.probeCam.position.copy(pos);
     this.probeCam.updateMatrixWorld();
     const sel = this.selHelper?.visible; if (this.selHelper) this.selHelper.visible = false;
+    // A cube probe renders the scene twelve times on High. Planar reflectors would add
+    // full-screen passes to each face and can feed a render target back into itself.
+    const liveMirrors = (this.mirrors ?? []).filter((mirror) => mirror.material === mirror.userData.mirrorMats?.live);
+    for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.still;
     const m = MOODS[this.mood];
     // pass 0: direct light only (sun, lamps, faint fill) + sky through the windows;
     // pass 1: lit additionally by pass 0 → the stored probe carries two bounces.
     let target = null;
-    for (let pass = 0; pass < 2; pass++) {
+    for (let pass = 0; pass < (this.quality === 'high' ? 2 : 1); pass++) {
       s.environment = target?.texture ?? this.blackEnv();
       s.environmentIntensity = 1;
       s.environmentRotation.set(0, 0, 0);
@@ -362,21 +375,22 @@ export class Viewer {
     this.probeRoom = LightRig.roomAt(this.camera.position);
     this.probeDirty = false;
     if (this.selHelper) this.selHelper.visible = sel;
+    for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.live;
     this.stats.probes++;
     this.autoExposure ??= Math.min(m.maxExp, 1.4);
     this.applyEnvironment();
-    this.metering = this.meter(m).then((exp) => { if (exp) { this.autoExposure = exp; this.applyEnvironment(); } });
+    this.metering = this.meter(m, this.probeRT).then((exp) => { if (exp) { this.autoExposure = exp; this.applyEnvironment(); } });
   }
 
   /**
    * Camera-like auto exposure: log-average luminance of the captured room (all six faces,
    * sparse samples) mapped to the mood's key value. GPU read-back is asynchronous.
    */
-  async meter(m) {
+  async meter(m, target) {
     const token = (this._meterToken = (this._meterToken ?? 0) + 1);
     try {
-      const n = ENV_SIZE, faces = [];
-      for (let f = 0; f < 6; f++) faces.push(await this.renderer.readRenderTargetPixelsAsync(this.probeRT, 0, 0, n, n, 0, f));
+      const n = target.width, faces = [];
+      for (let f = 0; f < 6; f++) faces.push(await this.renderer.readRenderTargetPixelsAsync(target, 0, 0, n, n, 0, f));
       if (token !== this._meterToken) return null;
       let sum = 0, cnt = 0, any = false;
       const half = faces[0] instanceof Uint16Array, val = half ? THREE.DataUtils.fromHalfFloat : (x) => x;
@@ -480,10 +494,10 @@ export class Viewer {
 
   setQuality(q) {
     this.quality = q;
-    this.basePR = q === 'high' ? Math.min(window.devicePixelRatio, 2) : q === 'medium' ? Math.min(window.devicePixelRatio, 1.25) : 1;
+    this.basePR = q === 'high' ? Math.min(window.devicePixelRatio, 1.5) : q === 'medium' ? Math.min(window.devicePixelRatio, 1.2) : 1;
     this.prScale = 1;
     this.renderer.setPixelRatio(this.basePR);
-    const s = q === 'low' ? 2048 : 4096;
+    const s = q === 'low' ? 1536 : q === 'medium' ? 2048 : 3072;
     this.sun.shadow.mapSize.set(s, s);
     this.sun.shadow.map?.dispose(); this.sun.shadow.map = null;
     this.pipelines?.setQuality(q);
@@ -562,6 +576,10 @@ export class Viewer {
   loop() {
     this.timer.update();
     const dt = Math.min(0.1, this.timer.getDelta()), now = performance.now();
+    if (document.hidden || !this.container.getClientRects().length) {
+      this.needsRender = true;
+      return;
+    }
     let moving = false;
     if (this._anim) { this._anim(now); moving = true; }
     if (this.walkUpdate(Math.min(dt, 0.05))) moving = true;
@@ -575,7 +593,9 @@ export class Viewer {
     if (this.renderMode === 'realistic') {
       // temporal accumulation: keep rendering until converged
       if (!this.needsRender && this.accum >= CONVERGE_FRAMES) return;
-      this.pipelines.realistic.render();
+      // Screen-space GI, reflections and temporal AA are expensive while their history is
+      // invalidated every frame. Reserve them for the stationary, converging image.
+      (still ? this.pipelines.realistic : this.pipelines.fast).render();
       this.needsRender = false;
       this.accum = still ? this.accum + 1 : 0;
       this.refined = this.accum >= CONVERGE_FRAMES;

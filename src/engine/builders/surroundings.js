@@ -69,7 +69,7 @@ function crownGeo(seed) {
     // lobe centre inside an ellipsoid; the lower lobes spread wider (open, domed habit)
     const a = r() * Math.PI * 2, t = r(), h = 0.35 + t * 1.3, spread = (1 - Math.pow(t - 0.35, 2) * 1.6) * (0.35 + r() * 0.45);
     g.translate(Math.cos(a) * spread, h, Math.sin(a) * spread);
-    parts.push(g.toNonIndexed());
+    parts.push(g.index ? g.toNonIndexed() : g);
   }
   return BufferGeometryUtils.mergeGeometries(parts, false);
 }
@@ -232,12 +232,12 @@ function buildPark(M) {
   const g = new THREE.Group(); g.name = 'park';
   const lawn = new THREE.CircleGeometry(520, 160); lawn.rotateX(-Math.PI / 2);
   lawn.translate(...(() => { const [x, z] = W(CENTER); return [x, GROUND, z]; })());
-  g.add(meshOf(uvGeo(lawn.toNonIndexed(), M.grass), M.grass));
+  g.add(meshOf(uvGeo(lawn.index ? lawn.toNonIndexed() : lawn, M.grass), M.grass));
   const pathPts = PATHS.map((p) => new THREE.CatmullRomCurve3(p.map(([x, y]) => new THREE.Vector3(x, 0, y))).getSpacedPoints(120).map((v) => [v.x, v.z]));
   for (const p of PATHS) g.add(meshOf(uvGeo(ribbonGeo(p, 3.2, GROUND + 0.015), M.gravelPath), M.gravelPath));
   // forecourt / pavement around the building
   const court = ROOMS.map((r) => prismGeo(offsetPolygon(r.points, EXTERIOR_WALL + 2.2), GROUND, GROUND + 0.03));
-  g.add(meshOf(uvGeo(BufferGeometryUtils.mergeGeometries(court.map((c) => c.toNonIndexed()), false), M.pavement), M.pavement));
+  g.add(meshOf(uvGeo(BufferGeometryUtils.mergeGeometries(court.map((c) => c.index ? c.toNonIndexed() : c), false), M.pavement), M.pavement));
   g.add(buildTrees(M, pathPts));
   // park lamps along the promenade (lit in the evening)
   const lamps = new THREE.Group();

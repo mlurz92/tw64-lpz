@@ -18,7 +18,7 @@ export const FINISH = {
   office: { wall: 'wall', floor: 'floorOak', skirting: true, dir: [1, 0] },
   bath: { wall: 'tileWall', floor: 'tileFloor', skirting: false, dir: [1, 0] },
   guestbath: { wall: 'tileWall', floor: 'tileFloor', skirting: false, dir: [1, 0] },
-  utility: { wall: 'wall', floor: 'tileFloor', skirting: true, dir: [0.9902, 0.1393] },
+  utility: { wall: 'tileWall', floor: 'tileFloor', skirting: false, dir: [1, 0] },
 };
 
 /** Feature walls (limewash accents in the moodboard colours). */
@@ -153,17 +153,22 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT, finish = FINISH, wallO
     // 3 cm overlap into the walls: no hairline crack (sky showing through) at wall/ceiling joints
     const c = ceilingMesh(offsetPolygon(r.points, 0.03), M.ceiling, H);
     c.userData.room = r.id; ceilings.add(c);
-    // Roof slab over the room incl. its walls: closes wall/ceiling joints and corner notches
-    // for the sun's shadow map (no light leaks in walk mode). Shadow-only, never drawn.
-    const roof = slabMesh(offsetPolygon(r.points, EXTERIOR_WALL), M.slab, H + 0.002, H + 0.25);
-    roof.castShadow = true; roof.receiveShadow = false;
-    roof.material = SHADOW_ONLY; roof.name = 'roof';
-    ceilings.add(roof);
   }
+  // One watertight shadow cover avoids cracks and self-intersections at the many concave
+  // room junctions. It sits above the visible ceilings and is hidden with them in dollhouse mode.
+  const roofPts = ROOMS.flatMap((r) => r.points);
+  const roofX = roofPts.map((p) => p[0]), roofZ = roofPts.map((p) => p[1]);
+  const x0 = Math.min(...roofX) - 0.05, x1 = Math.max(...roofX) + 0.05;
+  const z0 = Math.min(...roofZ) - 0.05, z1 = Math.max(...roofZ) + 0.05;
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.2, z1 - z0), M.slab);
+  roof.position.set((x0 + x1) / 2 - OFFSET.x, H + 0.102, (z0 + z1) / 2 - OFFSET.y);
+  roof.castShadow = true; roof.receiveShadow = false; roof.name = 'roof';
+  ceilings.add(roof);
   // slab edge below the whole apartment
   const slabGroup = new THREE.Group(); slabGroup.name = 'slab'; root.add(slabGroup);
   for (const pts of [...ROOMS.map((r) => r.points), ...BALCONIES.map((b) => b.points)]) {
-    slabGroup.add(slabMesh(pts, M.slab, -SLAB, -0.001));
+    // The balcony decking sits at -3.5 cm; keep the slab below it and the interior finishes.
+    slabGroup.add(slabMesh(pts, M.slab, -SLAB, -0.06));
   }
 
   // reveal floors in openings (thresholds) – each side fills its half of the wall
@@ -259,10 +264,6 @@ function ceilingMesh(pts, mat, y) {
   m.receiveShadow = true; m.castShadow = true; m.userData.keepUV = true;
   return m;
 }
-
-// Writes depth into shadow maps but never colour into the image.
-const SHADOW_ONLY = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
-SHADOW_ONLY.name = 'shadowOnly';
 
 /** Mitred outward offset of a clockwise (y-down) room polygon. */
 export function offsetPolygon(pts, d) {

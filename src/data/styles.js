@@ -132,7 +132,7 @@ export const STYLES = {
       ['Bronze, gebürstet', 'Leuchten, Griffe, Armaturen, Sockel'],
       ['Bouclé Off-White · Taupe · Samt Salbei', 'Sofa Alba, Bett Dream, Kissen, Sessel'],
       ['Kalkputz warm-greige, Akzent Taupe/Salbei', 'Wände; Schlafzimmer eine Nuance tiefer'],
-      ['Kalkstein 60 × 120 cm', 'Bäder, raumhoch; HWR-Boden'],
+      ['Feinsteinzeug Iron 60 × 60 cm', 'Bäder und HWR, Wand und Boden'],
     ],
     walls: [
       ['Medienwand W11', 'Raumhohe Räuchereichen-Lamellen (dunkel, wie Bett- und Einbauten) auf schwarzem Akustikfilz, LED-Voute oben'],
@@ -225,7 +225,7 @@ export const STYLES = {
       ['Kalk-/Lehmputz Sand mit Struktur', 'Medienwand W11 und Bettwand W20 als Strukturflächen'],
       ['Leinen · Wolle · Cord', 'Sofa SÖDERHAMN, Bett Dream (Cord), Kissen Cognac/Salbei'],
       ['Messing brüniert · Anthrazit', 'Leuchten, Griffe, Armaturen'],
-      ['Kalkstein 60 × 120 cm', 'Bäder'],
+      ['Feinsteinzeug Iron 60 × 60 cm', 'Bäder und HWR, Wand und Boden'],
     ],
     walls: [
       ['Medienwand W11', 'Strukturputz Sand (kräftige Kelle), TV wandbündig, lineare Messingleuchte'],

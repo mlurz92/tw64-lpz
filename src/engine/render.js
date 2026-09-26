@@ -11,7 +11,7 @@
 //             when the camera rests, stays interactive while moving.
 import * as THREE from 'three/webgpu';
 import {
-  pass, mrt, output, normalView, diffuseColor, velocity, metalness, roughness, vec2, vec4, screenUV, sample,
+  pass, mrt, output, normalView, diffuseColor, velocity, metalness, roughness, vec4, screenUV, sample,
   packNormalToRGB, unpackRGBToNormal, builtinAOContext, uniform,
 } from 'three/tsl';
 import { ssao, ssgi, ssr, traa, smaa, bloom } from '../../vendor/three-addons.js';
@@ -50,14 +50,16 @@ export function createPipelines(renderer, scene, camera) {
   const rp = pass(scene, camera);
   rp.setMRT(mrt({
     output,
-    diffuseColor,
-    normal: packNormalToRGB(normalView),
+    // Four attachments fit the WebGPU baseline of 32 colour-attachment bytes/sample.
+    // Reuse alpha channels for the SSR material parameters; the scene output retains alpha.
+    diffuseMetal: vec4(diffuseColor.rgb, metalness),
+    normalRough: vec4(packNormalToRGB(normalView).rgb, roughness),
     velocity,
-    metalrough: vec2(metalness, roughness),
   }));
-  for (const k of ['diffuseColor', 'normal', 'metalrough']) rp.getTexture(k).type = THREE.UnsignedByteType;
-  const color = rp.getTextureNode('output'), diffuse = rp.getTextureNode('diffuseColor'), depth = rp.getTextureNode('depth');
-  const vel = rp.getTextureNode('velocity'), mr = rp.getTextureNode('metalrough'), normal = normalFrom(rp.getTextureNode('normal'));
+  for (const k of ['diffuseMetal', 'normalRough']) rp.getTexture(k).type = THREE.UnsignedByteType;
+  const color = rp.getTextureNode('output'), diffuse = rp.getTextureNode('diffuseMetal'), depth = rp.getTextureNode('depth');
+  const vel = rp.getTextureNode('velocity'), normalPacked = rp.getTextureNode('normalRough');
+  const normal = normalFrom(normalPacked);
 
   const gi = ssgi(color, depth, normal, camera);
   gi.sliceCount.value = 2;
@@ -69,7 +71,7 @@ export function createPipelines(renderer, scene, camera) {
   gi.giIntensity.value = 2.2;
   gi.backfaceLighting.value = 0.15;
 
-  const refl = ssr(color, depth, normal, { metalnessNode: mr.r, roughnessNode: mr.g });
+  const refl = ssr(color, depth, normal, { metalnessNode: diffuse.a, roughnessNode: normalPacked.a });
   refl.resolutionScale = 0.5;
   refl.maxDistance.value = 4;
   refl.thickness.value = 0.04;

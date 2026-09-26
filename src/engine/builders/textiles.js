@@ -46,6 +46,10 @@ export function curtainSet(M, span, { stack = 0.42, extra = 0.28, mat = 'curtain
 /** Flat rug with rounded corners and a slightly raised bound edge. */
 export function rug(M, w, d, { mat = 'rug', border = 'rugDark', r = 0.04, h = 0.014 } = {}) {
   const g = new THREE.Group();
+  if (M[border] === M[mat]) {
+    extrudePlan(g, M[mat], roundedRect(w, d, r), h, 0).castShadow = false;
+    return g;
+  }
   const outer = extrudePlan(g, M[border], roundedRect(w, d, r), h * 0.9, 0);
   outer.castShadow = false;
   const inner = extrudePlan(g, M[mat], roundedRect(w - 0.1, d - 0.1, r), h, 0);

@@ -60,7 +60,15 @@ export function validateLayout(items) {
   for (const it of items.filter((i) => i.footprint && i.plan !== false)) {
     const poly = polys.get(it.room); if (!poly) continue;
     checks.containment++;
-    const out = it.footprint.filter((p) => !inside(p, poly) && edgeDist(p, poly) > TOL);
+    // A footprint may bridge a concave corner even when every vertex is inside.
+    // Sample the complete perimeter at 10 cm intervals so recessed room geometry counts.
+    const perimeter = [];
+    for (let e = 0; e < it.footprint.length; e++) {
+      const a = it.footprint[e], b = it.footprint[(e + 1) % it.footprint.length];
+      const steps = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.1));
+      for (let k = 0; k < steps; k++) perimeter.push([a[0] + (b[0] - a[0]) * k / steps, a[1] + (b[1] - a[1]) * k / steps]);
+    }
+    const out = perimeter.filter((p) => !inside(p, poly) && edgeDist(p, poly) > TOL);
     if (out.length) {
       const worst = Math.max(...out.map((p) => edgeDist(p, poly)));
       issues.push({ type: 'Raumkontur', item: it.id, room: it.room, msg: `${it.name} ragt ${Math.round(worst * 100)} cm über die Wandflucht`, severity: worst > 0.05 ? 'error' : 'warn' });

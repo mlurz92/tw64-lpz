@@ -21,8 +21,9 @@ export const PROCEDURAL = {
   calacatta: () => TX.marble({ seed: 12, size: 1.4 }),
   calacattaFine: () => TX.marble({ seed: 29, size: 0.8, veins: 1.3 }),
   granite: () => TX.granite({ size: 0.9 }),
-  tiles: () => TX.limestoneTiles({}),
-  tilesFloor: () => TX.limestoneTiles({ seed: 19, base: [178, 170, 158], grout: [150, 143, 133] }),
+  // Iron: 60 x 60 cm matt porcelain, repeated in baths and utility room.
+  tiles: () => TX.limestoneTiles({ seed: 27, tileW: 0.6, tileH: 0.6, cols: 4, rows: 4, res: 1024, base: [106, 108, 109], grout: [75, 77, 78] }),
+  tilesFloor: () => TX.limestoneTiles({ seed: 35, tileW: 0.6, tileH: 0.6, cols: 4, rows: 4, res: 1024, base: [101, 103, 104], grout: [72, 74, 75] }),
   travertine: () => TX.travertine({ size: 0.9 }),
   travertineVein: () => TX.travertineVein({}),
   darkStone: () => TX.darkStone({}),
@@ -69,8 +70,8 @@ export async function createMaterials() {
   M.floorOak = uv(phys({ map: P.floorOak.map, normalMap: P.floorOak.normalMap, roughnessMap: P.floorOak.roughnessMap, roughness: 1, color: '#ffffff', clearcoat: 0.08, clearcoatRoughness: 0.55 }), 3.8);
   M.floorOak.userData.uv.aspect = P.floorOak.aspect;
   M.deck = uv(phys({ map: P.deck.map, normalMap: P.deck.normalMap, roughness: 0.8, color: '#c9c2b8' }), 2.4);
-  M.tileWall = uv(phys({ map: P.tiles.map, normalMap: P.tiles.normalMap, roughness: 0.55, color: '#ffffff' }), 2.4);
-  M.tileFloor = uv(phys({ map: P.tilesFloor.map, normalMap: P.tilesFloor.normalMap, roughness: 0.6, color: '#ffffff' }), 2.4);
+  M.tileWall = uv(phys({ map: P.tiles.map, normalMap: P.tiles.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 0.82, color: '#ffffff' }), 2.4);
+  M.tileFloor = uv(phys({ map: P.tilesFloor.map, normalMap: P.tilesFloor.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 0.88, color: '#ffffff' }), 2.4);
   M.skirting = phys({ color: PALETTE.wallDeep, roughness: 0.6 });
   M.slab = phys({ color: '#d7d2ca', roughness: 0.95 });
   M.facade = uv(phys({ color: '#E6E2DA', roughness: 0.95, normalMap: plasterN, normalScale: new THREE.Vector2(0.5, 0.5) }), 1.6);

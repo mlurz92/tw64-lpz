@@ -71,7 +71,7 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
     B.laundryNiche(M), abs(14.076, 5.883 + 0.32, 0));
   add({ id: 'wc-bath', room: 'bath', name: 'Wand-WC Laufen Meda, spülrandlos', cat: 'Sanitär', spec: `Tiefspüler, Vorwand W35, Drückerplatte ${BLACK}`, size: [0.36, 0.56], anchor: 'back' },
     B.wc(M), abs(14.956, 5.883, 0));
-  add({ id: 'ledge-bath', room: 'bath', name: 'Vorwand mit Ablage H 1,18 m', cat: 'Sanitär', spec: `Installationswand hinter dem Waschtisch, Kalkstein, Ablage ${top} 2 cm · 90 × 25 cm`, size: [0.901, 0.249], anchor: 'back' },
+  add({ id: 'ledge-bath', room: 'bath', name: 'Vorwand mit Ablage H 1,18 m', cat: 'Sanitär', spec: `Installationswand hinter dem Waschtisch, Fliese Iron 60 × 60 cm, Ablage ${top} 2 cm · 90 × 25 cm`, size: [0.901, 0.249], anchor: 'back' },
     grp([B.preWall(M, { w: 0.901, d: 0.249 })], [B.ledgeProps(M), -0.22, B.LEDGE_H, 0.12]), abs(15.8055, 5.634, 0));
   add({ id: 'mirror-bath', room: 'bath', name: 'Spiegel nach Maß 90 × 138 cm', cat: 'Sanitär', spec: 'Maßanfertigung: Kristallspiegel über die volle Breite des Waschtisch-Vorsprungs (W36 bis Wannenkante) oberhalb der Ablage (1,18 m) bis zur Decke, Schattenfuge 5 mm; über der Wanne bleibt die Wand gefliest', size: [0.901, 0.01], plan: false },
     B.wallMirror(M, 0.901, 2.56 - B.LEDGE_H), abs(15.8055, 5.634, 0, B.LEDGE_H));
@@ -81,7 +81,7 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
     B.bathPendant(M, D.lampLight), abs(x, 5.634 + 0.16, 0));
   add({ id: 'ledge-tub', room: 'bath', name: 'Vorwand Wanne mit Ablage H 1,18 m', cat: 'Sanitär', spec: `Installationswand W38, Ablage ${top} · 180 × 10 cm`, size: [1.8, 0.1], anchor: 'back' },
     grp([B.preWall(M, { w: 1.8, d: 0.1 })], [D.candle(M, 0.1, 0.035), 0.55, B.LEDGE_H, 0.05], [D.vase(M, 'bud', S.vase ?? 'stonewareCharcoal', 1), -0.6, B.LEDGE_H, 0.05]), abs(17.176, 6.534, -Math.PI / 2));
-  add({ id: 'tub', room: 'bath', name: 'Badewanne Villeroy & Boch Collaro 180 × 80', cat: 'Sanitär', spec: `Acryl, eingefliest (Kalkstein); Wannenthermostat Aufputz Duravit Tulum mit Handbrause ${BLACK}`, size: [1.8, 0.82] },
+  add({ id: 'tub', room: 'bath', name: 'Badewanne Villeroy & Boch Collaro 180 × 80', cat: 'Sanitär', spec: `Acryl, eingefliest (Iron 60 × 60 cm); Wannenthermostat Aufputz Duravit Tulum mit Handbrause ${BLACK}`, size: [1.8, 0.82] },
     grp([B.bathtub(M)], [B.exposedThermostat(M), 0.15, 0.8, -0.41]), abs(16.666, 6.534, -Math.PI / 2));
   add({ id: 'towel-bath', room: 'bath', name: 'Handtuchheizkörper 60 × 180', cat: 'Sanitär', spec: `${BLACK}, W39`, size: [0.6, 0.1], anchor: 'back' },
     B.towelRadiator(M), abs(15.006, 7.473, Math.PI));
@@ -94,7 +94,7 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
   // ======================================================================== DUSCHE / GÄSTE-WC
   add({ id: 'shower-guest', room: 'guestbath', name: 'Walk-in-Dusche 105 × 80', cat: 'Sanitär', spec: `bodengleich, Linienrinne ${BLACK}, Duschsystem Aufputz Duravit Tulum (Thermostat, Kopfbrause Ø 25, Handbrause) ${BLACK}, Glas mit Profil ${BLACK}, beleuchtete Nische`, size: [1.05, 0.8] },
     B.walkInShower(M), abs(9.884, 6.132, 0));
-  add({ id: 'ledge-guest', room: 'guestbath', name: 'Vorwand mit Ablage H 1,18 m', cat: 'Sanitär', spec: `über die gesamte Wand W43, Kalkstein, Ablage ${top} · 131 × 15 cm`, size: [1.307, 0.149], anchor: 'back' },
+  add({ id: 'ledge-guest', room: 'guestbath', name: 'Vorwand mit Ablage H 1,18 m', cat: 'Sanitär', spec: `über die gesamte Wand W43, Fliese Iron 60 × 60 cm, Ablage ${top} · 131 × 15 cm`, size: [1.307, 0.149], anchor: 'back' },
     grp([B.preWall(M, { w: 1.307, d: 0.149 })], [B.ledgeProps(M), 0.22, B.LEDGE_H, 0.075]), abs(11.0625, 5.583, 0));
   add({ id: 'mirror-guest', room: 'guestbath', name: 'Spiegelwand nach Maß 131 × 138 cm', cat: 'Sanitär', spec: 'Maßanfertigung: Kristallspiegel über die gesamte Wand W43 oberhalb der Ablage (1,18 m) bis zur Decke, Schattenfuge 5 mm', size: [1.307, 0.01], plan: false },
     B.wallMirror(M, 1.307, 2.56 - B.LEDGE_H), abs(11.0625, 5.583, 0, B.LEDGE_H));
