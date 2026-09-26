@@ -119,7 +119,10 @@ class UI {
     }));
     $('#engineBadge').textContent = `${v.backend} · three.js r186`;
     $('#exposure').addEventListener('input', (e) => v.setExposure(+e.target.value));
-    $('#quality').addEventListener('change', (e) => v.setQuality(e.target.value));
+    const q = $('#quality');
+    q.value = v.quality;
+    if (v.qualityAuto) q.title += ` · automatisch gewählt für ${v.gpu || 'diese GPU'}`;
+    q.addEventListener('change', (e) => v.setQuality(e.target.value));
     $('#btnShot').addEventListener('click', async () => this.download(await v.screenshot(), this.shotName()));
     $('[data-collapse="stations"]').addEventListener('click', (e) => { const p = $('#stations'); p.classList.toggle('collapsed'); e.target.textContent = p.classList.contains('collapsed') ? '+' : '–'; });
   }

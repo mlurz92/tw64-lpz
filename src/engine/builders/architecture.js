@@ -5,6 +5,7 @@ import {
   ROOMS, WALLS, BALCONIES, ROOM_HEIGHT, DOOR_HEIGHT, WINDOW_HEAD, OFFSET, EXTERIOR_WALL, wallThickness, add, mul, sub, dot, len, livingParts, polygonArea,
 } from '../../core/geometry.js';
 import { box, boxOn, mesh, consolidate } from './common.js';
+import { BufferGeometryUtils } from '../../../vendor/three-addons.js';
 import { metricUV } from '../uv.js';
 
 const W = ([x, y]) => [x - OFFSET.x, y - OFFSET.y];
@@ -154,14 +155,17 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT, finish = FINISH, wallO
     const c = ceilingMesh(offsetPolygon(r.points, 0.03), M.ceiling, H);
     c.userData.room = r.id; ceilings.add(c);
   }
-  // A single cover avoids shadow-map seams between room roofs. The visible ceilings retain
-  // their exact outlines; this cover is hidden together with them in the dollhouse view.
-  const roofPts = ROOMS.flatMap((r) => r.points);
-  const roofX = roofPts.map((p) => p[0]), roofZ = roofPts.map((p) => p[1]);
-  const x0 = Math.min(...roofX) - 0.05, x1 = Math.max(...roofX) + 0.05;
-  const z0 = Math.min(...roofZ) - 0.05, z1 = Math.max(...roofZ) + 0.05;
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.2, z1 - z0), M.slab);
-  roof.position.set((x0 + x1) / 2 - OFFSET.x, H + 0.102, (z0 + z1) / 2 - OFFSET.y);
+  // Roof slab above the apartment (casts the sun shadow, closes the facade between the window
+  // heads and the slab band of the storey above). It follows the building outline – room
+  // polygons grown by the exterior wall – and not the plan's bounding box: a box spanned the
+  // courtyard notch and the balcony and hung as a plate in front of the windows, hiding the sky.
+  // The overlapping room prisms leave no shadow-map seams; the outline stays 5 mm behind the
+  // exterior wall faces so no side face is coplanar with a wall.
+  const roofGeo = BufferGeometryUtils.mergeGeometries(ROOMS.map((r) => {
+    const g = prismGeometry(offsetPolygon(r.points, EXTERIOR_WALL - 0.005), H + 0.002, H + SLAB);
+    return g.index ? g.toNonIndexed() : g;
+  }), false);
+  const roof = new THREE.Mesh(roofGeo, M.slab);
   roof.castShadow = true; roof.receiveShadow = false; roof.name = 'roof';
   ceilings.add(roof);
   // slab edge below the whole apartment
@@ -277,11 +281,16 @@ export function offsetPolygon(pts, d) {
   return out;
 }
 
-function slabMesh(pts, mat, y0, y1) {
+/** Plan polygon extruded between the heights y0 and y1 (world space). */
+function prismGeometry(pts, y0, y1) {
   const shape = new THREE.Shape(pts.map((p) => { const [x, z] = W(p); return new THREE.Vector2(x, -z); }));
   const g = new THREE.ExtrudeGeometry(shape, { depth: y1 - y0, bevelEnabled: false });
   g.rotateX(-Math.PI / 2); g.translate(0, y0, 0);
-  const m = new THREE.Mesh(g, mat);
+  return g;
+}
+
+function slabMesh(pts, mat, y0, y1) {
+  const m = new THREE.Mesh(prismGeometry(pts, y0, y1), mat);
   m.receiveShadow = true;
   return m;
 }

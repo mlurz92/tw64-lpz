@@ -1,7 +1,8 @@
 // Physically based material library. One base library (Refined Metallic Japandi) plus style
-// themes that remap or re-tint slots (see themeMaterials). All materials are MeshPhysicalMaterial
-// (sheen for textiles, clearcoat for lacquer and stone); the WebGPU renderer turns them into node
-// materials automatically.
+// themes that remap or re-tint slots (see themeMaterials). Materials that use a physical layer
+// (sheen for textiles, clearcoat for lacquer and stone, IOR for glass) are MeshPhysicalMaterial;
+// all others are MeshStandardMaterial – identical response (F0 = 0.04 ≙ IOR 1.5) with a cheaper
+// shader. The WebGPU renderer turns them into node materials automatically.
 import * as THREE from 'three';
 import * as TX from './textures.js';
 
@@ -31,7 +32,8 @@ export const PROCEDURAL = {
   wool: () => ({ map: TX.wool({ color: [200, 196, 190], size: 0.6 }) }),
 };
 
-const phys = (p) => new THREE.MeshPhysicalMaterial(p);
+const PHYSICAL = ['clearcoat', 'sheen', 'ior', 'transmission', 'iridescence', 'specularIntensity', 'specularColor', 'anisotropy', 'dispersion'];
+const phys = (p) => (PHYSICAL.some((k) => p[k] !== undefined) ? new THREE.MeshPhysicalMaterial(p) : new THREE.MeshStandardMaterial(p));
 const uv = (m, size, grain = null) => { m.userData.uv = { size, grain }; return m; };
 
 /** Builds all base materials (async because of photo textures). */
@@ -69,7 +71,7 @@ export async function createMaterials() {
   M.wallSage = wallMaterial(T, '#A7AE9C', 0.7);
   M.wallCap = phys({ color: '#3b3935', roughness: 0.9 });
   M.ceiling = uv(phys({ color: PALETTE.ceiling, roughness: 0.95, normalMap: plasterN, normalScale: new THREE.Vector2(0.12, 0.12) }), 1.6);
-  M.floorOak = uv(phys({ map: P.floorOak.map, normalMap: P.floorOak.normalMap, roughnessMap: P.floorOak.roughnessMap, roughness: 1, color: '#ffffff', clearcoat: 0.08, clearcoatRoughness: 0.55 }), 3.8);
+  M.floorOak = uv(phys({ map: P.floorOak.map, normalMap: P.floorOak.normalMap, roughnessMap: P.floorOak.roughnessMap, roughness: 1, color: '#ffffff' }), 3.8);
   M.floorOak.userData.uv.aspect = P.floorOak.aspect;
   M.deck = uv(phys({ map: P.deck.map, normalMap: P.deck.normalMap, roughness: 0.8, color: '#c9c2b8' }), 2.4);
   M.tileWall = uv(phys({ map: P.tiles.map, normalMap: P.tiles.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 0.82, color: '#ffffff' }), 2.4);
@@ -191,7 +193,8 @@ export async function createMaterials() {
   M.matteBlack = phys({ color: '#141414', roughness: 0.6 });
   M.plasticWhite = phys({ color: '#efefec', roughness: 0.35 });
   M.appliance = phys({ color: '#101010', metalness: 0.3, roughness: 0.25, clearcoat: 0.8, clearcoatRoughness: 0.08 });
-  M.screen = phys({ color: '#050505', roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05 });
+  // Anti-glare panel: a mirror-smooth coat aliased the lamp and window highlights (sparkle).
+  M.screen = phys({ color: '#050505', roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.14 });
   M.paper = phys({ color: '#efe9de', roughness: 0.95 });
   M.soil = phys({ color: '#3b3026', roughness: 1 });
   M.pebbles = phys({ color: '#bdb6aa', roughness: 0.7 });
@@ -227,7 +230,7 @@ function limewashTint(color) {
 
 /** Limewash wall: neutral limewash albedo tinted by `color`, plaster relief of given strength. */
 function wallMaterial(T, color, relief = 0.4, size = 2.4) {
-  const m = new THREE.MeshPhysicalMaterial({
+  const m = new THREE.MeshStandardMaterial({
     color: limewashTint(color), map: T.lime, roughness: 0.93,
     normalMap: T.plasterN, normalScale: new THREE.Vector2(relief, relief), roughnessMap: T.plasterR,
   });
@@ -264,7 +267,7 @@ export function artMaterial(kind, seed) {
   const key = kind + seed;
   if (artCache.has(key)) return artCache.get(key);
   const tex = TX.artwork(kind, { seed });
-  const m = new THREE.MeshPhysicalMaterial({ map: tex, roughness: kind === 'ink' ? 0.9 : 0.75 });
+  const m = new THREE.MeshStandardMaterial({ map: tex, roughness: kind === 'ink' ? 0.9 : 0.75 });
   if (kind === 'relief') { m.normalMap = TX.reliefNormal({ seed }); m.normalScale = new THREE.Vector2(1.6, 1.6); }
   m.name = 'art-' + kind;
   artCache.set(key, m);
