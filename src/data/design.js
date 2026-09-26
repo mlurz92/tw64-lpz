@@ -48,8 +48,8 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
   add({ id: 'console', room: 'living', name: 'Wandkonsole + Rundspiegel Ø 80', cat: 'Möbel', spec: `Konsole ${S.builtIn ?? 'Räuchereiche'}, Spiegel mit Metallrahmen ${S.metal ?? 'Bronze'}`, size: [1.2, 0.32] },
     grp([F.wallConsole(M)], [D.roundMirror(M, 0.8), 0, 1.58, -0.14], [D.tray(M, 'bronzeDark', 0.34, 0.2), -0.3, 0.96, 0.0], [D.vase(M, 'bottle', S.vase ?? 'stonewareCharcoal', 1.2), 0.32, 0.96, -0.02], [D.branches(M, { h: 0.5, seed: 14 }), 0.32, 1.35, -0.02]),
     at(fr.W13, 0.75, 0.16));
-  add({ id: 'art-hall', room: 'living', name: S.hallArt?.name ?? 'Tuschezeichnung 60 × 80', cat: 'Kunst', spec: 'Rahmen Eiche, Schattenfuge', size: [0.6, 0.03], plan: false },
-    D.artwork(M, S.hallArt?.kind ?? 'ink', 0.6, 0.8, { seed: 7 }), at(fr.W02, 0.5, 0.025, 0, 1.5));
+  add({ id: 'art-hall', room: 'living', name: (S.hallArt?.name ?? 'Tuschezeichnung').replace(/\d+ × \d+/, '90 × 120'), cat: 'Kunst', spec: 'Rahmen Eiche, Schattenfuge', size: [0.9, 0.03], plan: false },
+    D.artwork(M, S.hallArt?.kind ?? 'ink', 0.9, 1.2, { seed: 7 }), at(fr.W02, 0.55, 0.025, 0, 1.45));
 
   // ======================================================================== KÜCHE (Bestand)
   add({ id: 'kitchen-row', room: 'kitchen', name: 'Küchenzeile (Bestand) 360 cm', cat: 'Küche', spec: 'Nussbaum, Granit gesprenkelt, Backofen/Kühlschrank in Hochschränken', size: [3.6, 0.6] },

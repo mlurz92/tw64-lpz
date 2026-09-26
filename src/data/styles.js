@@ -30,7 +30,7 @@ function living(ctx, o) {
   add({ id: 'floorlamp-living', room: 'living', cat: 'Leuchte', ...o.lamp.meta, size: [0.45, 0.45], round: true }, o.lamp.build(), at(L, 4.72, 2.6));
   add({ id: 'plant-living', room: 'living', name: 'Solitärpflanze Pachira 190 cm', cat: 'Pflanze', spec: `Kübel ${o.potName ?? 'Keramik Anthrazit'} Ø 44`, size: [0.44, 0.44], round: true },
     D.pottedPlant(M, lib, 'pachira', { height: 1.95, potR: 0.22, potH: 0.5, maxR: 0.34, potMat: o.pot ?? 'stonewareCharcoal' }), at(L, 0.36, o.plantV ?? 1.02));
-  add({ id: 'art-living', room: 'living', cat: 'Kunst', plan: false, ...o.art.meta, size: [o.art.w, 0.04] }, D.artwork(M, o.art.kind, o.art.w, o.art.h, { seed: o.art.seed ?? 4, frame: o.art.frame ?? 'oakLight' }), at(fr.W10, 4.516 - 3.3, 0.03, 0, 1.55));
+  add({ id: 'art-living', room: 'living', cat: 'Kunst', plan: false, ...o.art.meta, name: o.art.meta.name.replace(/\d+ × \d+/, `${Math.round(o.art.w * 100)} × ${Math.round(o.art.h * 100)}`), size: [o.art.w, 0.04] }, D.artwork(M, o.art.kind, o.art.w, o.art.h, { seed: o.art.seed ?? 4, frame: o.art.frame ?? 'oakLight' }), at(fr.W10, 4.516 - 3.3, 0.03, 0, 1.55));
   o.extra?.(ctx, L);
   void F; void C; void grp;
 }
@@ -53,7 +53,7 @@ function dining(ctx, o) {
       [D.bowl(M, o.bowl ?? 'bronze', 0.16, 0.06), 0.1, sb.h, 0.02],
       [D.stoneStack(M), sb.w / 2 - 0.12, sb.h, 0.08]),
     at(fr.W07, 1.56, sb.d / 2 + 0.005));
-  add({ id: 'art-dining', room: 'living', cat: 'Kunst', plan: false, ...o.art.meta, size: [o.art.w, 0.04] }, D.artwork(M, o.art.kind, o.art.w, o.art.h, { seed: o.art.seed ?? 2, frame: o.art.frame ?? 'oakLight' }), at(fr.W07, 1.56, 0.03, 0, sb.h + 0.15 + o.art.h / 2 + 0.12));
+  add({ id: 'art-dining', room: 'living', cat: 'Kunst', plan: false, ...o.art.meta, name: o.art.meta.name.replace(/\d+ × \d+/, `${Math.round(o.art.w * 100)} × ${Math.round(o.art.h * 100)}`), size: [o.art.w, 0.04] }, D.artwork(M, o.art.kind, o.art.w, o.art.h, { seed: o.art.seed ?? 2, frame: o.art.frame ?? 'oakLight' }), at(fr.W07, 1.56, 0.03, 0, sb.h + 0.15 + o.art.h / 2 + 0.12));
   add({ id: 'plant-dining', room: 'living', name: 'Solitärpflanze 180 cm', cat: 'Pflanze', spec: `Kübel ${o.potName ?? 'Steinzeug Sand'}`, size: [0.44, 0.44], round: true },
     D.pottedPlant(M, lib, 'pachiraMid', { height: 1.8, potR: 0.22, potH: 0.46, potMat: o.pot ?? 'stonewareSand', shape: 'bowl', seed: 2, maxR: 0.3 }), at(L, 4.68, 7.08));
   const hb = o.highboard;
@@ -73,7 +73,7 @@ function bedroom(ctx, o) {
       at(W20, u, wallD + n.size[1] / 2 + 0.005));
     add({ id: id + '-pendant', room: 'bedroom', cat: 'Leuchte', plan: false, ...o.pendant.meta, size: [0.2, 0.2], round: true }, o.pendant.build(), at(W20, u, wallD + 0.26));
   }
-  add({ id: 'art-bed', room: 'bedroom', cat: 'Kunst', plan: false, ...o.art.meta, size: [o.art.w, 0.03] }, D.artwork(M, o.art.kind, o.art.w, o.art.h, { seed: o.art.seed ?? 6, frame: o.art.frame ?? 'oakLight' }), at(W20, 2.087, wallD + 0.02, 0, o.art.y));
+  add({ id: 'art-bed', room: 'bedroom', cat: 'Kunst', plan: false, ...o.art.meta, name: o.art.meta.name.replace(/\d+ × \d+/, `${Math.round(o.art.w * 100)} × ${Math.round(o.art.h * 100)}`), size: [o.art.w, 0.03] }, D.artwork(M, o.art.kind, o.art.w, o.art.h, { seed: o.art.seed ?? 6, frame: o.art.frame ?? 'oakLight' }), at(W20, 2.087, wallD + 0.02, 0, o.art.y));
   add({ id: 'wardrobe', room: 'bedroom', cat: 'Möbel', ...o.wardrobe.meta, size: [3.0, 0.6] }, o.wardrobe.build(), at(fr.W22, 1.5, 0.3));
   add({ id: 'reading-chair', room: 'bedroom', cat: 'Polster', ...o.chair.meta, size: o.chair.size, round: o.chair.round }, o.chair.build(), { ...at(S, 2.6, 3.64), yaw: S.face(-0.55, -1) });
   add({ id: 'floorlamp-bed', room: 'bedroom', cat: 'Leuchte', ...o.lamp.meta, size: [0.4, 0.4], round: true }, o.lamp.build(), at(S, 1.98, 3.93));
@@ -88,7 +88,7 @@ function office(ctx, o) {
   const O = fr.W23;
   add({ id: 'sofabed', room: 'office', name: 'IKEA HYLTARP Bettsofa 2', cat: 'Polster', spec: `${o.sofabed.fabricName} · 182 × 93 × 82 cm, Sitzhöhe 48 cm, Liegefläche 140 × 200 cm (Westwing-Kissen)`, size: [1.82, 0.93] },
     C.sofaBed(M, o.sofabed.opts), at(O, 1.95, 0.47));
-  add({ id: 'art-office', room: 'office', cat: 'Kunst', plan: false, ...o.art.meta, size: [0.9, 0.03] }, D.artwork(M, o.art.kind, 0.9, 0.7, { seed: o.art.seed ?? 11, frame: o.art.frame ?? 'oakLight' }), at(O, 1.95, 0.025, 0, 1.45));
+  add({ id: 'art-office', room: 'office', cat: 'Kunst', plan: false, ...o.art.meta, name: o.art.meta.name.replace(/\d+ × \d+/, '145 × 100'), size: [1.45, 0.03] }, D.artwork(M, o.art.kind, 1.45, 1.0, { seed: o.art.seed ?? 11, frame: o.art.frame ?? 'oakLight' }), at(O, 1.95, 0.025, 0, 1.50));
   add({ id: 'desk', room: 'office', name: 'IKEA TONSTAD Schreibtisch 140 × 75', cat: 'Tisch', spec: `${o.desk.name} · 140 × 75 × 75 cm, Schublade, Massivholzknopf`, size: [1.4, 0.75] },
     grp([C.deskT(M, { mat: o.desk.mat, knob: o.desk.mat })], [D.mushroomLamp(M, { h: 0.36, r: 0.14, mat: o.desk.lamp ?? 'bronze' }), -0.5, 0.75, -0.2], [ctx.helpers.laptop(M), 0.05, 0.75, 0.02], [D.bookStack(M, 3, { seed: 31, w: 0.26, d: 0.2 }), 0.52, 0.75, -0.18, 0.2]),
     at(O, 3.48 - 0.375 - 0.005, 1.95, -Math.PI / 2));
@@ -131,20 +131,20 @@ export const STYLES = {
       ['Calacatta-Marmor, hell', 'Couchtisch, Deckplatte Lowboard, Ablagen der Bad-Vorwände'],
       ['Bronze, gebürstet', 'Leuchten, Griffe, Armaturen, Sockel'],
       ['Bouclé Off-White · Taupe · Samt Salbei', 'Sofa Alba, Bett Dream, Kissen, Sessel'],
-      ['Kalkputz warm-greige, Akzent Taupe/Salbei', 'Wände; Schlafzimmer eine Nuance tiefer'],
+      ['Weiße Wände, Akzent Taupe', 'Grundwände weiß; Essplatz W07 als zurückhaltende Akzentfläche'],
       ['Feinsteinzeug Iron 60 × 60 cm', 'Bäder und HWR, Wand und Boden'],
     ],
     walls: [
       ['Medienwand W11', 'Raumhohe Räuchereichen-Lamellen (dunkel, wie Bett- und Einbauten) auf schwarzem Akustikfilz, LED-Voute oben'],
       ['Essplatz W07', 'Kalkputz Taupe (tiefer Ton, stärkere Struktur) als Bühne für Sideboard und Kunst'],
       ['Schlafen W20', 'Räuchereichen-Lamellenwand hinter dem Bett'],
-      ['Arbeiten W23', 'Kalkputz Salbei hinter dem Schlafsofa'],
-      ['Übrige Wände', 'Kalkputz Warm-Greige, Schlafzimmer eine Nuance tiefer; Sockel im Wandton'],
+      ['Arbeiten W23', 'Weiße Wand mit großformatiger Kunst hinter dem Schlafsofa'],
+      ['Übrige Wände', 'Weiße Wandfarbe mit feiner Struktur; Sockel im Wandton'],
     ],
     lightPlan: ['Grundlicht: entblendete LED-Einbaustrahler 2700 K, CRI > 95', 'Akzent: LED-Voute an der Lamellenwand, hinterleuchtete Regalböden', 'Zonen: Bronze-Saucer Ø 80 über dem Esstisch, Opal-Pendel neben dem Bett', 'Stimmung: Pilz-Tischleuchten, Stehleuchte Kaya am Lesesessel'],
     theme: null,
     finish: FINISH,
-    wallOverride: { W07: 'wallAccent', W23: 'wallSage' },
+    wallOverride: { W07: 'wallAccent' },
     decor: { metal: 'Bronze gebürstet', builtIn: 'Räuchereiche kanneliert', bathFront: 'Räuchereiche', bathTop: 'Calacatta', vase: 'stonewareCharcoal', hallArt: { kind: 'ink', name: 'Tuschezeichnung 60 × 80' } },
     notes: {
       living: { title: 'Wohnen · Essen · Diele', zoning: 'Drei Zonen entlang der Raumtiefe: Medienwand (W11) – Lounge – Essplatz vor der Fensterfront (W06).', points: [
@@ -179,14 +179,14 @@ export const STYLES = {
         rug: { mat: 'rug', border: 'rugDark', spec: 'IKEA STOENSE Kurzflor 240 × 350 cm, beige' },
         lounge: { size: [0.66, 0.77], meta: { name: 'Westwing Loungesessel Mikkel', spec: 'Bouclé Off-White, Gestell Holz dunkel · 66 × 77 × 79 cm, Sitzhöhe 46 cm' }, build: () => grp([C.armchair(M, { w: 0.66, d: 0.77, h: 0.79, seatH: 0.46, armH: 0.58, arms: 'upholstered', wood: 'walnut', fabric: 'boucle' })], [(() => { const k = ctx.T.cushion(M, 'velvetSage', [0.4, 0.32, 0.13]); k.rotation.x = -0.3; return k; })(), 0, 0.64, -0.17]) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß anthrazit, Schirm Baumwolle/Leinen Ø 45 cm, H 156 cm, 2700 K' }, build: () => C.drumFloorLamp(M) },
-        art: { kind: 'fields', w: 1.1, h: 0.85, seed: 4, meta: { name: 'Kunstwerk „Stein & Salbei“ 110 × 85', spec: 'Acryl auf Leinwand, Schattenfugenrahmen Eiche' } },
+        art: { kind: 'fields', w: 1.6, h: 1.15, seed: 4, meta: { name: 'Kunstwerk „Stein & Salbei“ 110 × 85', spec: 'Acryl auf Leinwand, Schattenfugenrahmen Eiche' } },
       });
       dining(ctx, {
         table: { h: 0.75, meta: { name: 'Westwing Esstisch Sahra Ø 116 + 4 Armlehnstühle Adrien', spec: 'Westwing Collection, organischer Säulenfuß Ø 55, lackiert Greige · Ø 116 × 75 cm; Westwing Cord-/Bouclé-Armlehnstühle Adrien beige, Gestell schwarz' }, build: () => C.roundTable(M, { dia: 1.16, top: 'lacquerGreige', topT: 0.025, base: 'drum', baseMat: 'lacquerGreige', baseDia: 0.55 }) },
         chair: () => C.chair(M, { kind: 'shell', fabric: 'boucleOat', frame: 'blackMatte' }),
         pendant: { meta: { name: 'Pendelleuchte Saucer Ø 80', spec: 'Bronze gebürstet, Opaldiffusor, Unterkante 1,61 m (Designleuchte, Stilreferenz)' }, build: () => D.saucerPendant(M) },
         sideboard: { w: 1.6, d: 0.45, h: 0.75, meta: { name: 'Westwing Sideboard Calary', spec: 'Dark Oak, geriffelte Schiebetüren, Eichenbeine 17 cm · 160 × 45 × 75 cm' }, build: () => C.cabinet(M, { w: 1.6, d: 0.45, h: 0.75, legH: 0.17, fronts: 'ribbed', doors: 2, mat: 'smokedOak', pull: 'bronze' }) },
-        art: { kind: 'landscape', w: 1.2, h: 0.85, meta: { name: 'Kunstwerk „Nebellandschaft“ 120 × 85', spec: 'Öl/Acryl, Rahmen Eiche' } },
+        art: { kind: 'landscape', w: 1.45, h: 1.0, meta: { name: 'Kunstwerk „Nebellandschaft“ 120 × 85', spec: 'Öl/Acryl, Rahmen Eiche' } },
         highboard: { w: 0.9, d: 0.35, meta: { name: 'Highboard Rauchglas (Bar/Gläser)', spec: 'Maßanfertigung Räuchereiche, Rauchglastüren, LED-Innenlicht · 90 × 35 × 155 cm' }, build: () => grp([F.glassHighboard(M)], [D.vase(M, 'bud', 'stonewareCharcoal', 1.2), -0.22, 1.55, 0], [D.bookStack(M, 2, { seed: 17, w: 0.26, d: 0.2 }), 0.18, 1.55, 0.0, 0.3]) },
       });
       bedroom(ctx, {
@@ -194,7 +194,7 @@ export const STYLES = {
         bed: { size: [1.96, 2.22], meta: { name: 'Westwing Polsterbett Dream 180 × 200', spec: 'Bouclé Taupe · 196 × 222 cm, Kopfteil H 110 / T 14 cm; Bettwäsche Leinen, Plaid Salbei' }, build: () => C.bedModel(M, { kind: 'dream', frame: 'boucleTaupe' }) },
         night: { ...nightFloat('Maßanfertigung Räuchereiche kanneliert, Marmorplatte · 50 × 38 cm'), build: () => F.nightstand(M) },
         pendant: { meta: { name: 'Opal-Pendel', spec: 'Opalglas Ø 20, Bronze' }, build: () => D.globePendant(M, { drop: 1.0 }) },
-        art: { kind: 'sage', w: 1.2, h: 0.75, y: 1.72, meta: { name: 'Kunstwerk „Salbei“ 120 × 75', spec: 'Acryl, Rahmen Eiche' } },
+        art: { kind: 'sage', w: 1.55, h: 0.9, y: 1.72, meta: { name: 'Kunstwerk „Salbei“ 120 × 75', spec: 'Acryl, Rahmen Eiche' } },
         wardrobe: { meta: { name: 'Einbauschrank IKEA PAX 300 cm', spec: 'IKEA PAX 3 × 100 × 58 × 236 cm, Maßfronten Räuchereiche kanneliert, Griffleisten Bronze, Deckenblende' }, build: () => C.paxWardrobe(M, { fronts: 'fluted', frontMat: 'smokedOak', handle: 'bar', handleMat: 'bronze' }) },
         chair: { size: [0.78, 0.78], round: true, meta: { name: 'Drehsessel Samt Salbei', spec: 'Ø 78 cm, Bronzefuß (Stilreferenz)' }, build: () => F.tubChair(M) },
         lamp: { meta: { name: 'Stehleuchte Bronze / Plissee', spec: 'Marmorfuß, Leinenschirm plissiert, 2700 K' }, build: () => D.floorLamp(M, { h: 1.5 }) },
@@ -216,7 +216,7 @@ export const STYLES = {
     label: 'Japandi × Soft Brutalism',
     short: 'Soft Brutalism',
     claim: 'Ruhe in Form und Material.',
-    lead: 'Heller und erdiger: Eiche natur, Travertin, sandfarbener Kalk- und Lehmputz mit spürbarer Struktur, Leinen und Wolle. Cognac- und Salbeiakzente, brüniertes Messing und Anthrazit geben Halt. Überwiegend IKEA STOCKHOLM 2025 / TONSTAD, ergänzt um Westwing-Stücke.',
+    lead: 'Heller und erdiger: weiße Grundwände, gezielte Akzente aus sandfarbenem Strukturputz, Eiche natur, Travertin, Leinen und Wolle. Cognac- und Salbeiakzente, brüniertes Messing und Anthrazit geben Halt. Überwiegend IKEA STOCKHOLM 2025 / TONSTAD, ergänzt um Westwing-Stücke.',
     moodboard: 'Moodboard Japandi x Soft Brutalism.png',
     palette: [['Off-White', '#ECE7DE'], ['Sand', '#DCCFBD'], ['Greige', '#BDB1A1'], ['Taupe', '#9A8D7D'], ['Cognac', '#9A5E3A'], ['Salbei', '#8A9582'], ['Messing brüniert', '#A8854F'], ['Anthrazit', '#2E2D2B']],
     materials: [
@@ -230,8 +230,8 @@ export const STYLES = {
     walls: [
       ['Medienwand W11', 'Strukturputz Sand (kräftige Kelle), TV wandbündig, lineare Messingleuchte'],
       ['Schlafen W20', 'Lehmputz Terrakotta-Sand hinter dem Bett, Gips-Relief als Kunst'],
-      ['Arbeiten W23', 'Kalkputz Salbei'],
-      ['Übrige Wände', 'Kalkputz Off-White/Sand, Sockel im Wandton'],
+      ['Arbeiten W23', 'Weiße Wand mit großformatiger Kunst'],
+      ['Übrige Wände', 'Weiße Wandfarbe mit feiner Struktur, Sockel im Wandton'],
     ],
     lightPlan: ['Grundlicht: LED-Einbaustrahler 2700 K', 'Essplatz: Westwing Nebo (linear, 3 Glasschirme, 120 cm)', 'Wandlicht: lineare Leuchte Messing an der Medienwand', 'Stimmung: Stehlampe Kaya (Betonfuß beige), Pilz-Tischleuchten, schwarze Zylinderpendel am Bett'],
     theme: {
@@ -241,7 +241,7 @@ export const STYLES = {
       remap: { smokedOak: 'oakNatural', marble: 'travertineVein', marbleFine: 'travertineVein', bronze: 'brassBrushed', boucle: 'boucleOat' },
     },
     finish: withWalls({}),
-    wallOverride: { W11: 'wallAccent', W20: 'wallClay', W23: 'wallSage' },
+    wallOverride: { W11: 'wallAccent', W20: 'wallClay' },
     decor: { metal: 'Messing brüniert', builtIn: 'Eiche natur', bathFront: 'Eiche natur', bathTop: 'Travertin', vase: 'stonewareSand', hallArt: { kind: 'arch', name: 'Grafik „Bogen“ 60 × 80' }, balcony: { cushion: 'linenBeige', cushionName: 'Sand', pot: 'stonewareRaw' } },
     notes: {
       living: { title: 'Wohnen · Essen · Diele', zoning: 'Medienwand in Strukturputz – Gesprächsinsel um den Travertin-Couchtisch – Essplatz vor W06.', points: [
@@ -279,7 +279,7 @@ export const STYLES = {
         lounge: { size: [0.64, 0.78], meta: { name: 'IKEA EKENÄSET Sessel', spec: 'Eiche/Kilanda hellbeige · 64 × 78 × 76 cm (Leseplatz)' }, build: () => grp([C.armchair(M, { fabric: 'linenBeige', wood: 'oakNatural' })], [(() => { const k = ctx.T.cushion(M, 'linenCognac', [0.4, 0.3, 0.12]); k.rotation.x = -0.3; return k; })(), 0, 0.62, -0.18]) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß beige, Schirm Baumwolle/Leinen Ø 45 cm, H 156 cm' }, build: () => C.drumFloorLamp(M, { base: 'stonewareRaw', stem: 'brassBrushed' }) },
         pot: 'stonewareRaw', potName: 'Steinzeug roh', plantV: 0.8,
-        art: { kind: 'relief', w: 0.9, h: 0.9, seed: 4, frame: 'oakNatural', meta: { name: 'Gips-Relief 90 × 90', spec: 'Kalk/Gips auf Holzplatte, Schattenfugenrahmen Eiche' } },
+        art: { kind: 'relief', w: 1.5, h: 1.15, seed: 4, frame: 'oakNatural', meta: { name: 'Gips-Relief 90 × 90', spec: 'Kalk/Gips auf Holzplatte, Schattenfugenrahmen Eiche' } },
       });
       dining(ctx, {
         table: { h: 0.75, meta: { name: 'IKEA STOCKHOLM 2025 Tisch Ø 115 + 4 Stühle', spec: 'Eichenfurnier; STOCKHOLM-2025-Stühle Eiche/dunkelbraun Leder (Bugholz)' }, build: () => C.roundTable(M, { dia: 1.15, top: 'oakNatural', topT: 0.03, base: 'legs', baseMat: 'oakNatural' }) },
@@ -287,14 +287,14 @@ export const STYLES = {
         pendant: { rot: Math.PI / 2, meta: { name: 'Westwing Pendelleuchte Nebo', spec: 'Glasschirme Ø 9/11/13, Gestell gold · 120 cm, Höhe 87–120 cm' }, build: () => C.linearPendant(M) },
         sideboard: { w: 1.61, d: 0.42, h: 0.83, meta: { name: 'IKEA STOCKHOLM 2025 Sideboard', spec: 'Eichenfurnier gebürstet, Push-to-open · 161 × 42 × 83 cm' }, build: () => C.cabinet(M, { w: 1.61, d: 0.42, h: 0.83, legH: 0.13, fronts: 'plain', doors: 3, mat: 'oakNatural' }) },
         lampMat: 'brassBrushed', vase2: 'stonewareClay', bowl: 'stonewareCharcoal', vase: 'stonewareRaw', pot: 'stonewareRaw', potName: 'Steinzeug roh',
-        art: { kind: 'arch', w: 1.0, h: 0.7, frame: 'oakNatural', meta: { name: 'Grafik „Bogen“ 100 × 70', spec: 'Pigmentdruck, Rahmen Eiche' } },
+        art: { kind: 'arch', w: 1.4, h: 1.0, frame: 'oakNatural', meta: { name: 'Grafik „Bogen“ 100 × 70', spec: 'Pigmentdruck, Rahmen Eiche' } },
         highboard: shelfItem(ctx, { name: 'IKEA TONSTAD Regal', spec: 'Eichenfurnier · 121 × 37 × 120 cm', w: 1.21, d: 0.37, h: 1.2, shelves: 2, mat: 'oakNatural' }),
       });
       bedroom(ctx, {
         bed: { size: [1.96, 2.22], meta: { name: 'Westwing Polsterbett Dream 180 × 200', spec: 'Cord hellbeige · 196 × 222 cm, Kopfteil H 110 cm; Leinenbettwäsche, Plaid Cognac' }, build: () => C.bedModel(M, { kind: 'dream', frame: 'cordBeige', throwMat: 'throwCognac', pillows: ['linenCognac', 'linenSage'] }) },
         night: { meta: { name: 'IKEA TONSTAD Ablagetisch', spec: 'Eichenfurnier · 40 × 40 × 59 cm' }, size: [0.4, 0.4], top: 0.59, build: () => C.sideBox(M) },
         pendant: { meta: { name: 'Zylinderpendel schwarz', spec: 'Metall mattschwarz, Opal-Abschluss' }, build: () => C.cylinderPendant(M) },
-        art: { kind: 'relief', w: 0.9, h: 0.9, y: 1.68, seed: 9, frame: 'oakNatural', meta: { name: 'Gips-Relief 90 × 90', spec: 'Kalk/Gips, Rahmen Eiche' } },
+        art: { kind: 'relief', w: 1.5, h: 0.95, y: 1.68, seed: 9, frame: 'oakNatural', meta: { name: 'Gips-Relief 90 × 90', spec: 'Kalk/Gips, Rahmen Eiche' } },
         wardrobe: { meta: { name: 'Einbauschrank IKEA PAX 300 cm', spec: 'IKEA PAX 3 × 100 × 58 × 236 cm, Fronten Eiche, Holzknöpfe, Deckenblende' }, build: () => C.paxWardrobe(M, { fronts: 'flat', frontMat: 'oakNatural', handle: 'knob', handleMat: 'oakNatural', plinth: 'oakNatural' }) },
         chair: { size: [0.64, 0.78], meta: { name: 'IKEA EKENÄSET Sessel', spec: 'Eiche/Kilanda hellbeige · 64 × 78 × 76 cm' }, build: () => C.armchair(M, { fabric: 'linenBeige', wood: 'oakNatural' }) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß beige, Schirm Ø 45 cm' }, build: () => C.drumFloorLamp(M, { base: 'stonewareRaw', stem: 'brassBrushed' }) },
@@ -319,12 +319,12 @@ export const STYLES = {
     label: 'Refined Brutalism',
     short: 'Refined Brutalism',
     claim: 'Architektonisch. Geerdet. Leiser Luxus.',
-    lead: 'Die dunkelste, architektonischste Variante: warmgrauer Kalkputz mit kräftiger Struktur, eine Betonspachtel-Medienwand, Räuchereiche in ruhigen Flächen, dunkler Naturstein, Bouclé in Hafer und Moosgrün, brünierter Stahl. Lange, niedrige Horizontalen und indirektes Licht.',
+    lead: 'Architektonisch und geerdet: weiße Grundwände mit ausgewählter Betonspachtel-Medienwand, Räuchereiche in ruhigen Flächen, dunkler Naturstein, Bouclé in Hafer und Moosgrün, brünierter Stahl. Lange, niedrige Horizontalen und indirektes Licht.',
     moodboard: 'Moodboard Refined Brutalism.png',
     palette: [['Soft Off-White', '#E7E3DC'], ['Pale Greige', '#CFC8BD'], ['Warm Concrete', '#A69E92'], ['Mushroom Taupe', '#857A6D'], ['Muted Sage', '#7F8870'], ['Smoked Brown', '#4E4339'], ['Charcoal', '#34322F'], ['Muted Black', '#1C1B1A']],
     materials: [
       ['Räuchereiche, ruhige Flächen', 'Lowboard (Maß auf BESTÅ), Wandpaneel Schlafen, PAX-Fronten, Westwing Chandler'],
-      ['Betonspachtel / Kalkputz warmgrau', 'Medienwand W11, alle Wände mit kräftiger Struktur'],
+      ['Betonspachtel / Kalkputz warmgrau', 'Nur Medienwand W11 und Essplatz W07 als Akzente'],
       ['Naturstein dunkel, geschliffen', 'Block-Couchtisch'],
       ['Eiche dunkel', 'Westwing Esstisch Calary Ø 120 mit Stauraum'],
       ['Bouclé Hafer · Moosgrün', 'Westwing Lennon, Mikkel, Lukas'],
@@ -334,8 +334,8 @@ export const STYLES = {
       ['Medienwand W11', 'Betonspachtel warmgrau über die volle Breite, zwei lineare Wandleuchten schwarz'],
       ['Essplatz W07', 'Kalkputz Pilz-Taupe, Gips-Relief'],
       ['Schlafen W20', 'Räuchereichen-Paneel H 120 cm mit LED-Ablage und integrierten Nachttischen'],
-      ['Arbeiten W23', 'Kalkputz Moos-Salbei'],
-      ['Übrige Wände', 'Kalkputz warmgrau mit starker Kellenstruktur; Sockel dunkel'],
+      ['Arbeiten W23', 'Weiße Wand mit großformatiger Kunst'],
+      ['Übrige Wände', 'Weiße Wandfarbe mit feiner Struktur; Sockel im Wandton'],
     ],
     lightPlan: ['Grundlicht: LED-Einbaustrahler 2700 K, gedimmt', 'Indirekt: Unterleuchtung Lowboard und Plattformbett, LED-Ablage am Bettpaneel', 'Wandlicht: lineare Wandleuchten schwarz an der Medienwand', 'Essplatz: Saucer schwarz Ø 60; Stehlampe Kaya anthrazit'],
     theme: {
@@ -345,7 +345,7 @@ export const STYLES = {
       remap: { boucle: 'boucleOat' },
     },
     finish: withWalls({}),
-    wallOverride: { W11: 'wallConcrete', W07: 'wallAccent', W23: 'wallSage' },
+    wallOverride: { W11: 'wallConcrete', W07: 'wallAccent' },
     decor: { metal: 'Stahl brüniert / Bronze', builtIn: 'Räuchereiche glatt', bathFront: 'Räuchereiche', bathTop: 'Calacatta', vase: 'stonewareRaw', hallArt: { kind: 'monolith', name: 'Grafik „Monolith“ 60 × 80' }, balcony: { cushion: 'linenCharcoal', cushionName: 'Anthrazit', pot: 'concreteDark' } },
     notes: {
       living: { title: 'Wohnen · Essen · Diele', zoning: 'Langes, schwebendes Lowboard über die volle Medienwand – tiefe Lounge – Essplatz mit dunklem Holztisch.', points: [
@@ -381,7 +381,7 @@ export const STYLES = {
         lounge: { size: [0.66, 0.77], meta: { name: 'Westwing Loungesessel Mikkel', spec: 'Bouclé dunkelgrün, Holz dunkel · 66 × 77 × 79 cm' }, build: () => C.armchair(M, { w: 0.66, d: 0.77, h: 0.79, seatH: 0.46, armH: 0.58, arms: 'upholstered', wood: 'oakDark', fabric: 'boucleMoss' }) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß anthrazit, Schirm Ø 45 cm, H 156 cm' }, build: () => C.drumFloorLamp(M, { stem: 'steelBlackened' }) },
         pot: 'concreteDark', potName: 'Beton dunkel',
-        art: { kind: 'monolith', w: 1.0, h: 1.0, seed: 4, frame: 'smokedOak', meta: { name: 'Kunstwerk „Monolith“ 100 × 100', spec: 'Acryl/Sand auf Leinwand, Rahmen Räuchereiche' } },
+        art: { kind: 'monolith', w: 1.6, h: 1.2, seed: 4, frame: 'smokedOak', meta: { name: 'Kunstwerk „Monolith“ 100 × 100', spec: 'Acryl/Sand auf Leinwand, Rahmen Räuchereiche' } },
       });
       dining(ctx, {
         table: { h: 0.75, meta: { name: 'Westwing Esstisch Calary Ø 120 + 4 Stühle Lukas', spec: 'Eiche dunkel, geriffelter Fuß mit Stauraum; Westwing Bouclé-Polsterstühle Lukas (Hafer, Holzbeine)' }, build: () => C.roundTable(M, { dia: 1.2, top: 'oakDark', topT: 0.035, base: 'ribbed', baseMat: 'oakDark', baseDia: 0.62 }) },
@@ -389,7 +389,7 @@ export const STYLES = {
         pendant: { meta: { name: 'Pendelleuchte Saucer Ø 60 schwarz', spec: 'Metall mattschwarz, Opaldiffusor (Stilreferenz)' }, build: () => D.saucerPendant(M, { dia: 0.6, mat: 'steelBlackened' }) },
         sideboard: { w: 1.65, d: 0.43, h: 0.75, meta: { name: 'Westwing Sideboard Chandler', spec: 'Massive Eiche, dunkel lackiert, Push-to-open, Füße 20 cm · 165 × 43 × 75 cm' }, build: () => C.cabinet(M, { w: 1.65, d: 0.43, h: 0.75, legH: 0.2, fronts: 'panel', doors: 4, mat: 'oakDark' }) },
         lampMat: 'steelBlackened', vase: 'stonewareRaw', vase2: 'stonewareRaw', bowl: 'stonewareCharcoal', pot: 'concreteDark', potName: 'Beton dunkel',
-        art: { kind: 'relief', w: 1.0, h: 0.8, seed: 12, frame: 'smokedOak', meta: { name: 'Gips-Relief 100 × 80', spec: 'Kalk/Gips, Rahmen Räuchereiche' } },
+        art: { kind: 'relief', w: 1.4, h: 1.0, seed: 12, frame: 'smokedOak', meta: { name: 'Gips-Relief 100 × 80', spec: 'Kalk/Gips, Rahmen Räuchereiche' } },
         highboard: { w: 0.9, d: 0.35, meta: { name: 'Highboard Rauchglas (Bar/Gläser)', spec: 'Maßanfertigung Räuchereiche, Rauchglastüren, LED-Innenlicht · 90 × 35 × 155 cm' }, build: () => grp([F.glassHighboard(M)], [D.vase(M, 'bud', 'stonewareRaw', 1.2), -0.22, 1.55, 0]) },
       });
       bedroom(ctx, {
@@ -398,7 +398,7 @@ export const STYLES = {
         nightU: [0.76, 3.41],
         night: { meta: { name: 'Nachttisch schwebend (Paneel)', spec: 'Räuchereiche, im Paneel verankert · 50 × 36 cm' }, size: [0.5, 0.36], top: 0.58, build: () => { const g = new ctx.THREE.Group(); ctx.boxOn(g, M.smokedOak, [0.5, 0.16, 0.36], [0, 0.42, 0]); return g; } },
         pendant: { meta: { name: 'Zylinderpendel', spec: 'Stahl brüniert, Opal-Abschluss' }, build: () => C.cylinderPendant(M, { mat: 'steelBlackened' }) },
-        art: { kind: 'sage', w: 1.0, h: 0.7, y: 1.82, seed: 8, frame: 'smokedOak', meta: { name: 'Kunstwerk „Moos“ 100 × 70', spec: 'Acryl, Rahmen Räuchereiche' } },
+        art: { kind: 'sage', w: 1.5, h: 0.85, y: 1.78, seed: 8, frame: 'smokedOak', meta: { name: 'Kunstwerk „Moos“ 100 × 70', spec: 'Acryl, Rahmen Räuchereiche' } },
         wardrobe: { meta: { name: 'Einbauschrank IKEA PAX 300 cm', spec: 'IKEA PAX 3 × 100 × 58 × 236 cm, Fronten Räuchereiche glatt mit Griffkante, Deckenblende' }, build: () => C.paxWardrobe(M, { fronts: 'flat', frontMat: 'smokedOak', handle: 'edge', handleMat: 'steelBlackened' }) },
         chair: { size: [0.78, 0.78], round: true, meta: { name: 'Drehsessel Samt Moos', spec: 'Ø 78 cm (Stilreferenz)' }, build: () => F.tubChair(M, { fabric: 'velvetMoss' }) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß anthrazit, Schirm Ø 45 cm' }, build: () => C.drumFloorLamp(M, { stem: 'steelBlackened' }) },
@@ -438,7 +438,7 @@ export const STYLES = {
       ['Medienwand W11', 'Lamellen Eiche dunkel, raumhoch, LED-Voute'],
       ['Essplatz W07', 'Kalkputz Steingrau hell'],
       ['Schlafen W20', 'Lamellen Eiche dunkel hinter dem Bett'],
-      ['Arbeiten W23', 'Salbei sanft'],
+      ['Arbeiten W23', 'Weiße Wand mit großformatiger Kunst'],
       ['Übrige Wände', 'Wandfarbe Weiß (feine Kalkstruktur), Sockel weiß'],
     ],
     lightPlan: ['Grundlicht: LED-Einbaustrahler 2700 K', 'Essplatz: zwei Amber-Glaspendel', 'Akzent: LED-Voute an den Lamellenwänden', 'Stimmung: Pilzleuchte Westwing Walter schwarz, Kaya anthrazit, schwarze Zylinderpendel'],
@@ -449,7 +449,7 @@ export const STYLES = {
       remap: { smokedOak: 'oakDark', bronze: 'blackMatte', marbleFine: 'marble' },
     },
     finish: withWalls({}),
-    wallOverride: { W07: 'wallStone', W23: 'wallSage' },
+    wallOverride: { W07: 'wallStone' },
     decor: { metal: 'Mattschwarz', builtIn: 'Eiche Furnier warm dunkel', bathFront: 'Eiche dunkel', bathTop: 'Marmor hell', vase: 'stonewareCharcoal', hallArt: { kind: 'botanical', name: 'Grafik „Blätter“ 60 × 80' }, balcony: { cushion: 'linenIvory', cushionName: 'Ecru', pot: 'stonewareCharcoal' } },
     notes: {
       living: { title: 'Wohnen · Essen · Diele', zoning: 'Dunkle Lamellenwand als Rückgrat – helle Lounge – Essplatz mit Amberlicht.', points: [
@@ -485,7 +485,7 @@ export const STYLES = {
         bowl: 'bronzeDark',
         lounge: { size: [0.66, 0.77], meta: { name: 'Westwing Loungesessel Mikkel', spec: 'Bouclé dunkelgrün, Holz dunkel · 66 × 77 × 79 cm' }, build: () => C.armchair(M, { w: 0.66, d: 0.77, h: 0.79, seatH: 0.46, armH: 0.58, arms: 'upholstered', wood: 'oakDark', fabric: 'boucleMoss' }) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß anthrazit, Schirm Ø 45 cm, H 156 cm' }, build: () => C.drumFloorLamp(M) },
-        art: { kind: 'botanical', w: 0.9, h: 1.1, seed: 4, frame: 'oakDark', meta: { name: 'Kunstwerk „Blätter“ 90 × 110', spec: 'Pigmentdruck, Rahmen Eiche dunkel' } },
+        art: { kind: 'botanical', w: 1.5, h: 1.15, seed: 4, frame: 'oakDark', meta: { name: 'Kunstwerk „Blätter“ 90 × 110', spec: 'Pigmentdruck, Rahmen Eiche dunkel' } },
       });
       dining(ctx, {
         table: { h: 0.75, meta: { name: 'IKEA STOCKHOLM 2025 Tisch Ø 115 + 4 Westwing Adrien', spec: 'Eichenfurnier; Westwing Bouclé-Stühle Adrien olivgrün, Gestell schwarz (56 × 51 × 82)' }, build: () => C.roundTable(M, { dia: 1.15, top: 'oakNatural', topT: 0.03, base: 'legs', baseMat: 'oakNatural' }) },
@@ -493,7 +493,7 @@ export const STYLES = {
         pendant: { meta: { name: 'Glaspendel Amber (2 ×)', spec: 'Glas getönt, Baldachin Messing, Unterkante 1,61 m (Stilreferenz)' }, build: () => grp([C.glassPendant(M), -0.26, 0, 0], [C.glassPendant(M), 0.26, 0, 0]) },
         sideboard: { w: 1.6, d: 0.45, h: 0.75, meta: { name: 'Westwing Sideboard Calary', spec: 'Matt schwarz, geriffelte Schiebetüren, Eichenbeine 17 cm · 160 × 45 × 75 cm' }, build: () => C.cabinet(M, { w: 1.6, d: 0.45, h: 0.75, legH: 0.17, fronts: 'ribbed', doors: 2, mat: 'lacquerBlack', legMat: 'oakDark' }) },
         lampMat: 'blackMatte', vase: 'stonewareCharcoal', vase2: 'stonewareCharcoal', bowl: 'bronzeDark',
-        art: { kind: 'landscape', w: 1.2, h: 0.85, frame: 'oakDark', meta: { name: 'Kunstwerk „Nebellandschaft“ 120 × 85', spec: 'Öl/Acryl, Rahmen Eiche dunkel' } },
+        art: { kind: 'landscape', w: 1.4, h: 1.0, frame: 'oakDark', meta: { name: 'Kunstwerk „Nebellandschaft“ 120 × 85', spec: 'Öl/Acryl, Rahmen Eiche dunkel' } },
         highboard: shelfItem(ctx, { name: 'IKEA TONSTAD Bücherregal', spec: 'braun gebeiztes Eichenfurnier · 82 × 37 × 201 cm', w: 0.82, d: 0.37, h: 2.01, shelves: 5, mat: 'oakDark' }),
       });
       bedroom(ctx, {
@@ -501,7 +501,7 @@ export const STYLES = {
         bed: { size: [1.95, 2.13], meta: { name: 'IKEA TÄLLÅSEN Bettgestell 180 × 200', spec: 'gepolstert, Kulsta graugrün · 195 × 213 cm, Kopfteil H 107 cm; Leinen Weiß/Sand, Plaid Salbei tief' }, build: () => C.bedModel(M, { kind: 'dream', outerW: 1.95, outerL: 2.13, headH: 1.07, headT: 0.1, frame: 'linenSage', throwMat: 'throwMoss', pillows: ['velvetMoss', 'linenIvory'] }) },
         night: { meta: { name: 'IKEA TONSTAD Ablagetisch', spec: 'braun gebeiztes Eichenfurnier · 40 × 40 × 59 cm' }, size: [0.4, 0.4], top: 0.59, build: () => C.sideBox(M, { mat: 'oakDark', knob: 'oakDark' }) },
         pendant: { meta: { name: 'Zylinderpendel schwarz', spec: 'Metall mattschwarz' }, build: () => C.cylinderPendant(M) },
-        art: { kind: 'botanical', w: 0.9, h: 0.7, y: 1.66, seed: 3, frame: 'oakDark', meta: { name: 'Grafik „Blätter“ 90 × 70', spec: 'Rahmen Eiche dunkel' } },
+        art: { kind: 'botanical', w: 1.5, h: 0.9, y: 1.66, seed: 3, frame: 'oakDark', meta: { name: 'Grafik „Blätter“ 90 × 70', spec: 'Rahmen Eiche dunkel' } },
         wardrobe: { meta: { name: 'Einbauschrank IKEA PAX 300 cm', spec: 'IKEA PAX 3 × 100 × 58 × 236 cm, Fronten Eiche dunkel, Griffstangen mattschwarz, Deckenblende' }, build: () => C.paxWardrobe(M, { fronts: 'flat', frontMat: 'oakDark', handle: 'bar', handleMat: 'blackMatte' }) },
         chair: { size: [0.66, 0.77], meta: { name: 'Westwing Loungesessel Mikkel', spec: 'Bouclé Off-White, Holz dunkel · 66 × 77 × 79 cm' }, build: () => C.armchair(M, { w: 0.66, d: 0.77, h: 0.79, seatH: 0.46, armH: 0.58, arms: 'upholstered', wood: 'oakDark', fabric: 'boucle' }) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß anthrazit, Schirm Ø 45 cm' }, build: () => C.drumFloorLamp(M) },
@@ -539,9 +539,9 @@ export const LUXURY_PRINCIPLES = [
 /** Room notes shared by all styles (fixed installations). */
 export const SHARED_NOTES = {
   kitchen: { title: 'Kochen', zoning: 'Bestandsküche gemäß Referenz: Zeile an W18, Block an W16, Arbeitsgang 1,65 m.', points: ['Nussbaumfronten, gesprenkelte Granitplatte und -rückwand, schwarze Spüle/Armatur bleiben erhalten.', 'Styling mit Eichenbrett, Keramik und Grün; LED-Unterbauleuchte + zwei Einbaustrahler.'] },
-  bath: { title: 'Bad', zoning: 'Nach HLS-Plan: Waschtrockner in der ersten Nische direkt neben der Tür, WC Laufen Meda an der Vorwand W35, Waschtisch Laufen VAL 60 × 42 vor der Vorwand W37 (Ablage 1,18 m), Wanne V&B Collaro 180 × 80 an W38, Handtuchheizkörper 60 × 180 an W39.', points: ['Maßspiegel über die volle Breite des Waschtisch-Vorsprungs oberhalb der Ablage bis zur Decke (90 × 138 cm), endet bündig an der Wannenkante; zwei IP44-Pendel davor als blendfreies Gesichtslicht.', 'Alle Armaturen schwarz matt (Duravit Tulum: Waschtischmischer, Wannenthermostat Aufputz mit Handbrause); Drückerplatte und Heizkörper ebenfalls schwarz.', 'Stauraum: Waschtrockner unter Steinablage mit Hängeschrank darüber, Unterschrank mit zwei Schubkästen, Ablagen 1,18 m an Waschtisch und Wanne.'] },
-  guestbath: { title: 'Dusche / Gäste-WC', zoning: 'Walk-in-Dusche 105 × 80 cm an der Vorwand W41, Waschtisch Laufen VAL 60 × 42 vor der Vorwand W43 (Ablage 1,18 m über die volle Wandbreite), WC an W46, Handtuchheizkörper 60 × 180 an W44.', points: ['Maßspiegel über die gesamte Wand W43 oberhalb der Ablage bis zur Decke (131 × 138 cm), zwei IP44-Pendel.', 'Duschsystem Aufputz Duravit Tulum mit Kopf- und Handbrause, Linienrinne, Glas mit Profil – alles schwarz matt; beleuchtete Nische.'] },
-  utility: { title: 'HWR', zoning: 'Hochschrank in der Nische W50, offenes Regal an W49 östlich der Tür, Technik (Unterverteilung W47, Heizkreisverteiler W48) frei zugänglich; Türschwenk 76 cm frei.', points: ['Geschlossener Stauraum für Staubsauger/Vorräte, Körbe für Kleinteile.'] },
+  bath: { title: 'Bad', zoning: 'Nach HLS-Plan: Waschtrockner in der ersten Nische direkt neben der Tür, WC Laufen Meda an der Vorwand W35, Waschtisch Laufen VAL 60 × 42 vor der Vorwand W37 (Ablage 1,18 m), Wanne V&B Collaro 180 × 80 an W38, Handtuchheizkörper 60 × 180 an W39.', points: ['Wände und Boden: Feinsteinzeug Iron 60 × 60 cm.', 'Maßspiegel über die volle Breite des Waschtisch-Vorsprungs oberhalb der Ablage bis zur Decke (90 × 138 cm), endet bündig an der Wannenkante; zwei IP44-Pendel davor als blendfreies Gesichtslicht.', 'Alle Armaturen schwarz matt (Duravit Tulum: Waschtischmischer, Wannenthermostat Aufputz mit Handbrause); Drückerplatte und Heizkörper ebenfalls schwarz.', 'Stauraum: Waschtrockner unter Steinablage mit Hängeschrank darüber, Unterschrank mit zwei Schubkästen, Ablagen 1,18 m an Waschtisch und Wanne.'] },
+  guestbath: { title: 'Dusche / Gäste-WC', zoning: 'Walk-in-Dusche 105 × 80 cm an der Vorwand W41, Waschtisch Laufen VAL 60 × 42 vor der Vorwand W43 (Ablage 1,18 m über die volle Wandbreite), WC an W46, Handtuchheizkörper 60 × 180 an W44.', points: ['Wände und Boden: Feinsteinzeug Iron 60 × 60 cm.', 'Maßspiegel über die gesamte Wand W43 oberhalb der Ablage bis zur Decke (131 × 138 cm), zwei IP44-Pendel.', 'Duschsystem Aufputz Duravit Tulum mit Kopf- und Handbrause, Linienrinne, Glas mit Profil – alles schwarz matt; beleuchtete Nische.'] },
+  utility: { title: 'HWR', zoning: 'Hochschrank in der Nische W50, offenes Regal an W49 östlich der Tür, Technik (Unterverteilung W47, Heizkreisverteiler W48) frei zugänglich; Türschwenk 76 cm frei.', points: ['Wände und Boden: Feinsteinzeug Iron 60 × 60 cm.', 'Geschlossener Stauraum für Staubsauger/Vorräte, Körbe für Kleinteile.'] },
   balcony1: { title: 'Balkon 1', zoning: 'Lounge mit zwei Teak-Sesseln und Pflanzkübeln.', points: [] },
   balcony2: { title: 'Balkon 2', zoning: 'Bistro-Platz am Küchenaustritt.', points: [] },
 };

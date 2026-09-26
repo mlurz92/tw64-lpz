@@ -198,7 +198,7 @@ export function granite({ seed = 3, size = 0.9, res = 1024 } = {}) {
   return { map: canvasTexture(c, { srgb: true, size }) };
 }
 
-/** Large-format limestone tiles (bathrooms), 60 × 120 cm, 2 mm grout. */
+/** Seamless ceramic tile texture; format and tone are supplied by the material preset. */
 export function limestoneTiles({ seed = 11, tileW = 0.6, tileH = 1.2, cols = 4, rows = 2, res = 2048, base = [200, 192, 180], grout = [168, 160, 150] } = {}) {
   const noise = makeNoise(seed), rnd = mulberry32(seed + 5);
   const Wm = tileW * cols, Hm = tileH * rows, W = res, H = Math.round(res * (Hm / Wm));

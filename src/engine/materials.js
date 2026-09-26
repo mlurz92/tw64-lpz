@@ -61,8 +61,10 @@ export async function createMaterials() {
   const T = M._tex = { oakD, oakR, oakN, darkD, darkR, darkN, walD, walR, walN, lightD, lightR, lightN, plasterN, plasterR, teddyN, teddyD, linenN, woolN, velvetN, lime, P };
   // --- architecture ---------------------------------------------------------------------
   // Walls: limewash albedo (neutral, tinted by colour) + photographed plaster relief.
-  M.wall = wallMaterial(T, '#DDD6CB', 0.35);
-  M.wallDeep = wallMaterial(T, '#CFC6B8', 0.45);
+  // Existing apartment walls: plain white paint; colour and strong texture are reserved for
+  // the deliberately selected accent walls.
+  M.wall = uv(phys({ color: '#ffffff', roughness: 0.94, normalMap: plasterN, normalScale: new THREE.Vector2(0.08, 0.08) }), 1.6);
+  M.wallDeep = M.wall;
   M.wallAccent = wallMaterial(T, '#BFB3A3', 0.9);
   M.wallSage = wallMaterial(T, '#A7AE9C', 0.7);
   M.wallCap = phys({ color: '#3b3935', roughness: 0.9 });
@@ -244,7 +246,10 @@ export function themeMaterials(M, theme) {
   if (!theme) return M;
   if (themeCache.has(theme.id)) return themeCache.get(theme.id);
   const S = Object.create(M);
-  for (const [k, [color, relief]] of Object.entries(theme.walls ?? {})) { S[k] = wallMaterial(M._tex, color, relief); S[k].name = `${theme.id}-${k}`; }
+  for (const [k, [color, relief]] of Object.entries(theme.walls ?? {})) {
+    if (k === 'wall' || k === 'wallDeep') continue; // base walls stay white in every style
+    S[k] = wallMaterial(M._tex, color, relief); S[k].name = `${theme.id}-${k}`;
+  }
   for (const [k, color] of Object.entries(theme.tint ?? {})) {
     const m = M[k].clone(); m.color.set(color); m.name = `${theme.id}-${k}`; S[k] = m;
   }
