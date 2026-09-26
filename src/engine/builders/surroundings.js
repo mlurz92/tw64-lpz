@@ -139,7 +139,10 @@ function buildBuilding(M) {
   const facade = [], bands = [], glass = [];
   for (const pts of outline) {
     facade.push(prismGeo(pts, GROUND, -0.28), prismGeo(pts, top, upperTop));
-    for (let k = 0; k <= 3; k++) bands.push(prismGeo(offsetPolygon(pts, 0.03), -k * STOREY - 0.3, -k * STOREY));
+    // Slab bands are solid prisms under the whole outline. The band of WE 13's own slab must stay
+    // below the slab top (−0.06) – with its top at ±0 it was coplanar with the finished floor and
+    // z-fought with it across every room in walk mode.
+    for (let k = 0; k <= 3; k++) bands.push(prismGeo(offsetPolygon(pts, 0.03), -k * STOREY - 0.3, k ? -k * STOREY : -0.08));
     bands.push(prismGeo(offsetPolygon(pts, 0.03), top - 0.02, top + 0.25), prismGeo(offsetPolygon(pts, 0.05), upperTop, upperTop + 0.45));
   }
   // windows of the other storeys at the same positions as in WE 13
@@ -232,9 +235,15 @@ function buildPark(M) {
   const g = new THREE.Group(); g.name = 'park';
   const lawn = new THREE.CircleGeometry(520, 160); lawn.rotateX(-Math.PI / 2);
   lawn.translate(...(() => { const [x, z] = W(CENTER); return [x, GROUND, z]; })());
-  g.add(meshOf(uvGeo(lawn.index ? lawn.toNonIndexed() : lawn, M.grass), M.grass));
+  // Paths, forecourt and street lie only centimetres above the lawn but are seen from up to
+  // 150 m away, where the depth buffer resolves no better than that: the lawn is pushed back in
+  // depth (slope-scaled polygon offset), so they never z-fight with it.
+  const grass = M.grass.clone();
+  Object.assign(grass, { polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
+  g.add(meshOf(uvGeo(lawn.index ? lawn.toNonIndexed() : lawn, grass), grass));
   const pathPts = PATHS.map((p) => new THREE.CatmullRomCurve3(p.map(([x, y]) => new THREE.Vector3(x, 0, y))).getSpacedPoints(120).map((v) => [v.x, v.z]));
-  for (const p of PATHS) g.add(meshOf(uvGeo(ribbonGeo(p, 3.2, GROUND + 0.015), M.gravelPath), M.gravelPath));
+  // crossing paths get their own level (2 cm apart), otherwise they z-fight where they meet
+  PATHS.forEach((p, i) => g.add(meshOf(uvGeo(ribbonGeo(p, 3.2, GROUND + 0.015 + i * 0.02), M.gravelPath), M.gravelPath)));
   // forecourt / pavement around the building
   const court = ROOMS.map((r) => prismGeo(offsetPolygon(r.points, EXTERIOR_WALL + 2.2), GROUND, GROUND + 0.03));
   g.add(meshOf(uvGeo(BufferGeometryUtils.mergeGeometries(court.map((c) => c.index ? c.toNonIndexed() : c), false), M.pavement), M.pavement));

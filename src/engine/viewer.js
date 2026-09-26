@@ -14,7 +14,9 @@
 //  · Adaptive resolution: if frames during motion stay slow, the pixel ratio steps down.
 //  · Local room probe: in walk mode the room around the camera is captured into a cube map
 //    (two bounces) and used as image-based light → indirect light and reflections of the actual
-//    room instead of the outdoor sky; its luminance drives the automatic exposure.
+//    room instead of the outdoor sky; its luminance drives the automatic exposure. The capture
+//    is spread over frames (one bounce per frame, no scene frame in the same tick) → no hitches.
+//  · Frame cap: at most 60 rendered frames per second, also on 120/144 Hz displays.
 //  · Mirrors: room-probe reflections on WebGPU; planar reflectors on WebGL 2 in walk mode.
 import * as THREE from 'three/webgpu';
 import { reflector, vec4 } from 'three/tsl';
@@ -61,6 +63,7 @@ const PROBE_SIZE = { high: 256, medium: 128, low: 128 };
 const PROBE_MOVE = 1.0;         // re-capture the room probe after this many metres
 const SETTLE_MS = 160;          // camera must be still this long before the refined frame
 const CONVERGE_FRAMES = 40;     // realistic mode: temporal accumulation frames at rest
+const FRAME_MS = 1000 / 60 - 1; // frame cap: high-refresh displays render at most ~60 fps
 const w3 = ([x, y, z]) => new THREE.Vector3(x - OFFSET.x, y, z - OFFSET.y);
 
 export class Viewer {
@@ -72,7 +75,8 @@ export class Viewer {
     this.prScale = 1;
     r.setPixelRatio(this.basePR);
     r.shadowMap.enabled = true;
-    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    // r186 WebGPU: PCFSoftShadowMap was removed; PCF with a sampling radius gives the soft edge.
+    r.shadowMap.type = THREE.PCFShadowMap;
     r.toneMapping = THREE.NeutralToneMapping;
     r.toneMappingExposure = 1;
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -97,6 +101,7 @@ export class Viewer {
     this.refined = false;
     this.accum = 0;
     this.lastMove = 0;
+    this.lastFrame = 0;
     this.frameTimes = [];
     this.stats = { frames: 0, refined: 0, probes: 0 };
 
@@ -159,7 +164,7 @@ export class Viewer {
   /** Requests a new frame (and a refined one after it). */
   invalidate() { this.needsRender = true; this.refined = false; this.accum = 0; }
   /** Scene content changed: shadows, mirrors and probe must be re-rendered as well. */
-  sceneChanged() { this.sun.shadow.needsUpdate = true; this.probeDirty = true; this.invalidate(); }
+  sceneChanged() { this.sun.shadow.needsUpdate = true; this.probeDirty = true; this.cancelProbe(); this.invalidate(); }
 
   /** Replaces the apartment (initial load and style switch). */
   async setApartment(apartment) {
@@ -337,49 +342,72 @@ export class Viewer {
    * and prefilters it for image-based lighting. Two passes = two light bounces.
    */
   captureProbe() {
-    if (!this.apartment || this.mode !== 'walk') return;
-    const r = this.renderer, s = this.scene;
-    const size = PROBE_SIZE[this.quality];
-    if (this.probeRT && this.probeRT.width !== size) {
-      this.probeRT.dispose(); this.probeRT = null; this.probeCam = null;
+    while (!this.probeStep());
+  }
+
+  /**
+   * One bounce of the probe capture (six cube faces + prefilter). Returns true once the probe is
+   * complete. The render loop calls it once per frame, so a two-bounce capture is spread over two
+   * frames instead of rendering the scene twelve times plus a view in a single frame.
+   */
+  probeStep() {
+    if (!this.apartment || this.mode !== 'walk') { this.cancelProbe(); return true; }
+    const r = this.renderer, s = this.scene, m = MOODS[this.mood];
+    let job = this.probeJob;
+    if (!job) {
+      const size = PROBE_SIZE[this.quality];
+      if (this.probeRT && this.probeRT.width !== size) {
+        this.probeRT.dispose(); this.probeRT = null; this.probeCam = null;
+      }
+      this.probeRT ??= new THREE.CubeRenderTarget(size, { type: THREE.HalfFloatType });
+      this.probeCam ??= new THREE.CubeCamera(0.05, 60, this.probeRT);
+      const pos = this.camera.position.clone();
+      pos.y = THREE.MathUtils.clamp(pos.y, 0.9, 1.6);
+      // the lamps of the room the probe is taken in must be active before the first face renders
+      this.rig?.update(this.mode, this.camera.position);
+      job = this.probeJob = { pos, camPos: this.camera.position.clone(), pass: 0, passes: this.quality === 'high' ? 2 : 1, target: null };
     }
-    this.probeRT ??= new THREE.CubeRenderTarget(size, { type: THREE.HalfFloatType });
-    this.probeCam ??= new THREE.CubeCamera(0.05, 60, this.probeRT);
-    const pos = this.camera.position.clone();
-    pos.y = THREE.MathUtils.clamp(pos.y, 0.9, 1.6);
-    this.probeCam.position.copy(pos);
+    this.probeCam.position.copy(job.pos);
     this.probeCam.updateMatrixWorld();
     const sel = this.selHelper?.visible; if (this.selHelper) this.selHelper.visible = false;
-    // A cube probe renders the scene twelve times on High. Planar reflectors would add
+    // A cube probe renders the scene six times per bounce. Planar reflectors would add
     // full-screen passes to each face and can feed a render target back into itself.
     const liveMirrors = (this.mirrors ?? []).filter((mirror) => mirror.material === mirror.userData.mirrorMats?.live);
     for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.still;
-    const m = MOODS[this.mood];
     // pass 0: direct light only (sun, lamps, faint fill) + sky through the windows;
     // pass 1: lit additionally by pass 0 → the stored probe carries two bounces.
-    let target = null;
-    for (let pass = 0; pass < (this.quality === 'high' ? 2 : 1); pass++) {
-      s.environment = target?.texture ?? this.blackEnv();
-      s.environmentIntensity = 1;
-      s.environmentRotation.set(0, 0, 0);
-      this.fill.intensity = m.fill[1];
-      this.probeCam.update(r, s);
-      const next = this.pmrem.fromCubemap(this.probeRT.texture);
-      target?.dispose();
-      target = next;
-    }
-    this.probeTarget?.dispose();
-    this.probeTarget = target;
-    this.probeEnv = target.texture;
-    this.probePos = this.camera.position.clone();
-    this.probeRoom = LightRig.roomAt(this.camera.position);
-    this.probeDirty = false;
+    s.environment = job.target?.texture ?? this.blackEnv();
+    s.environmentIntensity = 1;
+    s.environmentRotation.set(0, 0, 0);
+    this.fill.intensity = m.fill[1];
+    this.probeCam.update(r, s);
+    const next = this.pmrem.fromCubemap(this.probeRT.texture);
+    job.target?.dispose();
+    job.target = next;
+    job.pass++;
     if (this.selHelper) this.selHelper.visible = sel;
     for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.live;
+    if (job.pass < job.passes) { this.applyEnvironment(); return false; }
+
+    this.probeJob = null;
+    this.probeTarget?.dispose();
+    this.probeTarget = job.target;
+    this.probeEnv = job.target.texture;
+    this.probePos = job.camPos;
+    this.probeRoom = LightRig.roomAt(job.camPos);
+    this.probeDirty = false;
     this.stats.probes++;
     this.autoExposure ??= Math.min(m.maxExp, 1.4);
     this.applyEnvironment();
     this.metering = this.meter(m, this.probeRT).then((exp) => { if (exp) { this.autoExposure = exp; this.applyEnvironment(); } });
+    return true;
+  }
+
+  /** Drops an unfinished probe capture (scene, mood or mode changed in between). */
+  cancelProbe() {
+    if (!this.probeJob) return;
+    this.probeJob.target?.dispose();
+    this.probeJob = null;
   }
 
   /**
@@ -421,6 +449,7 @@ export class Viewer {
 
   probeStale() {
     if (this.mode !== 'walk') return false;
+    if (this.probeJob) return true;
     if (this.probeDirty || !this.probeEnv) return true;
     if (this.probePos.distanceTo(this.camera.position) > PROBE_MOVE) return true;
     return LightRig.roomAt(this.camera.position) !== this.probeRoom;
@@ -589,7 +618,11 @@ export class Viewer {
     const still = now - this.lastMove > SETTLE_MS;
     // light budget follows the camera (walk mode: room of the camera)
     if (this.rig?.update(this.mode, this.camera.position)) this.invalidate();
-    if (still && this.probeStale()) { this.captureProbe(); this.needsRender = true; }
+    // Load distribution: a probe bounce takes this whole tick; the view renders in the next one.
+    if (still && this.probeStale()) { this.probeStep(); this.needsRender = true; return; }
+    // Frame cap: controls/animations keep running every tick, the GPU draws at most ~60 fps.
+    if (now - this.lastFrame < FRAME_MS) return;
+    const frameDt = Math.min(0.1, (now - this.lastFrame) / 1000);
     if (this.renderMode === 'realistic') {
       // temporal accumulation: keep rendering until converged
       if (!this.needsRender && this.accum >= CONVERGE_FRAMES) return;
@@ -609,9 +642,11 @@ export class Viewer {
       this.refined = still;
       if (hq) this.stats.refined++;
     }
+    this.lastFrame = now;
     this.stats.frames++;
-    if (moving) this.adaptResolution(dt);
-    this.emit('frame', dt);
+    // only frame-to-frame intervals of continuous motion count (not the pause before it)
+    if (moving && frameDt < 0.1) this.adaptResolution(frameDt);
+    this.emit('frame', frameDt);
   }
 
   /**
@@ -619,6 +654,9 @@ export class Viewer {
    * realistic mode – the temporal accumulation converged (TRAA/SSGI need real animation frames).
    */
   async settle() {
+    // Exports may follow a jump to another station directly: select that room's lamps first,
+    // otherwise the probe (and the exposure metered from it) sees the previous room's light.
+    if (this.rig?.update(this.mode, this.camera.position)) this.invalidate();
     if (this.probeStale()) this.captureProbe();
     await this.metering;
     if (this.renderMode === 'realistic' && this.renderer.getAnimationLoop()) {
@@ -629,6 +667,7 @@ export class Viewer {
 
   /** Renders a finished frame immediately (first frame, screenshots, exports). */
   renderNow() {
+    this.rig?.update(this.mode, this.camera.position);
     if (this.probeStale()) this.captureProbe();
     const p = this.pipelines;
     (this.renderMode === 'realistic' ? p.realistic : this.quality !== 'low' ? p.refined : p.fast).render();

@@ -16,6 +16,7 @@ const withWalls = (walls) => Object.fromEntries(Object.entries(FINISH).map(([k, 
 // Essplatz Mitte (3,45 | 5,65) · Sideboard an W07 · Lesenische W05/W06.
 const SOFA_BACK = 4.0;          // Sofarücken (v), 0,5 m vor dem Wandversatz W09
 const DINING = [3.45, 5.65];    // Tischmitte (u, v) – 1,1 m Durchgang zur Küche, Türzone Schlafen frei
+const RUG_LIVING = [3.0, 4.0];  // Wohnzimmerteppich (u × v) in allen Stilwelten
 
 function living(ctx, o) {
   const { M, lib, add, at, grp, fr, F, D, T, C } = ctx;
@@ -23,9 +24,11 @@ function living(ctx, o) {
   o.media(ctx, L);
   add({ id: 'sofa', room: 'living', cat: 'Polster', ...o.sofa.meta, size: o.sofa.size }, o.sofa.build(), at(L, 1.42, sofaV, Math.PI));
   o.coffee(ctx, L, sofaFront);
-  // Großer Teppich: Sofa und Sessel stehen mit den Vorderfüßen darauf (Luxus-Regel „Rug anchors the group“)
-  const [rw, rd] = o.rug.size ?? [2.4, 3.5];
-  add({ id: 'rug-living', room: 'living', cat: 'Textil', name: `Teppich ${rw * 100} × ${rd * 100}`, spec: o.rug.spec, size: [rw, rd], plan: 'soft' }, T.rug(M, rw, rd, { mat: o.rug.mat, border: o.rug.border ?? o.rug.mat }), at(L, 1.42, rd > 3.2 ? 2.3 : 2.45));
+  // Großer Teppich 300 × 400 (Luxus-Regel „Rug anchors the group“): Sofa, Couch- und Beistelltisch
+  // stehen vollständig darauf. 15 cm Abstand zu W10, beginnt unter dem schwebenden Lowboard und
+  // endet 35 cm hinter dem Sofarücken; mittig auf der Sitzgruppe (Sofa + Beistelltisch).
+  const [rw, rd] = o.rug.size ?? RUG_LIVING;
+  add({ id: 'rug-living', room: 'living', cat: 'Textil', name: `Teppich ${Math.round(rw * 100)} × ${Math.round(rd * 100)}`, spec: o.rug.spec, size: [rw, rd], plan: 'soft' }, T.rug(M, rw, rd, { mat: o.rug.mat, border: o.rug.border ?? o.rug.mat }), at(L, 0.15 + rw / 2, 0.35 + rd / 2));
   add({ id: 'lounge', room: 'living', cat: 'Polster', ...o.lounge.meta, size: o.lounge.size }, o.lounge.build(), { ...at(L, 4.5, 2.92), yaw: L.face(-3.05, -0.85) });
   add({ id: 'floorlamp-living', room: 'living', cat: 'Leuchte', ...o.lamp.meta, size: [0.45, 0.45], round: true }, o.lamp.build(), at(L, 4.72, 2.6));
   add({ id: 'plant-living', room: 'living', name: 'Solitärpflanze Pachira 190 cm', cat: 'Pflanze', spec: `Kübel ${o.potName ?? 'Keramik Anthrazit'} Ø 44`, size: [0.44, 0.44], round: true },
@@ -176,7 +179,7 @@ export const STYLES = {
           add({ id: 'side-table', room: 'living', name: 'Beistelltisch Travertin Ø 42', cat: 'Tisch', spec: 'Travertin, Bronzesäule, H 52 cm', size: [0.42, 0.42], round: true },
             grp([F.sideTable(M)], [D.bookStack(M, 2, { seed: 12, w: 0.24, d: 0.18 }), 0, 0.52, 0], [D.vase(M, 'bud', 'stoneware', 1.1), 0.08, 0.57, 0.06]), at(L, 2.9, 3.3));
         },
-        rug: { mat: 'rug', border: 'rugDark', spec: 'IKEA STOENSE Kurzflor 240 × 350 cm, beige' },
+        rug: { mat: 'rug', border: 'rugDark', spec: 'Kurzflorteppich nach Maß 300 × 400 cm, Wolle, beige mit dunkler Bordüre' },
         lounge: { size: [0.66, 0.77], meta: { name: 'Westwing Loungesessel Mikkel', spec: 'Bouclé Off-White, Gestell Holz dunkel · 66 × 77 × 79 cm, Sitzhöhe 46 cm' }, build: () => grp([C.armchair(M, { w: 0.66, d: 0.77, h: 0.79, seatH: 0.46, armH: 0.58, arms: 'upholstered', wood: 'walnut', fabric: 'boucle' })], [(() => { const k = ctx.T.cushion(M, 'velvetSage', [0.4, 0.32, 0.13]); k.rotation.x = -0.3; return k; })(), 0, 0.64, -0.17]) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß anthrazit, Schirm Baumwolle/Leinen Ø 45 cm, H 156 cm, 2700 K' }, build: () => C.drumFloorLamp(M) },
         art: { kind: 'fields', w: 1.6, h: 1.15, seed: 4, meta: { name: 'Kunstwerk „Stein & Salbei“ 110 × 85', spec: 'Acryl auf Leinwand, Schattenfugenrahmen Eiche' } },
@@ -274,7 +277,7 @@ export const STYLES = {
           add({ id: 'armchair-2', room: 'living', name: 'IKEA EKENÄSET Sessel', cat: 'Polster', spec: 'Eiche/Kilanda hellbeige · 64 × 78 × 76 cm, Sitzhöhe 45 cm', size: [0.64, 0.78] },
             C.armchair(M, { fabric: 'linenBeige', wood: 'oakNatural' }), { ...at(L, 0.44, 1.55), yaw: L.face(1, 0) });
         },
-        rug: { mat: 'rug', spec: 'IKEA STOENSE Kurzflor 240 × 350 cm, beige' },
+        rug: { mat: 'rug', spec: 'Kurzflorteppich nach Maß 300 × 400 cm, Wolle, beige, Bordüre gekettelt' },
         bowl: 'stonewareCharcoal',
         lounge: { size: [0.64, 0.78], meta: { name: 'IKEA EKENÄSET Sessel', spec: 'Eiche/Kilanda hellbeige · 64 × 78 × 76 cm (Leseplatz)' }, build: () => grp([C.armchair(M, { fabric: 'linenBeige', wood: 'oakNatural' })], [(() => { const k = ctx.T.cushion(M, 'linenCognac', [0.4, 0.3, 0.12]); k.rotation.x = -0.3; return k; })(), 0, 0.62, -0.18]) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß beige, Schirm Baumwolle/Leinen Ø 45 cm, H 156 cm' }, build: () => C.drumFloorLamp(M, { base: 'stonewareRaw', stem: 'brassBrushed' }) },
@@ -376,7 +379,7 @@ export const STYLES = {
           add({ id: 'floor-vase', room: 'living', name: 'Bodenvase mit Zweigen', cat: 'Deko', spec: 'Steinzeug roh, H 55 cm', size: [0.34, 0.34], round: true },
             grp([D.vase(M, 'amphora', 'stonewareRaw', 1.3)], [D.branches(M, { h: 0.9, spread: 0.5, seed: 21 }), 0, 0.5, 0]), at(L, 4.75, 3.62));
         },
-        rug: { mat: 'rugGrey', size: [2.0, 3.0], spec: 'IKEA STOENSE Kurzflor 200 × 300 cm, grau' },
+        rug: { mat: 'rugGrey', spec: 'Kurzflorteppich nach Maß 300 × 400 cm, Wolle, grau, Bordüre gekettelt' },
         bowl: 'stonewareCharcoal',
         lounge: { size: [0.66, 0.77], meta: { name: 'Westwing Loungesessel Mikkel', spec: 'Bouclé dunkelgrün, Holz dunkel · 66 × 77 × 79 cm' }, build: () => C.armchair(M, { w: 0.66, d: 0.77, h: 0.79, seatH: 0.46, armH: 0.58, arms: 'upholstered', wood: 'oakDark', fabric: 'boucleMoss' }) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß anthrazit, Schirm Ø 45 cm, H 156 cm' }, build: () => C.drumFloorLamp(M, { stem: 'steelBlackened' }) },
@@ -481,7 +484,7 @@ export const STYLES = {
           add({ id: 'coffee-2', room: 'living', name: 'Beistelltisch Trommel Ø 50', cat: 'Tisch', spec: 'Eiche Furnier warm dunkel, H 42 cm (Stilreferenz)', size: [0.5, 0.5], round: true },
             grp([C.drumTable(M, { dia: 0.5, h: 0.42, top: 'oakDark', fluted: true })], [D.bowl(M, 'bronzeDark', 0.13, 0.05), 0, 0.42, 0]), at(L, 1.85, front - 0.4 - 0.25 - 0.18));
         },
-        rug: { mat: 'rugIvory', spec: 'IKEA STOENSE Kurzflor 240 × 350 cm, elfenbeinweiß' },
+        rug: { mat: 'rugIvory', spec: 'Kurzflorteppich nach Maß 300 × 400 cm, Wolle, elfenbeinweiß, Bordüre gekettelt' },
         bowl: 'bronzeDark',
         lounge: { size: [0.66, 0.77], meta: { name: 'Westwing Loungesessel Mikkel', spec: 'Bouclé dunkelgrün, Holz dunkel · 66 × 77 × 79 cm' }, build: () => C.armchair(M, { w: 0.66, d: 0.77, h: 0.79, seatH: 0.46, armH: 0.58, arms: 'upholstered', wood: 'oakDark', fabric: 'boucleMoss' }) },
         lamp: { meta: { name: 'Westwing Stehlampe Kaya', spec: 'Betonfuß anthrazit, Schirm Ø 45 cm, H 156 cm' }, build: () => C.drumFloorLamp(M) },
@@ -531,7 +534,7 @@ export const LUXURY_PRINCIPLES = [
   ['Verdeckter Stauraum, sichtbare Ruhe', 'Grifflose bzw. kannelierte Fronten, Push-to-open, Kabelkanäle im Lowboard; offen bleibt nur kuratierte Deko (Bücher, Keramik, Grün) in Dreiergruppen.'],
   ['Materialehrlichkeit vor Dekor', 'Massivholz/Echtholzfurnier, Naturstein (Calacatta, Travertin, dunkler Naturstein), Kalk-/Lehmputz, Leinen, Wolle, Bouclé; Metalle je Stilwelt nur in einem Ton.'],
   ['Mehrschichtiges Licht 2700 K, CRI > 95', 'Grundlicht entblendet, indirekte LED-Vouten und -Unterleuchtung, Zonenlicht über Tisch/Bett, Stimmungslicht auf Tisch- und Stehleuchten; Badpendel IP44 als Gesichtslicht vor den Spiegelwänden.'],
-  ['Großzügige Proportionen', 'Teppich 240 × 350 cm: Sofa und Sessel stehen darauf; Vorhänge an der Decke, bodenlang und breiter als die Öffnung; Kunst mit Bildmitte ≈ 1,45 m bzw. 25 cm über dem Möbel.'],
+  ['Großzügige Proportionen', 'Teppich 300 × 400 cm: Sofa, Couch- und Beistelltisch stehen vollständig darauf; Vorhänge an der Decke, bodenlang und breiter als die Öffnung; Kunst mit Bildmitte ≈ 1,45 m bzw. 25 cm über dem Möbel.'],
   ['Spiegel als Architektur', 'Maßgefertigte Spiegel oberhalb der Vorwand-Ablagen (1,18 m) bis zur Decke – im Gäste-WC wandfüllend, im Bad über die volle Breite des Waschtisch-Vorsprungs – verdoppeln die Raumtiefe; Armaturen, Brausen und Heizkörper durchgehend schwarz matt.'],
   ['Wenige, starke Setzungen', 'Je Raum ein Statement (Lamellenwand, Spiegelwand, Bibliothekswand), Rest zurückhaltend; eine Solitärpflanze je Zone statt vieler kleiner.'],
 ];
