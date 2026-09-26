@@ -31,13 +31,13 @@ Umschalten **direkt im 3D-Viewer** über die Stilwelt-Leiste oben (oder die Tast
 | Bett | Westwing **Dream** 180 vor Räuchereichen-Lamellen | Westwing **Dream** 180, Cord | Plattformbett Räuchereiche (Maß) + Wandpaneel | IKEA **TÄLLÅSEN** 180 |
 | Kleiderschrank | IKEA **PAX** 3 × 100 × 58 × 236, kannelierte Maßfronten | PAX, Eichenfronten + Holzknöpfe | PAX, Räuchereiche glatt + Griffkante | PAX, Eiche dunkel + Griffstangen schwarz |
 | Arbeiten | IKEA **HYLTARP** + **TONSTAD** 140 × 75, Westwing **Alain** (Leder Caramel), **Bibliothekswand** 150 × 40 × 252 | dto., Bibliothekswand Eiche mit **BJÖRKÖVIKEN** Birke | dto., Alain schwarz, Bibliothekswand Räuchereiche | dto., Alain schwarz, Bibliothekswand mit **BJÖRKÖVIKEN** braun gebeizt |
-| Teppich Wohnen | IKEA **STOENSE** 240 × 350 beige | STOENSE 240 × 350 beige | STOENSE 200 × 300 grau | STOENSE 240 × 350 elfenbeinweiß |
+| Teppich Wohnen | **Maßteppich 300 × 400** Wolle beige, dunkle Bordüre | Maßteppich 300 × 400 beige | Maßteppich 300 × 400 grau | Maßteppich 300 × 400 elfenbeinweiß |
 
 Gemeinsam für alle Stilwelten: Bestandsküche (Nussbaum/Granit), **Bäder nach HLS-Plan** (siehe unten), Einbaugarderobe Diele (PAX 35 cm tief), HWR, Vorhänge (Verdunkelung IKEA **MAJGULL** im Schlafzimmer), Grundlicht.
 
 Die **Grundwände bleiben weiß**. Nur die in der jeweiligen Stilwelt benannten Medien-, Ess- oder Bettwände erhalten einen Material- oder Farbakzent. Großformatige Kunst (im Wohnbereich bis 160 × 120 cm) ist auf die Wandabschnitte und die Breite der Möbel abgestimmt.
 
-> **Produktangaben:** Artikelnamen und Maße stammen aus den Herstellerangaben (Recherche 09/2026, u. a. Westwing-Neuheiten Zumi, Hilda, Alain; IKEA BJÖRKÖVIKEN, STOENSE 240 × 350). Westwing **Abby** ist derzeit nicht lieferbar und wurde durch **Sahra** Ø 116 ersetzt. Maßanfertigungen und reine Stilreferenzen sind in der Möbelliste gekennzeichnet. Vor Bestellung Verfügbarkeit, Bezug/Farbe, Liefer- und Montagemaße prüfen.
+> **Produktangaben:** Artikelnamen und Maße stammen aus den Herstellerangaben (Recherche 09/2026, u. a. Westwing-Neuheiten Zumi, Hilda, Alain; IKEA BJÖRKÖVIKEN, STOENSE). Westwing **Abby** ist derzeit nicht lieferbar und wurde durch **Sahra** Ø 116 ersetzt. Maßanfertigungen und reine Stilreferenzen sind in der Möbelliste gekennzeichnet. Vor Bestellung Verfügbarkeit, Bezug/Farbe, Liefer- und Montagemaße prüfen.
 
 ### Bäder (nach Ausführungsplan HLS)
 
@@ -65,7 +65,7 @@ Die Spiegel nutzen auf WebGPU die lokale Raum-Lightprobe für stabile Reflexione
 | Verdeckter Stauraum, sichtbare Ruhe | grifflose/kannelierte Fronten, Push-to-open, verdeckte Kabelführung; offen nur kuratierte Deko |
 | Materialehrlichkeit | Echtholz/-furnier, Naturstein, Kalk-/Lehmputz, Leinen, Wolle, Bouclé; je Stilwelt nur ein Metallton |
 | Mehrschichtiges Licht 2700 K, CRI > 95 | Grundlicht entblendet, indirekte LED-Vouten/-Unterleuchtung, Zonen- und Stimmungslicht; Bad 3000 K |
-| Großzügige Proportionen | Teppich 240 × 350 (Sofa und Sessel stehen darauf), deckenhohe, bodenlange Vorhänge, Kunst mit Bildmitte ≈ 1,45 m |
+| Großzügige Proportionen | Teppich 300 × 400 (Sofa, Couch- und Beistelltisch stehen vollständig darauf, vom Lowboard bis 35 cm hinter den Sofarücken), deckenhohe, bodenlange Vorhänge, Kunst mit Bildmitte ≈ 1,45 m |
 | Spiegel als Architektur | Maßspiegel oberhalb der Ablagen bis zur Decke: im Gäste-WC wandfüllend, im Bad über die Breite des Waschtisch-Vorsprungs (nicht über der Wanne) |
 | Wenige, starke Setzungen | je Raum ein Statement (Lamellen-, Spiegel-, Bibliothekswand) |
 
@@ -86,7 +86,7 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 
 | Raum | Zonierung |
 |---|---|
-| **Wohnen** | Medienwand W11 (284 cm) – Lounge (Sofarücken 0,5 m vor dem Wandversatz W09, Sehabstand ≈ 3,2–3,4 m, 40–45 cm Knieraum) – Hauptweg Diele → Essplatz/Küche/Schlafen ≥ 1,0 m – Lesenische W05/W06 |
+| **Wohnen** | Medienwand W11 (284 cm) – Lounge (Sofarücken 0,5 m vor dem Wandversatz W09, Sehabstand ≈ 3,2–3,4 m, 40–45 cm Knieraum, Teppich 300 × 400 mit 15 cm Wandabstand zu W10) – Hauptweg Diele → Essplatz/Küche/Schlafen ≥ 1,0 m – Lesenische W05/W06 |
 | **Essen** | Tischmitte vor W06, 1,1 m Durchgang zur Küche, 90-cm-Türzone Schlafen frei; Sideboard an W07, Regal/Highboard an W08 |
 | **Schlafen** | Bett mittig an W20, Schrank 300 cm an W22 mit ≈ 0,9 m Gang (Türen frei schwenkbar), Leseplatz in der Südostecke |
 | **Arbeiten / Gäste** | Bettsofa an W23 außerhalb der Türzone, Schreibtisch mit seitlichem Tageslicht an W24/W26, Bibliothekswand über die volle Wand W28 |
@@ -124,10 +124,11 @@ Der bisherige Weg (WebGL-Renderer + progressiver GPU-Pathtracer) war für die fo
 Gemeinsame Grundlagen:
 
 - **PBR-Materialien** (`MeshPhysicalMaterial`, automatisch in Node-Materialien übersetzt): Sheen für Textilien, Clearcoat für Lack/Stein; CC0-Fotoscans (Poly Haven) und vorberechnete prozedurale Texturen.
-- **Weiche Sonnenschatten** (Schattenkarte 3072/2048/1536 Pixel nach Qualitätsstufe, Frustum deckt die gesamte Plandiagonale ab). Ein geschlossenes Dach und vereinfachte Schattencaster verhindern die hellen Streifen auf den Böden; Möbelkontakt entsteht über AO/SSGI.
+- **Weiche Sonnenschatten** (PCF mit Abtastradius – `PCFSoftShadowMap` existiert in r186/WebGPU nicht mehr; Schattenkarte 3072/2048/1536 Pixel nach Qualitätsstufe, Frustum deckt die gesamte Plandiagonale ab). Ein geschlossenes Dach und vereinfachte Schattencaster verhindern die hellen Streifen auf den Böden; Möbelkontakt entsteht über AO/SSGI.
 - **Lokale Raum-Lightprobe:** In der Begehung wird der Raum um die Kamera in eine Cubemap mit 256 oder 128 Pixeln je Fläche aufgenommen. *Hoch* berechnet zwei Lichtdurchgänge, *Mittel/Schnell* einen; auf WebGPU liefert sie auch die Spiegelreflexion, auf WebGL 2 werden planare Spiegel während der Aufnahme ausgesetzt. Im Modus *Realistisch* ergänzt SSGI den Nahbereich.
-- **Belichtungsautomatik:** log. Mittelwert der Leuchtdichte der Lightprobe (asynchrones GPU-Readback) → Zielwert der Lichtstimmung; der Belichtungsregler wirkt als Korrektur.
+- **Belichtungsautomatik:** log. Mittelwert der Leuchtdichte der Lightprobe (asynchrones GPU-Readback) → Zielwert der Lichtstimmung; der Belichtungsregler wirkt als Korrektur. Vor jeder Aufnahme (auch bei PNG-Export direkt nach Stationswechsel) wird zuerst das Licht-Budget des Zielraums aktiviert – sonst wurde z. B. das Bad mit den Leuchten des Vorraums gemessen und massiv überbelichtet.
 - **Außenraum 3. OG mit Blick in den Park** (`builders/surroundings.js`, nur in der Begehung): Der Blick aus den Fenstern ist echte Geometrie statt eines Panoramafotos auf Straßenniveau – Parkrasen mit Kieswegen und Parkleuchten **9,28 m unter dem Fertigfußboden** (laut Plan „+9,28 OK FFB“), rund 150 Laubbäume (instanziert, 10–17 m hoch, spätsommerliche Grüntöne) mit freier Rasenfläche vor den Fensterfassaden, Eingangsstraße mit Gründerzeit-Häuserzeile, Stadtkante am Horizont, Luftperspektive ab 50 m. Das Gebäude selbst ist mit Erdgeschoss bis 2. OG, Geschossbändern, Fenstern und gestapelten Balkonen darunter sowie dem 4. OG darüber modelliert. Die Himmel sind reine Himmelspanoramen ohne Bodenkulisse; ihre Sonnenscheibe wird automatisch vermessen (Schwerpunkt der Scheibe) und exakt auf die Richtung des Schattenwurfs gedreht (Abweichung < 0,5°), die Scheibe selbst wird im Umgebungslicht gekappt, damit die Sonne nicht doppelt wirkt.
+- **Tiefenpuffer ohne Z-Fighting:** Keine zwei sichtbaren Flächen liegen koplanar. Das Geschossband des eigenen Geschosses in der Außenszene endet unter der Rohdecke (−8 cm statt ±0, vorher flackerte es in der Begehung flächig durch den Parkettboden); Rasen mit Polygon-Offset gegenüber Wegen, Vorplatz und Straße, sich kreuzende Parkwege auf getrennten Höhen.
 - **Planare Spiegel:** Reflector-Knoten für alle Spiegel (Bad-Spiegelwände, Dielenspiegel) in der Begehung, gerendert nur wenn sichtbar; im Dollhouse Lightprobe-Spiegelung.
 - **Lichtstimmungen:** *Tageslicht* (Sonne aus Südost, Himmel Poly Haven *Kloofendal 48d*; fensterlose Räume beleuchtet), *Goldene Stunde* (tief stehende Sonne, *Qwantani Late Afternoon*), *Abend* (Dämmerung, *Qwantani Dusk 2* (alle Leuchten, 2700 K, Bad 3000 K). Leuchtenwerte photometrisch (Lumen → Candela/Nits).
 
@@ -135,7 +136,9 @@ Gemeinsame Grundlagen:
 
 | Maßnahme | Wirkung |
 |---|---|
-| **Rendern bei Bedarf** | Standard: nur bei Änderungen; Realistisch: schnelle Vorschau beim Bewegen, bis zur Konvergenz (≈ 40 Bilder) im Stillstand, danach Ruhe |
+| **Rendern bei Bedarf** | Standard: nur bei Änderungen; Realistisch: schnelle Vorschau beim Bewegen, bis zur Konvergenz (≈ 40 Bilder) im Stillstand, danach Ruhe – im Stillstand 0 Bilder/s |
+| **Bildraten-Deckel** | höchstens ≈ 60 gerenderte Bilder/s, auch auf 120/144-Hz-Displays (Steuerung und Animation laufen weiter mit voller Rate) → spürbar weniger Leistungsaufnahme beim Bewegen |
+| **Lastverteilung Lightprobe** | Aufnahme der Raum-Lightprobe über mehrere Frames verteilt (je Frame ein Lichtdurchgang mit 6 Würfelseiten, kein zusätzliches Szenenbild im selben Frame) → keine Ruckler beim Raumwechsel |
 | **Zweistufige Qualität** | Standard in Bewegung ohne AO/MSAA, nach 160 ms Stillstand ein verfeinertes Bild |
 | **Statische Schatten** | Sonnen-Shadow-Map nur nach Szenen-, Stil-, Modus- oder Stimmungswechsel |
 | **Licht-Budget** (`lighting.js`) | Feste Punkt-/Spot-Slots, belegt mit den Leuchten des aktuellen Raums – kein Lichtdurchschlag durch Wände |
