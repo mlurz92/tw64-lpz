@@ -2,7 +2,13 @@
 
 Maßstäbliche, fotorealistische Einrichtungsplanung der Wohnung **WE 13, Täubchenweg 62–64, Leipzig (3. OG, 97,56 m², Blick in den Park)** in **vier umschaltbaren Stilwelten** – alle aus den Moodboards abgeleitet, alle auf dieselbe gemessene Raumgeometrie geplant und überwiegend mit aktuellen Möbeln von **Westwing** und **IKEA** (Herstellermaße, Recherche 09/2026) möbliert.
 
-Die Anwendung verbindet die aus dem Ausführungsplan rekonstruierte Raumgeometrie mit einer vollständig durchgeplanten Möblierung und rendert sie mit der **WebGPU-Engine von three.js (r186)** – wahlweise als schnelle Echtzeitansicht oder im Modus **„Realistisch“** mit globaler Beleuchtung, Spiegelungen und temporalem Anti-Aliasing in Echtzeit.
+Die Anwendung verbindet die aus dem Ausführungsplan rekonstruierte Raumgeometrie mit einer vollständig durchgeplanten Möblierung und rendert sie in drei Stufen:
+
+| Darstellung | Engine | Wofür |
+|---|---|---|
+| **Standard** | three.js r186 **WebGPU** (Rasterisierung, PBR, SSAO, MSAA) | flüssiges Planen und Begehen |
+| **Realistisch** | WebGPU + Screen-Space-GI, Spiegelungen (SSR), temporales AA | Echtzeit-Eindruck mit Lichtbounce |
+| **Fotorealistisch** *(neu)* | **GPU-Pathtracer** (three-gpu-pathtracer, WebGL 2) + **KI-Entrauschung Intel Open Image Denoise** (oidn-web, WebGPU) | physikalisch korrekte Standbilder in Archviz-Qualität, startet automatisch, sobald die Kamera ruht |
 
 ## Schnellstart
 
@@ -13,7 +19,7 @@ python3 -m http.server 8000
 # oder: node tools/dev-server.mjs
 ```
 
-Danach <http://localhost:8000> öffnen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten rechts im 3D-Viewer. Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
+Danach <http://localhost:8000> öffnen. Die Pathtracing-Engine (≈ 1 MB) und die Denoiser-Gewichte (1,8 MB) werden erst beim ersten Wechsel auf *Fotorealistisch* geladen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten rechts im 3D-Viewer. Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
 
 ## Stilwelten (Möblierungsvarianten)
 
@@ -67,6 +73,9 @@ Die Spiegel nutzen auf WebGPU die lokale Raum-Lightprobe für stabile Reflexione
 | Mehrschichtiges Licht 2700 K, CRI > 95 | Grundlicht entblendet, indirekte LED-Vouten/-Unterleuchtung, Zonen- und Stimmungslicht; Bad 3000 K |
 | Großzügige Proportionen | Teppich 300 × 400 (Sofa, Couch- und Beistelltisch stehen vollständig darauf, vom Lowboard bis 35 cm hinter den Sofarücken), deckenhohe, bodenlange Vorhänge, Kunst mit Bildmitte ≈ 1,45 m |
 | Spiegel als Architektur | Maßspiegel oberhalb der Ablagen bis zur Decke: im Gäste-WC wandfüllend, im Bad über die Breite des Waschtisch-Vorsprungs (nicht über der Wanne) |
+| Relief statt Farbe an den Wänden *(neu)* | Grundwände bleiben weiß, gewinnen aber Tiefe: **Wandfelder** über die volle Wand W10 (4,28 m) im Wohnen und an der Blickwand W19 neben dem Bett, Brüstungsprofil H 80 cm, Kunst mittig im großen Feld. Profil je Stilwelt: *Boiserie klassisch* (Metallic Japandi, Quiet Luxury), *Leistenrahmen Japandi* (Soft Brutalism), *Schattenfugen-Rahmen* (Refined Brutalism) |
+| Galerielicht *(neu)* | **Bilderleuchten** (2700 K, CRI > 95) über jedem Hauptkunstwerk – Diele, Wohnen, Essen, Schlafen, Arbeiten – im Metallton der Stilwelt (Bronze, Messing brüniert, Stahl brüniert, Mattschwarz) |
+| Licht auf Textil, Technik unsichtbar *(neu)* | **Vorhangvouten** wand-zu-wand (20 × 10 cm) an allen Fensterwänden (W03, W04, W06, W21, W27): verdecken die Schienen, eine LED-Linie streift die bodenlangen Vorhänge |
 | Wenige, starke Setzungen | je Raum ein Statement (Lamellen-, Spiegel-, Bibliothekswand) |
 
 ### Stauraum
@@ -95,7 +104,7 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 
 | Ansicht | Inhalt |
 |---|---|
-| **3D-Rundgang** | Dollhouse (ohne Decke) und Begehung auf Augenhöhe, 14 Kamerastationen, drei Lichtstimmungen, **Stilwelt-Leiste**, Darstellung **Standard / Realistisch**, Möbel anklicken → Details |
+| **3D-Rundgang** | Dollhouse (ohne Decke) und Begehung auf Augenhöhe, 14 Kamerastationen, drei Lichtstimmungen, **Stilwelt-Leiste**, Darstellung **Standard / Realistisch / Fotorealistisch**, Möbel anklicken → Details |
 | **Grundriss** | Maßstäblicher Plan (SVG) aus derselben Datenbasis: Wände mit Öffnungen, Wandmaße, nummerierte Möbel-Grundflächen, Raumfokus, Zoom/Pan |
 | **Wandmaße** | Alle 52 Wände mit Länge, Öffnungen, Nettoabschnitten und Prüfstatus |
 | **Konzept & Möbel** | Stilwelt-Reiter, Farbpalette, Materialität, Wandgestaltung, Lichtplanung, **Luxus-Prinzipien**, Planungsprüfung, Raumkonzepte, Möbel- und Ausstattungsliste, Moodboards |
@@ -112,7 +121,36 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 
 ## Rendering
 
-### Engine: three.js WebGPU (r186) statt WebGL-Renderer + Pathtracer
+### Fotorealistisch: Pathtracing + KI-Entrauschung (neu)
+
+Die Echtzeit-Techniken (SSAO, SSGI, SSR) sind Näherungen im Bildraum: Licht von außerhalb des Bildes fehlt, Spiegel zeigen nur, was ohnehin sichtbar ist, Innenräume wirken flach. Für Standbilder in Archviz-Qualität arbeitet die App deshalb **hybrid** – wie Enscape, Twinmotion oder D5: Die Kamera wird in Echtzeit (WebGPU) bewegt; sobald sie ruht, übernimmt ein **unverzerrter GPU-Pathtracer** und rechnet dieselbe Szene physikalisch korrekt.
+
+| Schritt | Umsetzung (`src/engine/photo.js`) |
+|---|---|
+| Szenenabgleich | Proxy-Szene aus exakt dem, was der Rasterizer zeigt (Layer 0, sichtbare Meshes, instanzierte Bäume/Häuser expandiert); **dieselben** Geometrien, Materialien und Texturen – WebGPU- und WebGL-Build teilen sich einen three.js-Kern (`vendor/three-core-*.js`, esbuild-Code-Splitting) |
+| Glas, Spiegel, Licht | Fensterglas als echte Transmission mit Fresnel-Spiegelung, Spiegel als ideale Metallfläche, alle Leuchten der Wohnung als physikalische Lichtquellen, Sonne + HDR-Himmel |
+| **Sky-Portale** | je Außenfenster/Balkontür ein Flächenlicht in der Öffnung (für Kamerastrahlen unsichtbar) mit der kosinusgewichteten mittleren Himmelsleuchtdichte dieser Blickrichtung (aus dem HDR-Panorama, Weißabgleich für Innenräume); 70 % des Himmelslichts laufen über die direkt abgetasteten Portale, 30 % über das Environment – kein Doppelzählen, **um ein Vielfaches schnellere Konvergenz** in fensterbeleuchteten Räumen (Technik der Offline-Renderer V-Ray/Corona) |
+| Licht-Auswahl | Next-Event-Estimation nur mit Lampen und Portalen des Kameraraums (+ offen verbundene Räume) statt aller 43 Lichtquellen |
+| BVH | Aufbau im Web Worker (three-mesh-bvh), ≈ 640 k Dreiecke, blockiert die Oberfläche nicht |
+| Pathtracing | three-gpu-pathtracer 0.0.24: Multiple Importance Sampling, 3–5 Bounces, Glossy-Filter gegen Fireflies, in Kacheln (2×2 bzw. 3×3) → jedes Einzelbild bleibt kurz, auch auf integrierter Grafik |
+| Belichtung | Kamera-artige Matrixmessung (mittengewichteter log. Mittelwert des HDR-Akkumulators) nach 4/16/48 Samples; Belichtungsregler wirkt ohne Neustart |
+| **KI-Entrauschung** | Intel **Open Image Denoise** (U-Net, oidn-web auf WebGPU) mit Albedo- und Normalen-Hilfsbildern: sauberes Bild nach 48 Samples, finale Entrauschung bei Erreichen des Sample-Budgets (Hoch 384 / Mittel 192 / Schnell 96) |
+| Export | PNG-Export wartet im Modus *Fotorealistisch* auf das fertig entrauschte Bild; *PNG 2×* rechnet den Pathtracer in doppelter Auflösung |
+
+Ohne WebGPU (reines WebGL 2) läuft der Pathtracer ebenfalls, nur ohne KI-Entrauschung (mehr Samples nötig).
+
+### Behobene Darstellungsfehler (Update 09/2026)
+
+| Fehler | Ursache | Behebung |
+|---|---|---|
+| Wandsäule 37 × 36 cm in der Diele vor der Bürotür (sichtbar als heller Streifen im Türblatt) | 1,6-cm-Versatzwand W29 fand keine Nachbarkontur → als 36-cm-Außenwand gebaut und um die Dicke von W28 verlängert | Versatzwände < 5 cm übernehmen die dünnere Nachbarwand, keine Eckverlängerung; Prüfskript: kein Wandkörper ragt in eine Raumkontur |
+| WebGPU brach in manchen Chrome-Versionen bei der ersten Lightprobe ab (`createView … swizzle`) | three.js r186 sendet immer `swizzle: 'rgba'`; ältere Implementierungen erwarten ein Dictionary | Build-Patch in `tools/build-vendor.mjs`: Identitäts-Swizzle wird weggelassen |
+| Vorhangpaket am rechten Fenster W06 ragte 8 cm in die Wand W07 | Paket symmetrisch 28 cm über die Laibung | Paket auf die Wandlänge begrenzt, Laibung bleibt bedeckt |
+| Spiegel im Bad dunkelgrau | Lightprobe direkt vor dem schwarzen Heizkörper aufgenommen, nur 1–2 Lichtdurchgänge | Probe-Punkt mit Wandabstand, 3 (Schnell: 2) Lichtdurchgänge |
+| Station „Schlafen“ blickte gegen die Schrankseite, „Blick zum Schrank“ stand im Lesesessel, „Bibliothekswand“ im Vorhang | Kamerapositionen | Stationen neu gesetzt |
+| PNG 2× nur in einfacher Auflösung | `resize()` setzte die verdoppelte Pixel-Ratio sofort zurück | Exportfaktor wird in der Pixel-Ratio-Berechnung berücksichtigt |
+
+### Engine: three.js WebGPU (r186) für die Echtzeitansicht
 
 Der bisherige Weg (WebGL-Renderer + progressiver GPU-Pathtracer) war für die fotorealistische Ansicht zu langsam: BVH-Aufbau blockierte die Oberfläche, und ein rauschfreies Bild brauchte Hunderte Samples bei stillstehender Kamera. **Unreal Engine** wurde geprüft, ist für diese Web-Anwendung aber nicht einsetzbar: Der HTML5/WebGL-Export wurde mit UE 4.24 eingestellt, und *Pixel Streaming* benötigt einen dauerhaft laufenden GPU-Server, der das Bild als Video streamt – keine Offline-Nutzung, laufende Kosten, Latenz. Stattdessen nutzt die App die **WebGPU-Engine von three.js**, die dieselben Techniken wie moderne Game-Engines (vgl. Unreal Lumen/SSR/TAA) als Echtzeit-Nachbearbeitung im Browser bereitstellt:
 
@@ -126,7 +164,7 @@ Gemeinsame Grundlagen:
 - **PBR-Materialien** (automatisch in Node-Materialien übersetzt): `MeshPhysicalMaterial` nur wo eine physikalische Schicht wirkt (Sheen für Textilien, Clearcoat für Lack/Stein, IOR für Glas), sonst `MeshStandardMaterial` – identische Reflexion (F0 = 0,04 ≙ IOR 1,5) mit günstigerem Shader; CC0-Fotoscans (Poly Haven) und vorberechnete prozedurale Texturen.
 - **Weiche Sonnenschatten** (PCF mit Abtastradius – `PCFSoftShadowMap` existiert in r186/WebGPU nicht mehr; Schattenkarte 3072/2048/1536 Pixel nach Qualitätsstufe, Frustum deckt die gesamte Plandiagonale ab). Die Dachplatte folgt der Gebäudekontur. Große, opake Möbel werfen gezielt Sonnenlichtschatten; kleine Dekoteile bleiben aus der Schattenkarte. AO/SSGI ergänzen den Möbelkontakt.
 - **Geschlossene Wandhülle:** Die 9,9-cm-Rückführung zwischen Küchen-Trennwand und W08 ist als Wandstück modelliert, während die 1,57-m-Öffnung zwischen Küche und Wohnen offen bleibt. Unter Fenster-, Balkon- und Türöffnungen schließt ein massiver Wand-Sockel bis zur Unterkante der Bodenplatte; Wandenden, Unterseiten und obere Abschlüsse sind geschlossen. So scheinen weder Außenraum noch Himmel durch konstruktive Spalten.
-- **Lokale Raum-Lightprobe:** In der Begehung wird der Raum um die Kamera in eine Cubemap mit 256 oder 128 Pixeln je Fläche aufgenommen. *Hoch/Mittel* berechnen zwei Lichtdurchgänge, *Schnell* einen; auf WebGPU liefert sie auch die Spiegelreflexion, auf WebGL 2 werden planare Spiegel während der Aufnahme ausgesetzt. Im Modus *Realistisch* ergänzt SSGI den Nahbereich.
+- **Lokale Raum-Lightprobe:** In der Begehung wird der Raum um die Kamera in eine Cubemap mit 256 oder 128 Pixeln je Fläche aufgenommen – **nicht am Kamerastandort, sondern am nächstgelegenen Punkt mit ≥ 0,7 m Wandabstand** (vorher sah die Probe im Bad aus 17 cm Abstand fast nur den schwarzen Handtuchheizkörper, die Spiegel wirkten dunkelgrau). *Hoch/Mittel* berechnen drei Lichtdurchgänge, *Schnell* zwei; auf WebGPU liefert sie auch die Spiegelreflexion, auf WebGL 2 werden planare Spiegel während der Aufnahme ausgesetzt. Im Modus *Realistisch* ergänzt SSGI den Nahbereich.
 - **Belichtungsautomatik:** log. Mittelwert der Leuchtdichte der Lightprobe (asynchrones GPU-Readback) → Zielwert der Lichtstimmung; der Belichtungsregler wirkt als Korrektur. Vor jeder Aufnahme (auch bei PNG-Export direkt nach Stationswechsel) wird zuerst das Licht-Budget des Zielraums aktiviert – sonst wurde z. B. das Bad mit den Leuchten des Vorraums gemessen und massiv überbelichtet.
 - **Außenraum 3. OG mit Blick in den Park** (`builders/surroundings.js`, nur in der Begehung): Der Blick aus den Fenstern ist echte Geometrie statt eines Panoramafotos auf Straßenniveau – Parkrasen mit Kieswegen und Parkleuchten **9,28 m unter dem Fertigfußboden** (laut Plan „+9,28 OK FFB“), rund 150 Laubbäume (instanziert, 10–17 m hoch, spätsommerliche Grüntöne) mit freier Rasenfläche vor den Fensterfassaden, Eingangsstraße mit Gründerzeit-Häuserzeile, Stadtkante am Horizont, Luftperspektive ab 50 m. Das Gebäude selbst ist mit Erdgeschoss bis 2. OG, Geschossbändern, Fenstern und gestapelten Balkonen (je mit Kragplatte) darunter sowie dem 4. OG darüber modelliert. Die Himmel sind reine Himmelspanoramen ohne Bodenkulisse; ihre Sonnenscheibe wird automatisch vermessen (Schwerpunkt der Scheibe) und exakt auf die Richtung des Schattenwurfs gedreht (Abweichung < 0,5°), die Scheibe selbst wird im Umgebungslicht gekappt, damit die Sonne nicht doppelt wirkt.
 - **Tiefenpuffer ohne Z-Fighting:** Keine zwei sichtbaren Flächen liegen koplanar. Das Geschossband des eigenen Geschosses in der Außenszene endet unter der Rohdecke (−8 cm statt ±0, vorher flackerte es in der Begehung flächig durch den Parkettboden); Rasen mit Polygon-Offset gegenüber Wegen, Vorplatz und Straße, sich kreuzende Parkwege auf getrennten Höhen. TV und Gemälde: Bildfläche, Passepartout und Rahmen liegen ≥ 2,5 mm auseinander (vorher 0,2–0,5 mm → Flackern des Fernsehbilds). Near-/Far-Ebene je Kameramodus (Dollhouse 0,25–200 m, Begehung 0,05–700 m): 5× feinerer Tiefenpuffer in der Übersicht, Stadtkante nicht mehr abgeschnitten.
@@ -139,7 +177,8 @@ Gemeinsame Grundlagen:
 |---|---|
 | **Rendern bei Bedarf** | Standard: nur bei Änderungen; Realistisch: schnelle Vorschau beim Bewegen, bis zur Konvergenz (40/24/12 Bilder für Hoch/Mittel/Schnell) im Stillstand, danach Ruhe – im Stillstand 0 Bilder/s |
 | **Bildraten-Deckel** | höchstens ≈ 60 gerenderte Bilder/s, auch auf 120/144-Hz-Displays (Steuerung und Animation laufen weiter mit voller Rate) → spürbar weniger Leistungsaufnahme beim Bewegen |
-| **Lastverteilung Lightprobe** | Aufnahme der Raum-Lightprobe nur im Stillstand und je Tick nur ein Schritt (eine Würfelseite oder die Vorfilterung, 14 Schritte für zwei Lichtdurchgänge) → keine Lastspitze, auch nicht auf integrierter Grafik |
+| **Lastverteilung Lightprobe** | Aufnahme der Raum-Lightprobe nur im Stillstand und je Tick nur ein Schritt (eine Würfelseite oder die Vorfilterung, 21 Schritte für drei Lichtdurchgänge à 6 × 128² Pixel) → keine Lastspitze, auch nicht auf integrierter Grafik |
+| **Pathtracer nur im Stillstand** | Beim Bewegen rendert ausschließlich die schlanke WebGPU-Pipeline; der Pathtracer startet erst nach 160 ms Ruhe, rechnet in Kacheln (Mittel: 3 × 3 → ≈ 1/9 Bild je Frame), stoppt bei der ersten Bewegung und legt die GPU nach Erreichen des Sample-Budgets still. Engine, BVH-Worker und Denoiser-Gewichte werden erst bei Bedarf geladen; die Texturatlas-Größe folgt der Qualitätsstufe (1024 / 640 / 512 px) |
 | **Zusammengefasste Geometrie** (`scene.js`) | Statische, opake Möbel-, Fenster- und Türteile je Raum und Material zu einem Mesh vereint: ≈ 560 → ≈ 290 Draw-Calls in der Wohnung. Frustum-Culling und Front-to-Back-Sortierung bleiben je Raum erhalten; die Einzelobjekte liegen auf einem eigenen Layer nur für Auswahl, Hervorhebung und Grundriss |
 | **Pixelbudget** | Zeichenpuffer höchstens 3,7 / 2,1 / 1,1 Megapixel (Hoch/Mittel/Schnell) – ein 4K-Bildschirm mit 150 % Skalierung rendert sonst 8,3 MP je Bild |
 | **Automatische Qualitätsstufe** | nach GPU: integrierte Grafik (Intel Iris Xe/UHD wie im NUC 11–13, AMD-APUs, Apple M) → *Mittel*; dedizierte GPU → *Hoch*; Software-Renderer/Mobilgeräte → *Schnell*. Eine manuelle Wahl wird gespeichert |
@@ -166,9 +205,9 @@ Qualitätsstufen *Hoch/Mittel/Schnell* steuern Pixel-Ratio (maximal 1,5/1,25/1) 
 | Fenster / Balkontüren | 45 cm Zugang; Balkontüren vollständig frei, Fenster höchstens zur Hälfte verstellt |
 | Ausrichtung | Sofa zur Medienwand, Bettfuß in den Raum, Schlafsofa vom Wandrücken weg |
 
-Stand dieser Planung: **alle vier Stilwelten bestehen sämtliche Prüfungen** (je ≈ 440–470 Einzelprüfungen).
+Stand dieser Planung: **alle vier Stilwelten bestehen sämtliche Prüfungen** (je ≈ 440–470 Einzelprüfungen), auch mit den neuen Wandfeldern, Bilderleuchten und Vorhangvouten.
 
-Ein Browser-Smoke-Test prüft zusätzlich alle vier Stilwelten, die geschlossene Wandrückführung, den Sockel unter einem Außenfenster, alle Fassadenabschnitte im 25-cm-Raster sowie Standard- und Realistisch-Modus. Bei laufendem Entwicklungsserver: `node tools/smoke.mjs` (lokal installiertes Chrome und `tools`-Abhängigkeiten erforderlich).
+Ein Browser-Smoke-Test prüft zusätzlich alle vier Stilwelten, die geschlossene Wandrückführung, den Sockel unter einem Außenfenster, alle Fassadenabschnitte im 25-cm-Raster sowie die Modi Standard, Realistisch und Fotorealistisch (BVH-Aufbau + Samples). Bei laufendem Entwicklungsserver: `node tools/smoke.mjs` (lokal installiertes Chrome; ohne Chrome `CHANNEL=chromium node tools/smoke.mjs`).
 
 ## Maße und Genauigkeit
 
@@ -178,7 +217,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 
 ## Export
 
-- 3D-Ansicht als PNG und in doppelter Auflösung – im Modus *Realistisch* wird bis zur Konvergenz gewartet; Dateiname enthält Stilwelt, Station und Darstellung
+- 3D-Ansicht als PNG und in doppelter Auflösung – im Modus *Realistisch* wird bis zur Konvergenz gewartet, im Modus *Fotorealistisch* bis zum fertig entrauschten Pathtracing-Bild; Dateiname enthält Stilwelt, Station und Darstellung (die 2×-Ausgabe verdoppelt jetzt tatsächlich die Auflösung – vorher setzte die Größenanpassung den Faktor sofort zurück)
 - Grundriss mit Möblierung und Maßen als SVG · Druckansicht / PDF
 - Wandmaße und Nettoabschnitte als CSV
 - Möbelliste der aktiven Stilwelt als CSV
@@ -200,6 +239,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   ├── engine/
 │   │   ├── viewer.js             # WebGPU-Renderer, Render-Modi, Lightprobe, Belichtung, Spiegel, Kameras, Stimmungen
 │   │   ├── render.js             # TSL-Pipelines: Standard (SSAO, MSAA, SMAA) und Realistisch (SSGI, SSR, TRAA)
+│   │   ├── photo.js              # Fotorealistisch: Pathtracer, Sky-Portale, Belichtung, KI-Entrauschung (OIDN)
 │   │   ├── lighting.js           # Licht-Budget je Raum (feste Slots, fensterlose Räume)
 │   │   ├── scene.js              # Szenenaufbau je Stilwelt + Positionsregister
 │   │   ├── materials.js          # PBR-Materialbibliothek, Stil-Themen, prozedurale Textur-Tabelle
@@ -212,11 +252,15 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   │       ├── bath.js           # Vorwände 1,18 m, Maßspiegel, Waschtrockner-Nische, Laufen VAL/Meda, V&B Collaro, Duravit Tulum
 │   │       └── kitchen.js · decor.js · textiles.js · common.js
 │   └── ui/plan2d.js              # SVG-Grundriss
-├── vendor/                       # three.js r186 (WebGPU + TSL) und Add-ons (lokal, offline, versionsfest)
-├── assets/                       # CC0-Assets (lib/), Ausführungsplan (PDF), Moodboards
+├── vendor/                       # three.js r186 (WebGPU + TSL, gemeinsamer Kern), Add-ons, Pathtracer-Bundle,
+│                                 # BVH-Worker (lokal, offline, versionsfest)
+├── assets/                       # CC0-Assets (lib/), OIDN-Gewichte (lib/oidn/), Ausführungsplan (PDF), Moodboards
 └── tools/
     ├── build-vendor.mjs          # erzeugt vendor/ aus npm-Paketen (esbuild; auch unter Windows)
-    ├── smoke.mjs                 # Browserprüfung aller Stile, Wandhülle und Render-Modi
+    ├── smoke.mjs                 # Browserprüfung aller Stile, Wandhülle und aller drei Render-Modi
+    ├── flow.mjs                  # UI-Ablauf: Stilwechsel, Fotorealistisch starten/stoppen, Stimmung, Dollhouse
+    ├── shot.mjs · probe.mjs      # Screenshots von Stationen bzw. frei gewählten Kameras (headless)
+    ├── pathtracer-entry.js       # Einstieg des Pathtracer-Bundles
     ├── bake-textures.mjs · bake.html
     └── fetch-assets.py
 ```
@@ -224,7 +268,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 ### Abhängigkeiten neu erzeugen
 
 ```bash
-cd tools && npm install && node build-vendor.mjs   # vendor/ (three.webgpu.min.js, three.tsl.min.js, three-addons.js)
+cd tools && npm install && node build-vendor.mjs   # vendor/ (three.webgpu.min.js + three-core-*.js, three.tsl.min.js, three-addons.js, pathtracer.js, generateMeshBVH.worker.js)
 python3 tools/fetch-assets.py                      # assets/lib/
 cd tools && npx playwright install chromium && node bake-textures.mjs   # assets/lib/textures/baked/
 ```
@@ -241,11 +285,14 @@ Ein Eintrag in `STYLES` (`src/data/styles.js`) genügt: `theme`, `wallOverride`,
 - IKEA: [Neuheiten](https://www.ikea.com/de/de/new/new-products/), [BJÖRKÖVIKEN Tür braun gebeiztes Eichenfurnier 60 × 64](https://www.ikea.com/de/de/p/bjoerkoeviken-tuer-braun-gebeiztes-eichenfurnier-70490948/)
 - Gestaltung: [Homes & Gardens – Storage that looks expensive (2026)](https://www.homesandgardens.com/interior-design/what-storage-makes-a-house-look-expensive-in-2026), [House of Nuances – Quiet Luxury 2026](https://houseofnuances.com/blog/quiet-luxury-interior-design), [Finest Furniture Studio – Luxury ideas 2026](https://finestfurniturestudio.co.uk/luxury-interior-design-ideas/)
 - Wandflächen und Dekoration: [Westwing – Luxus Wohnen](https://www.westwing.de/inspiration/einrichten/wohnung-einrichten/luxus-wohnen/), [Westwing – Wanddeko im Wohnzimmer](https://www.westwing.de/inspiration/deko-ideen/wandgestaltung-dekorieren/wanddeko-im-wohnzimmer/), [IKEA – Wandgestaltungsideen](https://www.ikea.com/de/de/rooms/living-room/how-to/living-room-wall-decor-ideas-for-your-home-pub454dbe30/). Umgesetzt als einzelne starke Akzentwand je Zone, großformatige Kunst, gezielte Leuchten und gruppierte Accessoires.
+- Wandgestaltung 2026: [Decorfin – Modern luxury wall finishes](https://decorfinusa.com/2026/06/24/12-aesthetic-modern-luxury-wall-finishes/), [House of Nuances – Quiet Luxury 2026](https://houseofnuances.com/blog/quiet-luxury-interior-design), [Wall panelling trends 2026](https://homelydesignstudio.com/2026/04/22/10-must-try-wall-panel-designs-that-will-dominate-modern-interiors-in-2026/), [Luxury interior lighting guide 2026](https://luxehomedecore.com/luxury-interior-lighting-guide/), [Westwing – Wandleuchten](https://www.westwing.de/wandleuchten/). Umgesetzt als Wandfelder in Wandweiß (Relief statt Farbe), Galerielicht über der Kunst und Vorhangvouten mit indirektem Licht.
+- Pathtracing: [three-gpu-pathtracer](https://github.com/gkjohnson/three-gpu-pathtracer), [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh), [oidn-web](https://github.com/pissang/oidn-web) (Intel Open Image Denoise, Gewichte [RenderKit/oidn-weights](https://github.com/RenderKit/oidn-weights))
 - Rendering: three.js r186 – [SSGI](https://threejs.org/examples/webgpu_postprocessing_ssgi.html), [SSR](https://threejs.org/examples/webgpu_postprocessing_ssr.html), [TRAA](https://threejs.org/examples/webgpu_postprocessing_traa.html), [AO](https://threejs.org/examples/webgpu_postprocessing_ao.html)
 
 ## Lizenzen
 
 - three.js: MIT (siehe `vendor/LICENSE.three.txt`)
+- three-gpu-pathtracer, three-mesh-bvh, oidn-web: MIT (siehe `vendor/LICENSE.*.txt`); Open-Image-Denoise-Gewichte: Apache 2.0 (Intel RenderKit)
 - Texturen, HDRIs und Modelle: [Poly Haven](https://polyhaven.com), CC0
 - Schriften: Cormorant Garamond, Jost (Google Fonts, OFL)
 - Westwing, IKEA, Laufen, Villeroy & Boch, Duravit und genannte Produktnamen sind Marken der jeweiligen Inhaber; die Modelle sind vereinfachte Nachbildungen zu Planungszwecken.

@@ -17,12 +17,12 @@
 //                       more when the sample budget is reached.
 // Any camera movement hides the overlay immediately and restarts the accumulation.
 import * as THREE from 'three';
-import { LAMP_SCALE } from './lighting.js';
+import { LAMP_SCALE, LightRig, OPEN } from './lighting.js';
 import { WALLS, OFFSET, WINDOW_HEAD, add as add2, mul as mul2 } from '../core/geometry.js';
 import { analyseWalls } from './builders/architecture.js';
 
 const BUDGET = { high: { samples: 384, scale: 1, tiles: 2, bounces: 5, tex: 1024 },
-  medium: { samples: 192, scale: 0.8, tiles: 3, bounces: 4, tex: 768 },
+  medium: { samples: 192, scale: 0.8, tiles: 3, bounces: 4, tex: 640 },
   low: { samples: 96, scale: 0.6, tiles: 3, bounces: 3, tex: 512 } };
 const FIRST_DENOISE = 48;
 const EXPOSURE_AT = [4, 16, 48];
@@ -201,6 +201,7 @@ export class PhotoRenderer {
         l.lookAt(l.position.x + w.n[0], l.position.y, l.position.z + w.n[1]);
         l.updateMatrix(); l.matrixAutoUpdate = false;
         l.userData.portal = [-w.n[0], -w.n[1]]; // outward plan direction
+        l.userData.room = w.room;
         out.push(l);
       }
     }
@@ -280,7 +281,13 @@ export class PhotoRenderer {
     if (!this.scene) return;
     const rig = this.v.rig;
     const m = this.v.moodSettings();
+    // Next-event estimation picks one light at random per bounce: in walk mode only the lamps and
+    // window portals of the camera's room (and rooms openly connected to it) take part – with all
+    // 43 apartment lights most samples would test lamps behind closed walls.
+    const here = this.v.mode === 'walk' ? LightRig.roomAt(this.v.camera.position) : null;
+    const relevant = (r) => !here || r === here || (OPEN[here] ?? []).includes(r);
     this.scene.traverse((o) => {
+      if (o.isLight && o.userData.source !== this.v.sun) o.visible = relevant(o.userData.room ?? o.userData.source?.userData.room);
       if (o.userData.portal) {
         const c = this.skyRadiance(o.userData.portal).multiplyScalar(m.env * PORTAL_SHARE);
         // camera white balance for interiors: the blue cast of the open sky is halved
