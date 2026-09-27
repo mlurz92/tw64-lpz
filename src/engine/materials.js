@@ -77,6 +77,9 @@ export async function createMaterials() {
   M.tileWall = uv(phys({ map: P.tiles.map, normalMap: P.tiles.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 0.82, color: '#ffffff' }), 2.4);
   M.tileFloor = uv(phys({ map: P.tilesFloor.map, normalMap: P.tilesFloor.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 0.88, color: '#ffffff' }), 2.4);
   M.skirting = phys({ color: PALETTE.wallDeep, roughness: 0.6 });
+  // Wall mouldings (boiserie), pelmets: satin paint in the white of the walls – the relief reads
+  // through light and shadow, not through colour.
+  M.trim = phys({ color: '#f4f2ee', roughness: 0.5 });
   M.slab = phys({ color: '#d7d2ca', roughness: 0.95 });
   M.facade = uv(phys({ color: '#E6E2DA', roughness: 0.95, normalMap: plasterN, normalScale: new THREE.Vector2(0.5, 0.5) }), 1.6);
 

@@ -334,3 +334,71 @@ export function stoneStack(M) {
 }
 
 export { circle, extrudePlan, rbox };
+
+// ------------------------------------------------------------------------------------------
+// Wall finishes and gallery lighting (luxury wall treatment, all styles)
+
+/**
+ * Picture light above an artwork (gallery lighting): slim bar head on a short arm, warm spot
+ * aimed at the canvas centre. Origin = wall face at the mounting height; +Z into the room.
+ * `drop` = distance from the mount down to the centre of the artwork.
+ */
+export function pictureLight(M, w = 0.5, { mat = 'brass', drop = 0.6, lumens = 260 } = {}) {
+  const g = new THREE.Group(), m = M[mat];
+  box(g, m, [0.06, 0.09, 0.012], [0, 0, 0.006]);
+  const arm = box(g, m, [0.012, 0.012, 0.15], [0, 0.03, 0.08]); arm.rotation.x = -0.28;
+  const head = new THREE.Group(); head.position.set(0, 0.055, 0.16); head.rotation.x = -0.5;
+  const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, w, 20).rotateZ(Math.PI / 2), m);
+  shell.castShadow = true; head.add(shell);
+  const lens = box(head, M.ledStrip, [w - 0.02, 0.004, 0.018], [0, -0.022, 0.004]); lens.castShadow = false;
+  g.add(head);
+  const l = lampLight('spot', lumens, { angle: 0.95, penumbra: 0.9, distance: 3.2 });
+  l.position.set(0, 0.03, 0.17);
+  l.target.position.set(0, -drop - 0.03, -0.17 + 0.03);
+  g.add(l);
+  return g;
+}
+
+/**
+ * Boiserie: applied wall mouldings in the wall white. `fields` are rectangles [u0, u1, y0, y1]
+ * relative to the origin (left end of the panelled stretch, floor); `rail` adds a dado rail.
+ * profile: 'classic' (stepped, Parisian), 'flat' (square Shaker batten, Japandi),
+ * 'shadow' (deep square frame with a shadow gap – architectural).
+ */
+export function boiserie(M, { w, fields, rail = null, profile = 'classic', mat = 'trim' } = {}) {
+  const g = new THREE.Group(), m = M[mat];
+  const P = { classic: [[0.034, 0.008], [0.018, 0.016]], flat: [[0.03, 0.012]], shadow: [[0.045, 0.02]] }[profile];
+  const frame = (u0, u1, y0, y1) => {
+    for (const [bw, bd] of P) {
+      const inset = (P[0][0] - bw) / 2;
+      const a = u0 + inset, b = u1 - inset, c = y0 + inset, d = y1 - inset;
+      box(g, m, [b - a, bw, bd], [(a + b) / 2, c + bw / 2, bd / 2]);
+      box(g, m, [b - a, bw, bd], [(a + b) / 2, d - bw / 2, bd / 2]);
+      box(g, m, [bw, d - c - bw * 2, bd], [a + bw / 2, (c + d) / 2, bd / 2]);
+      box(g, m, [bw, d - c - bw * 2, bd], [b - bw / 2, (c + d) / 2, bd / 2]);
+    }
+  };
+  for (const f of fields) frame(...f);
+  if (rail) {
+    box(g, m, [w, 0.05, 0.016], [w / 2, rail, 0.008]);
+    box(g, m, [w, 0.018, 0.026], [w / 2, rail + 0.025, 0.013]);
+  }
+  g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
+  return g;
+}
+
+/**
+ * Ceiling pelmet (Vorhangvoute) wall to wall: hides the curtain track, an LED line inside washes
+ * the curtains with light. Origin = wall face at the left end, +Z into the room.
+ */
+export function curtainPelmet(M, w, { depth = 0.2, h = 0.1, ceiling = 2.56, returns = [true, true] } = {}) {
+  const g = new THREE.Group();
+  const y = ceiling - h / 2;
+  box(g, M.trim, [w, h, 0.014], [w / 2, y, depth - 0.007]);
+  box(g, M.trim, [w, 0.012, 0.03], [w / 2, ceiling - h + 0.006, depth - 0.029]);
+  if (returns[0]) box(g, M.trim, [0.014, h, depth], [0.007, y, depth / 2]);
+  if (returns[1]) box(g, M.trim, [0.014, h, depth], [w - 0.007, y, depth / 2]);
+  const led = box(g, M.ledStrip, [w - 0.04, 0.008, 0.01], [w / 2, ceiling - 0.03, depth - 0.03]);
+  led.castShadow = false;
+  return g;
+}

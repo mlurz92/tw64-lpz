@@ -18,7 +18,7 @@ export const INTERIOR_LEVEL = 0.8;
  * so integrated GPUs ("Mittel") get fewer; walk mode only needs the lamps of one room anyway.
  */
 const SLOTS = { high: { point: 8, spot: 8 }, medium: { point: 5, spot: 5 }, low: { point: 3, spot: 3 } };
-const OPEN = { living: ['kitchen'], kitchen: ['living'] };
+export const OPEN = { living: ['kitchen'], kitchen: ['living'] };
 
 export class LightRig {
   constructor(apartment, quality = 'high') {

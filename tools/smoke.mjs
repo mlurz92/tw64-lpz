@@ -1,7 +1,7 @@
 // Run after starting `node tools/dev-server.mjs`: `node tools/smoke.mjs`.
 import { chromium } from 'playwright';
 
-const browser = await chromium.launch({ channel: 'chrome', headless: true,
+const browser = await chromium.launch({ channel: process.env.CHANNEL ?? 'chrome', headless: true,
   args: ['--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
@@ -56,13 +56,18 @@ try {
     if (audit.issues.length) errors.push(`${id}: ${audit.issues.map((issue) => issue.msg).join('; ')}`);
   }
   if (!shellOnly) {
-    await page.getByRole('button', { name: 'Realistisch' }).click();
+    await page.getByRole('button', { name: 'Realistisch', exact: true }).click();
     await page.waitForFunction(() => window.__app.viewer.renderMode === 'realistic');
     await page.getByRole('button', { name: 'Wohnen · Blick zur Medienwand' }).click();
     await page.waitForFunction(() => window.__app.viewer.station === 'living');
     const before = await page.evaluate(() => window.__app.viewer.stats.frames);
     await page.waitForFunction((frames) => window.__app.viewer.stats.frames >= frames + 3, before, { timeout: 60_000 });
     console.log('renderer:', await page.evaluate(() => ({ backend: window.__app.viewer.backend, quality: window.__app.viewer.quality, frames: window.__app.viewer.stats.frames })));
+    // Photoreal mode: path tracer must build the scene (BVH worker) and accumulate samples.
+    await page.evaluate(() => { window.__app.viewer.photoOverride = { samples: 2 }; });
+    await page.getByRole('button', { name: 'Fotorealistisch' }).click();
+    await page.waitForFunction(() => window.__app.viewer.photo?.samples >= 2, null, { timeout: 600_000 });
+    console.log('photo:', await page.evaluate(() => window.__app.viewer.photo.status()));
   }
 } finally {
   await browser.close();

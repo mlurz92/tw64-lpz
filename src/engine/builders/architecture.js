@@ -102,6 +102,16 @@ export function analyseWalls() {
       }
       // convex corner at the end: overlap 1 cm into the next wall's body (closes hairline cracks)
       if (next && w.dir[0] * next.dir[1] - w.dir[1] * next.dir[0] > 1e-3) extEnd = 0.01;
+      // Plan steps of a few millimetres/centimetres (W29: 1.6 cm offset between W28 and W30)
+      // have no thickness ray of their own – their rays miss every neighbour polygon and were
+      // built as 36 cm facade walls, extended by the previous wall's thickness: a 37 × 36 cm
+      // column stood in the hall in front of the office door. A step takes the thinner of its
+      // neighbouring walls and no corner extension.
+      if (w.length < 0.05 && prev && next) {
+        const tn = (x) => x.thickness ?? wallThickness(x).t;
+        info.set(w.id, { t: Math.min(tn(prev), tn(next)), shared: true, exterior: false, extStart: 0, extEnd: 0, hasPrev: true, hasNext: true, step: true });
+        continue;
+      }
       info.set(w.id, { ...th, extStart, extEnd, hasPrev: !!prev, hasNext: !!next });
     }
   }

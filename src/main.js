@@ -86,8 +86,10 @@ class UI {
       if (type === 'mood') $$('#moodSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mood === data));
       if (type === 'render') {
         $$('#renderSeg button').forEach((b) => b.classList.toggle('active', b.dataset.render === data));
-        document.body.classList.toggle('is-realistic', data === 'realistic');
+        document.body.classList.toggle('is-realistic', data !== 'standard');
+        document.body.classList.toggle('is-photo', data === 'photo');
       }
+      if (type === 'photo') this.photoStatus(data);
       if (type === 'converge') $('#converge i').style.width = `${Math.round(data * 100)}%`;
     });
     this.showRoom('living');
@@ -116,6 +118,7 @@ class UI {
     $$('#renderSeg button').forEach((b) => b.addEventListener('click', () => {
       v.setRenderMode(b.dataset.render);
       if (b.dataset.render === 'realistic') toast('Realistisch: globale Beleuchtung und Spiegelungen in Echtzeit – das Bild beruhigt sich nach ≈ 1 s Stillstand.');
+      if (b.dataset.render === 'photo') toast('Fotorealistisch: Pathtracing startet, sobald die Kamera ruht – nach wenigen Sekunden entrauscht die KI das Bild.');
     }));
     $('#engineBadge').textContent = `${v.backend} · three.js r186`;
     $('#exposure').addEventListener('input', (e) => v.setExposure(+e.target.value));
@@ -125,6 +128,16 @@ class UI {
     q.addEventListener('change', (e) => v.setQuality(e.target.value));
     $('#btnShot').addEventListener('click', async () => this.download(await v.screenshot(), this.shotName()));
     $('[data-collapse="stations"]').addEventListener('click', (e) => { const p = $('#stations'); p.classList.toggle('collapsed'); e.target.textContent = p.classList.contains('collapsed') ? '+' : '–'; });
+  }
+
+  /** Progress pill of the path tracer (samples, denoising). */
+  photoStatus(s) {
+    const el = $('#photoStatus');
+    const label = { building: s.message ?? 'Szene wird aufbereitet …', tracing: `Pathtracing · ${s.samples}/${s.target} Samples${s.denoised ? ' · KI-entrauscht' : ''}`,
+      denoising: 'KI-Entrauschung (Open Image Denoise) …', done: `Fertig · ${s.target} Samples · KI-entrauscht`, error: s.message ?? 'Pathtracing nicht verfügbar', idle: '' }[s.state] ?? '';
+    el.textContent = label;
+    el.classList.toggle('show', !!label);
+    $('#converge i').style.width = `${Math.round(Math.min(1, s.samples / s.target) * 100)}%`;
   }
 
   stations() {
@@ -335,8 +348,9 @@ class UI {
     const v = this.v;
     if (kind === 'png') this.download(await v.screenshot(), this.shotName());
     if (kind === 'png4k') {
-      const pr = v.renderer.getPixelRatio(); v.renderer.setPixelRatio(pr * 2); v.resize();
-      try { this.download(await v.screenshot(), this.shotName('_2x')); } finally { v.renderer.setPixelRatio(pr); v.resize(); }
+      // resize() recomputes the pixel ratio from the preset – the export factor must go through it
+      v.exportScale = 2; v.resize();
+      try { this.download(await v.screenshot(), this.shotName('_2x')); } finally { v.exportScale = 1; v.resize(); }
     }
     if (kind === 'svg') this.download(this.blob(this.plan.svg({ forExport: true }), 'image/svg+xml'), `WE13_grundriss_${this.style.id}.svg`);
     if (kind === 'csvWalls') {
