@@ -137,7 +137,7 @@ Die Oberfläche erkennt beim Laden und bei jeder Größen- oder Orientierungsän
 | Gerät | Navigation | 3D-Arbeitsfläche |
 |---|---|---|
 | **Desktop** (> 1180 px) | Kopfzeile mit Reitern | Kamerastationen links, Details rechts, Stilwelt-Leiste oben, vollständige Werkzeugleiste unten; ⛶ Vollbild |
-| **Tablet** (≤ 1180 px) | Kopfzeile, Symbole für Maßgrundlage | Kamerastationen standardmäßig eingeklappt, Stilwelt-Leiste über der Werkzeugleiste, schmaleres Detailpanel, größere Touch-Ziele |
+| **Tablet** (≤ 1180 px) | Kopfzeile, Symbole für Maßgrundlage | Kamerastationen eingeklappt, Detailpanel erst bei Bedarf, Stilwelt-Leiste über der Werkzeugleiste; Werkzeugleiste auf Dollhouse/Begehung + **„Ansicht“** reduziert (Licht, Darstellung, Belichtung, Qualität, PNG im Sheet); größere Touch-Ziele |
 | **Smartphone hoch** (≤ 700 px) | kompakte Kopfzeile (Symbol-Buttons), **App-Navigation unten** (3D · Plan · Maße · Konzept) | randlose 3D-Ansicht; oben zwei Chips (**aktuelle Kamerastation**, **Stilwelt**) und ⛶; unten nur Dollhouse/Begehung + **„Ansicht“**. Stationen, Stilwelten sowie Licht/Darstellung/Belichtung/Qualität/PNG öffnen sich als **Bottom-Sheets** (Wischen nach unten oder Tippen daneben schließt; die Szene bleibt dahinter sichtbar, Änderungen wirken live) |
 | **Smartphone quer** (Höhe ≤ 520 px) | Kopfzeile wird zur **schmalen Seitenleiste** links (Symbole) – die volle Bildhöhe gehört der 3D-Ansicht | Chips oben links, Detailkarte rechts oben, Sheets zentriert |
 

@@ -237,7 +237,8 @@ body:not(.is-photo) .photo-status { opacity: 0; }
 .fab:hover { background: #fff; }
 .fab.immersive-exit { display: none; }
 .immersive-btn { position: absolute; right: 16px; bottom: 16px; z-index: 4; }
-.engine-badge { right: 68px; bottom: 26px; }
+.engine-badge { right: auto; left: 16px; bottom: 26px; }
+.toolbar { max-width: calc(100% - 150px); }
 .style-card { position: relative; }
 .style-card .dots i { width: 12px; height: 12px; }
 .style-card kbd { position: absolute; right: 12px; top: 12px; font: 500 10px/1 var(--sans); color: var(--muted); border: 1px solid currentColor; border-radius: 4px; padding: 2px 4px; }
@@ -305,7 +306,7 @@ body:is([data-layout="phone"], [data-layout="phone-land"]) .toolbar { bottom: va
 body:is([data-layout="phone"], [data-layout="phone-land"]) .toolbar .seg button { display: flex; align-items: center; gap: 6px; padding: 8px 12px; }
 .seg button .ico { display: none; }
 body:is([data-layout="phone"], [data-layout="phone-land"]) .seg button .ico { display: block; width: 17px; height: 17px; }
-body:is([data-layout="phone"], [data-layout="phone-land"]) .tool-more { display: flex; align-items: center; gap: 6px; position: relative; padding: 9px 14px; }
+body.use-sheets .tool-more { display: flex; align-items: center; gap: 6px; position: relative; padding: 9px 14px; }
 .tool-more .converge.mini { position: absolute; left: 14px; right: 14px; bottom: 3px; width: auto; height: 2px; background: rgba(255,255,255,.2); }
 body:is([data-layout="phone"], [data-layout="phone-land"]) .hint { top: 62px; font-size: 11.5px; }
 body:is([data-layout="phone"], [data-layout="phone-land"]) .photo-status { bottom: 66px; }
@@ -323,12 +324,12 @@ body:is([data-layout="phone"], [data-layout="phone-land"]) .details .sheet-grip:
 body.show-joystick .details:not(.expanded) { left: 150px; }
 
 /* sheets */
-body:is([data-layout="phone"], [data-layout="phone-land"]) .sheet { display: flex; flex-direction: column; position: absolute; left: 0; right: 0; bottom: 0; max-height: 74%; background: var(--paper); border-radius: 20px 20px 0 0; box-shadow: 0 -12px 40px rgba(38,32,24,.2); transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1); z-index: 7; padding-bottom: 8px; visibility: hidden; }
-body:is([data-layout="phone"], [data-layout="phone-land"]) .sheet.open { transform: none; visibility: visible; }
+body.use-sheets .sheet { display: flex; flex-direction: column; position: absolute; left: 0; right: 0; bottom: 0; max-height: 74%; background: var(--paper); border-radius: 20px 20px 0 0; box-shadow: 0 -12px 40px rgba(38,32,24,.2); transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1); z-index: 7; padding-bottom: 8px; visibility: hidden; }
+body.use-sheets .sheet.open { transform: none; visibility: visible; }
 .sheet .sheet-grip { display: block; position: relative; height: 18px; flex: none; touch-action: none; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 0 12px 6px 18px; flex: none; touch-action: none; }
 .sheet-body { overflow: auto; padding: 4px 14px 10px; overscroll-behavior: contain; }
-body:is([data-layout="phone"], [data-layout="phone-land"]) .sheet-backdrop { display: block; position: absolute; inset: 0; z-index: 6; background: rgba(28,25,21,.14); opacity: 0; pointer-events: none; transition: opacity .25s; }
+body.use-sheets .sheet-backdrop { display: block; position: absolute; inset: 0; z-index: 6; background: rgba(28,25,21,.14); opacity: 0; pointer-events: none; transition: opacity .25s; }
 body.sheet-open .sheet-backdrop { opacity: 1; pointer-events: auto; }
 .sheet .station-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .sheet .station-list button { background: #efe9df; border-radius: 12px; font-size: 13px; line-height: 1.25; min-height: 48px; }
@@ -337,7 +338,7 @@ body.sheet-open .sheet-backdrop { opacity: 1; pointer-events: auto; }
 .style-sheet .style-card { background: #efe9df; }
 .style-sheet .style-card.active { background: #fff; }
 /* light/render/quality controls stacked full-width in their sheet */
-.view-sheet .tool-group { display: flex; flex-direction: column; gap: 14px; }
+.view-sheet .tool-group { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
 .view-sheet .seg { width: 100%; }
 .view-sheet .seg button { flex: 1; padding: 10px 6px; font-size: 13px; }
 .view-sheet .converge { display: none !important; }
@@ -415,3 +416,14 @@ body[data-layout="phone"] .topbar { z-index: 10; }
 }
 body:is([data-layout="phone"], [data-layout="phone-land"]) .plan-zoom { gap: 6px; }
 body:is([data-layout="phone"], [data-layout="phone-land"]) .plan-zoom .fab { width: 36px; height: 36px; font-size: 18px; }
+
+/* tablets: toolbar keeps camera mode + "Ansicht"; the sheet is a centred card */
+body[data-layout="tablet"] .sheet { left: 0; right: 0; width: min(560px, calc(100% - 24px)); margin: 0 auto; }
+body[data-layout="tablet"] .toolbar .seg button { padding: 8px 14px; }
+body[data-layout="tablet"] .tool-more { padding: 9px 16px; }
+/* landscape rail must fit ~340 px height */
+body[data-layout="phone-land"] .topbar { overflow-y: auto; scrollbar-width: none; justify-content: center; gap: 10px; }
+body[data-layout="phone-land"] .brand { display: none; }
+body[data-layout="phone-land"] .tabs button { padding: 4px 2px; }
+body[data-layout="phone-land"] .tabs .ico { width: 20px; height: 20px; }
+body[data-layout="phone-land"] .actions button { width: 36px; height: 36px; }

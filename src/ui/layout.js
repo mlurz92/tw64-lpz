@@ -54,13 +54,11 @@ export class Layout {
     this.state = s;
     if (prev && prev.layout === s.layout && prev.input === s.input) return;
     this.closeSheet();
-    if (s.compact) {
-      this.mount($('#stationList'), $('[data-slot="stations"]'));
-      this.mount($('#toolGroup'), $('[data-slot="tools"]'));
-    } else {
-      this.unmount($('#stationList'));
-      this.unmount($('#toolGroup'));
-    }
+    // phones and tablets: light/render/quality live in the "Ansicht" sheet, the toolbar stays short
+    const sheets = s.compact || s.layout === 'tablet';
+    b.classList.toggle('use-sheets', sheets);
+    if (s.compact) this.mount($('#stationList'), $('[data-slot="stations"]')); else this.unmount($('#stationList'));
+    if (sheets) this.mount($('#toolGroup'), $('[data-slot="tools"]')); else this.unmount($('#toolGroup'));
     // first classification: start with free view on small screens (details/stations on demand)
     if (!prev) {
       if (s.layout !== 'desktop') $('#details').classList.add('hidden');
