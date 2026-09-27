@@ -39,6 +39,7 @@ export class Layout {
     this.bindImmersive();
     this.bindJoystick();
     this.bindDragFade();
+    this.bindHint();
     const update = () => this.apply();
     for (const q of Object.values(MQ)) q.addEventListener('change', update);
     window.addEventListener('resize', () => { clearTimeout(this._rt); this._rt = setTimeout(update, 120); });
@@ -95,8 +96,15 @@ export class Layout {
     const hint = $('#hint');
     if (!hint) return;
     hint.textContent = input === 'touch'
-      ? 'Ein Finger: drehen / umsehen · zwei Finger: zoomen & verschieben · Tippen auf Möbel: Details' + (compact ? '' : ' · ⛶: Vollbild')
-      : 'Ziehen: drehen · Rechtsklick/Umschalt: verschieben · Rad: zoomen · Klick auf Möbel: Details · 1–4: Stilwelt · F: Vollbild';
+      ? 'Ziehen: drehen · zwei Finger: zoomen · Doppeltippen: hinfliegen / hingehen · Antippen: Details' + (compact ? '' : ' · ⛶: Vollbild')
+      : 'Ziehen: drehen · Rechtsklick/Umschalt: verschieben · Rad: zoomen · Doppelklick: hinfliegen / hingehen · Klick auf Möbel: Details · 1–4: Stilwelt · F: Vollbild';
+  }
+
+  /** The gesture hint leaves after the first interaction with the model (or after 9 s). */
+  bindHint() {
+    const hide = () => $('#hint')?.classList.add('off');
+    $('#stage').addEventListener('pointerdown', hide, { once: true });
+    setTimeout(hide, 9000);
   }
 
   // ---------------------------------------------------------------- bottom sheets
@@ -108,7 +116,11 @@ export class Layout {
     $$('.sheet [data-sheet-close]').forEach((b) => b.addEventListener('click', () => this.closeSheet()));
     $('#sheetBackdrop').addEventListener('click', () => this.closeSheet());
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.openSheet) this.closeSheet(); });
-    for (const sheet of $$('.sheet')) this.swipeToClose(sheet, $('.sheet-grip', sheet), () => this.closeSheet(), $('.sheet-head', sheet));
+    for (const sheet of $$('.sheet')) {
+      const close = () => this.closeSheet();
+      this.swipeToClose(sheet, $('.sheet-grip', sheet), close, $('.sheet-head', sheet));
+      this.pullFromBody(sheet, $('.sheet-body', sheet), close);
+    }
     // choosing a station or style in a sheet closes it – the view is what the user wants to see
     $('#stationList').addEventListener('click', (e) => {
       if (!e.target.closest('button')) return;
@@ -138,30 +150,77 @@ export class Layout {
     this.openSheet = null;
   }
 
-  /** Drag a sheet down by its grip/header; release beyond 70 px (or a flick) closes it. */
-  swipeToClose(sheet, ...handles) {
-    const onClose = handles.find((h) => typeof h === 'function');
-    for (const h of handles.filter((x) => x instanceof Element)) {
+  /**
+   * Drag a sheet by its grip/header: it follows the finger; releasing beyond 70 px (or a flick)
+   * closes it. Landscape drawers (phone-land) are dragged to the right instead of down.
+   * An upward drag/flick calls onOpen (details and plan sheets expand).
+   */
+  swipeToClose(sheet, ...args) {
+    const [onClose, onOpen] = args.filter((h) => typeof h === 'function');
+    for (const h of args.filter((x) => x instanceof Element)) {
       let start = null;
       h.addEventListener('pointerdown', (e) => {
-        if (e.pointerType === 'mouse' || e.target.closest('button:not(.sheet-grip)')) return;
-        start = { y: e.clientY, t: performance.now() }; h.setPointerCapture(e.pointerId);
+        if (e.pointerType === 'mouse' || e.target.closest('button:not(.sheet-grip), a, input, select')) return;
+        start = { x: e.clientX, y: e.clientY, t: performance.now(), axis: this.sheetAxis(sheet), moved: false };
+        h.setPointerCapture(e.pointerId);
         sheet.style.transition = 'none';
       });
       h.addEventListener('pointermove', (e) => {
         if (!start) return;
-        const dy = Math.max(0, e.clientY - start.y);
-        sheet.style.transform = `translateY(${dy}px)`;
+        const d = start.axis === 'x' ? e.clientX - start.x : e.clientY - start.y;
+        if (Math.abs(d) > 6) start.moved = true;
+        // closing direction follows the finger 1 : 1, the opening direction with resistance
+        sheet.style.transform = start.axis === 'x' ? `translateX(${Math.max(0, d)}px)` : `translateY(${d > 0 ? d : onOpen ? d / 4 : 0}px)`;
       });
       const end = (e) => {
         if (!start) return;
-        const dy = e.clientY - start.y, v = dy / Math.max(1, performance.now() - start.t);
+        const d = start.axis === 'x' ? e.clientX - start.x : e.clientY - start.y, v = d / Math.max(1, performance.now() - start.t);
+        const moved = start.moved;
         start = null; sheet.style.transition = ''; sheet.style.transform = '';
-        if (dy > 70 || v > 0.6) onClose();
+        if (d > 70 || v > 0.6) { onClose(); if (moved) this.swallowClick(h); } else if (onOpen && (d < -40 || v < -0.5)) { onOpen(); if (moved) this.swallowClick(h); }
       };
       h.addEventListener('pointerup', end);
       h.addEventListener('pointercancel', end);
     }
+  }
+
+  sheetAxis(sheet) { return this.state?.layout === 'phone-land' && sheet.classList.contains('sheet') ? 'x' : 'y'; }
+
+  /** A drag that ended on a grip must not additionally fire its click (toggle) handler. */
+  swallowClick(el) {
+    const stop = (e) => { e.stopPropagation(); e.preventDefault(); };
+    el.addEventListener('click', stop, { capture: true, once: true });
+    setTimeout(() => el.removeEventListener('click', stop, { capture: true }), 350);
+  }
+
+  /**
+   * Pull-to-close from the scrollable body of a sheet: when its content is scrolled to the top,
+   * a downward drag moves the whole sheet (like native iOS/Android sheets); otherwise the content
+   * scrolls normally. Touch events, because the browser would claim a pointer drag for scrolling.
+   */
+  pullFromBody(sheet, body, onClose) {
+    if (!body) return;
+    let s = null;
+    body.addEventListener('touchstart', (e) => {
+      s = e.touches.length === 1 ? { y: e.touches[0].clientY, t: performance.now(), pulling: false } : null;
+    }, { passive: true });
+    body.addEventListener('touchmove', (e) => {
+      if (!s || this.sheetAxis(sheet) === 'x') return;
+      const dy = e.touches[0].clientY - s.y;
+      if (!s.pulling) {
+        if (body.scrollTop <= 0 && dy > 8) { s.pulling = true; s.y += 8; sheet.style.transition = 'none'; } else if (Math.abs(dy) > 8) { s = null; return; } else return;
+      }
+      e.preventDefault();
+      sheet.style.transform = `translateY(${Math.max(0, e.touches[0].clientY - s.y)}px)`;
+    }, { passive: false });
+    const end = (e) => {
+      if (!s?.pulling) { s = null; return; }
+      const t = e.changedTouches[0], dy = t.clientY - s.y, v = dy / Math.max(1, performance.now() - s.t);
+      s = null; sheet.style.transition = ''; sheet.style.transform = '';
+      if (dy > 80 || v > 0.7) onClose();
+    };
+    body.addEventListener('touchend', end);
+    body.addEventListener('touchcancel', end);
   }
 
   // ---------------------------------------------------------------- details (peek sheet on phones)
@@ -177,7 +236,7 @@ export class Layout {
     });
     this.swipeToClose(d, grip, () => {
       if (d.classList.contains('expanded')) d.classList.remove('expanded'); else d.classList.add('hidden');
-    });
+    }, () => d.classList.add('expanded'));
     // new content always starts collapsed on phones so the 3D view stays visible
     new MutationObserver(() => { if (this.state?.compact) { d.classList.remove('expanded'); d.scrollTop = 0; } })
       .observe($('#detailBody'), { childList: true });
@@ -187,22 +246,24 @@ export class Layout {
   bindPlanSheet() {
     const side = $('#planSide');
     $('#planGrip').addEventListener('click', () => this.setPlanSheet(side.dataset.sheet === 'peek' ? 'half' : 'peek'));
-    // a room or position chosen in the plan opens the sheet so its info is visible
-    $('#plan').addEventListener('pointerup', () => {
-      if (this.state?.compact) setTimeout(() => { if ($('#planInfo').textContent.trim()) this.setPlanSheet('half'); }, 0);
-    });
-    this.swipeToClose(side, $('#planGrip'), () => this.setPlanSheet('peek'));
+    this.swipeToClose(side, $('#planGrip'), () => this.setPlanSheet('peek'), () => this.setPlanSheet('half'));
     $$('.plan-zoom [data-zoom]').forEach((b) => b.addEventListener('click', () => {
       const plan = this.planView;
       if (!plan) return;
       if (b.dataset.zoom === 'fit') plan.focusRoom(null);
-      else { plan.zoomBy(b.dataset.zoom === 'in' ? 0.7 : 1 / 0.7); plan.render(); }
+      else plan.zoomBy(b.dataset.zoom === 'in' ? 0.6 : 1 / 0.6, undefined, undefined, { animate: true });
     }));
   }
 
   setPlanSheet(state) {
     const side = $('#planSide');
     if (state) side.dataset.sheet = state; else delete side.dataset.sheet;
+    $('#planGrip')?.setAttribute('aria-expanded', String(state !== 'peek'));
+  }
+
+  /** A room or position chosen in the plan: on phones the sheet opens so its info is visible. */
+  revealPlanInfo() {
+    if (this.state?.compact) { this.setPlanSheet('half'); $('#planSide').scrollTop = 0; }
   }
 
   // ---------------------------------------------------------------- immersive / fullscreen
@@ -251,6 +312,7 @@ export class Layout {
     joy.addEventListener('pointerdown', (e) => {
       e.preventDefault(); e.stopPropagation();
       id = e.pointerId; joy.setPointerCapture(id); joy.classList.add('active');
+      navigator.vibrate?.(8); // Android: short tick when the stick is grabbed
       const r = joy.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2;
       set(e.clientX, e.clientY);
     });
@@ -273,7 +335,8 @@ export class Layout {
 
   // ---------------------------------------------------------------- overlays fade while navigating
   bindDragFade() {
-    const stage = $('#stage'), b = document.body;
+    // class on the 3D view only: a body class would restyle the whole document twice per drag
+    const stage = $('#stage'), b = $('#view-3d');
     let t = null;
     stage.addEventListener('pointerdown', (e) => {
       if (e.pointerType !== 'touch') return;

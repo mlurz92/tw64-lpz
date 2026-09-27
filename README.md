@@ -19,7 +19,7 @@ python3 -m http.server 8000
 # oder: node tools/dev-server.mjs
 ```
 
-Danach <http://localhost:8000> öffnen. Die Pathtracing-Engine (≈ 1 MB) und die Denoiser-Gewichte (1,8 MB) werden erst beim ersten Wechsel auf *Fotorealistisch* geladen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten links im 3D-Viewer (Desktop). Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
+Danach <http://localhost:8000> öffnen. Auf Smartphone und Tablet lässt sich die App über *Zum Home-Bildschirm* wie eine native App installieren (Web-App-Manifest, Vollbild ohne Browserleiste); ein Service Worker hält Texturen, Himmel, Modelle und Engine auf dem Gerät vor – ab dem zweiten Besuch lädt die App ohne erneuten Download der ≈ 60 MB und funktioniert offline (Details unter *Tempo & Touch*). Die Pathtracing-Engine (≈ 1 MB) und die Denoiser-Gewichte (1,8 MB) werden erst beim ersten Wechsel auf *Fotorealistisch* geladen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten links im 3D-Viewer (Desktop). Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
 
 ## Stilwelten (Möblierungsvarianten)
 
@@ -115,7 +115,8 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 |---|---|---|
 | Drehen / Umsehen | linke Maustaste ziehen | linke Maustaste ziehen |
 | Verschieben | rechte Maustaste / Umschalt + ziehen | `W` `A` `S` `D` (Umschalt = schneller), `Q`/`E` Höhe |
-| Zoom | Mausrad | – |
+| Zoom / Gehen | Mausrad | **Mausrad = vor/zurück gehen** |
+| Hinbewegen *(neu)* | **Doppelklick** → Flug zum Punkt, Abstand halbiert, der Punkt wird Drehpunkt | **Doppelklick auf den Boden** → dorthin gehen; auf Wand/Möbel → Halt 60 cm davor |
 | Stilwelt wechseln | Leiste oben oder `1`–`4` | Leiste oben oder `1`–`4` |
 | Möbel-Info | Klick auf Möbel | Klick auf Möbel |
 | Vollbild (nur 3D) | `F` oder ⛶ unten rechts, `Esc` beendet | `F` oder ⛶ unten rechts, `Esc` beendet |
@@ -124,11 +125,13 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 
 | Aktion | Dollhouse | Begehung |
 |---|---|---|
-| Drehen / Umsehen | ein Finger ziehen | ein Finger ziehen |
+| Drehen / Umsehen | ein Finger ziehen | ein Finger ziehen; zwei Finger ziehen ebenfalls (ohne Sprung beim Aufsetzen des zweiten Fingers) |
 | Verschieben / Zoom | zwei Finger (Pinch + Verschieben) | – |
-| Gehen | – | **virtueller Joystick** unten links (Auslenkung = Tempo, Vollausschlag = schnell) |
-| Möbel-Info | antippen → Detailkarte klappt unten ein Stück auf, Tippen/Hochziehen öffnet sie ganz, Wischen nach unten schließt | dto. |
-| Grundriss | ein Finger verschieben, **zwei Finger zoomen**, +/−/⛶-Knöpfe | – |
+| Gehen / Hinbewegen | **Doppeltippen** → Flug zum Punkt (halber Abstand) | **Doppeltippen auf den Boden** → dorthin gehen; **Pinch** = vor/zurück; **virtueller Joystick** unten links (Auslenkung = Tempo, Vollausschlag = schnell, kurzer Vibrationsimpuls beim Greifen auf Android) |
+| Möbel-Info | antippen → Detailkarte klappt unten ein Stück auf; **Hochwischen** oder Tippen öffnet sie ganz, Wischen nach unten schließt. Das Antippen wartet das Doppeltipp-Fenster (≈ 0,3 s) ab, damit ein Doppeltippen nicht zuerst die Karte unter dem zweiten Tipp öffnet | dto. |
+| Laufender Kameraflug | neuer Fingerkontakt übernimmt sofort (Flug bricht ab) | dto. |
+| Sheets | Wischen am Griff/Kopf oder – wenn der Inhalt oben steht – **am Inhalt selbst** nach unten schließt; im Querformat (Schublade rechts) nach rechts wischen | dto. |
+| Grundriss | ein Finger verschieben, **zwei Finger zoomen**, **Doppeltippen zoomt** auf den Punkt (tief gezoomt: zurück zur ganzen Wohnung), +/−/⛶-Knöpfe mit weichem Übergang; Maßstabsbalken passt sich an (25 cm … 10 m) | – |
 
 ## Responsives Layout (neu)
 
@@ -138,7 +141,7 @@ Die Oberfläche erkennt beim Laden und bei jeder Größen- oder Orientierungsän
 |---|---|---|
 | **Desktop** (> 1180 px) | Kopfzeile mit Reitern | Kamerastationen links, Details rechts, Stilwelt-Leiste oben, vollständige Werkzeugleiste unten; ⛶ Vollbild |
 | **Tablet** (≤ 1180 px) | Kopfzeile, Symbole für Maßgrundlage | Kamerastationen eingeklappt, Detailpanel erst bei Bedarf, Stilwelt-Leiste über der Werkzeugleiste; Werkzeugleiste auf Dollhouse/Begehung + **„Ansicht“** reduziert (Licht, Darstellung, Belichtung, Qualität, PNG im Sheet); größere Touch-Ziele |
-| **Smartphone hoch** (≤ 700 px) | kompakte Kopfzeile (Symbol-Buttons), **App-Navigation unten** (3D · Plan · Maße · Konzept) | randlose 3D-Ansicht; oben zwei Chips (**aktuelle Kamerastation**, **Stilwelt**) und ⛶; unten nur Dollhouse/Begehung + **„Ansicht“**. Stationen, Stilwelten sowie Licht/Darstellung/Belichtung/Qualität/PNG öffnen sich als **Bottom-Sheets** (Wischen nach unten oder Tippen daneben schließt; die Szene bleibt dahinter sichtbar, Änderungen wirken live) |
+| **Smartphone hoch** (≤ 700 px) | kompakte Kopfzeile (Symbol-Buttons), **App-Navigation unten** (3D · Plan · Maße · Konzept) | randlose 3D-Ansicht; oben zwei Chips (**aktuelle Kamerastation** in Kurzform, **Stilwelt** – kürzt zuerst) und ⛶; unten nur Dollhouse/Begehung + **„Ansicht“** über die volle Breite (bis 360 px Displaybreite vollständig sichtbar, darunter „Ansicht“ als Symbol). Stationen, Stilwelten sowie Licht/Darstellung/Belichtung/Qualität/PNG öffnen sich als **Bottom-Sheets** (Wischen nach unten oder Tippen daneben schließt; die Szene bleibt dahinter sichtbar, Änderungen wirken live) |
 | **Smartphone quer** (Höhe ≤ 520 px) | Kopfzeile wird zur **schmalen Seitenleiste** links (Symbole) – die volle Bildhöhe gehört der 3D-Ansicht | Chips oben links, Detailkarte rechts oben, Sheets zentriert |
 
 Weitere Anpassungen:
@@ -148,8 +151,55 @@ Weitere Anpassungen:
 - **Sichtfeld im Hochformat:** Die FOV-Werte der Kamerastationen sind für Querformat abgestimmt; im Hochformat würde der horizontale Bildwinkel in der Begehung auf einen schmalen Ausschnitt schrumpfen. Der vertikale Bildwinkel wird deshalb in Richtung des Querformat-Bildwinkels (Referenz 3 : 2) erweitert, begrenzt auf 85° gegen Verzerrung.
 - **Auflösung:** kleine Canvas (< 0,6 MP, also Smartphones) dürfen bis 1,5× Gerätepixel rendern, auch in der Stufe *Schnell* – das Pixelbudget der Qualitätsstufe und die adaptive Auflösung begrenzen die Last weiterhin.
 - `100dvh`, `viewport-fit=cover` und `env(safe-area-inset-*)`: kein Springen beim Ein-/Ausblenden der Browserleiste, Notch und Home-Indikator werden freigehalten.
-- Grundriss auf dem Smartphone randlos, Ebenen/Räume/Positionen als ausklappbares Sheet; Antippen eines Raums oder einer Position öffnet es automatisch.
+- Grundriss auf dem Smartphone randlos, Ebenen/Räume/Positionen als ausklappbares Sheet; Antippen eines Raums oder einer Position öffnet es automatisch (Verschieben/Zoomen dagegen nicht mehr – vorher klappte jedes Loslassen nach dem Verschieben das Sheet über den halben Plan), Hochwischen am Griff öffnet, Herunterwischen schließt; ein in der Raumliste gewählter Raum wird bei geschlossenem Sheet sichtbar eingepasst.
 - Wandmaß-Tabelle mit fixierter erster Spalte beim seitlichen Scrollen, Stilwelt-Reiter im Konzept als wischbare Zeile.
+
+## Tempo & Touch (Update 09/2026)
+
+Ziel: kein spürbares Stocken mehr – weder beim ersten Drehen, beim Betreten der Begehung, beim Raum- oder Lichtwechsel noch beim Stilwechsel – und eine Touch-Bedienung, die sich wie eine native App anfühlt.
+
+**Ursachenanalyse** (CPU-Profil und Zählung der Shader-Programme im Browser, Smartphone-Viewport):
+
+| Befund | Wirkung vorher |
+|---|---|
+| Shader wurden **synchron beim ersten Gebrauch** kompiliert – `compileAsync` erfasste nur eine nie genutzte Variante und wegen Frustum-Culling kaum Objekte | Hänger beim ersten Drehen, beim ersten Betreten der Begehung, beim ersten Abendlicht und nach jedem Stilwechsel |
+| Der Renderer schlüsselt jedes Material auf die **Identität der sichtbaren Lichter, des Umgebungs-Nodes und des Nebels** | jeder Raumwechsel in der Begehung (andere Leuchten), jede neue Raum-Lightprobe (neue Umgebungstextur), jeder Wechsel Dollhouse ↔ Begehung (Nebel an/aus) und jede Lichtstimmung baute die Node-Graphen aller ≈ 300 Zeichenobjekte neu |
+| Bewegtbild, Ruhebild (SSAO) und Lightprobe erzeugten **je eigene Shader** pro Material | doppelte Kompilierarbeit |
+| **≈ 530 MB Texturspeicher** auch auf dem Smartphone (neun 2K-Holz-/Bodentexturen à ≈ 20 MB inkl. Mipmaps) | Speicherdruck, langsame Uploads, Tab-Abstürze in Safari möglich |
+| Grundriss-SVG wurde bei **jedem** Pan-/Zoom-Ende und bei jedem Mausrad-Ereignis komplett neu erzeugt | ruckelnder Grundriss |
+| Werkzeugleiste auf dem Smartphone breiter als der Bildschirm („Ansicht“ abgeschnitten), dadurch horizontal verschiebbare App (Sheets rutschten nach links) | auf schmalen Geräten kaum bedienbar |
+| Unschärfe-Glas (`backdrop-filter`) über dem laufenden 3D-Bild | ganzflächiges Neu-Weichzeichnen bei jedem Bild auf Mobil-GPUs |
+| Hover-Zustände „klebten“ nach dem Antippen, iOS zoomte beim Fokussieren von Eingabefeldern (< 16 px), Doppeltipp-Zoom-Verzögerung auf Bedienelementen | unruhige Touch-Bedienung |
+
+**Messung** (gleiche Maschine, Software-GPU SwiftShader ohne parallele Shader-Kompilierung, Smartphone-Viewport, Stufe *Schnell* – absolute Zeiten sind auf echter Hardware um ein Vielfaches kürzer, die Verhältnisse gelten):
+
+| | vorher | nachher |
+|---|---|---|
+| Laden bis zum ersten Bild | 19,5 s (nur das Ruhebild kompiliert) | **17,5 s** (alle Varianten vorkompiliert) |
+| erstes Drehen / erste Begehung / erstes Abendlicht | +2,3 s / +9,1 s / +5,6 s Kompilier-Hänger | **keine** Szenen-Shader-Kompilierung mehr |
+| Stilwechsel | 16,0 s | **6,2 s**; Rückwechsel auf eine besuchte Stilwelt **3,2 s** (Cache) |
+| Texturspeicher Smartphone | ≈ 530 MB | **≈ 390 MB** (−140 MB) |
+
+Die Bildausgabe ist unverändert (Vergleichsaufnahmen Tageslicht und Abend, Dollhouse und Begehung, alt ↔ neu bildgleich).
+
+**Maßnahmen:**
+
+| Maßnahme | Umsetzung |
+|---|---|
+| **Stabile Shader** | feste **Proxy-Licht-Slots** (`lighting.js`): die Leuchten der Wohnung bleiben unsichtbare Datenquellen, Position, Farbe, Reichweite, Kegel und Intensität werden in einen festen Satz Punkt-/Spot-/Flächenlichter kopiert; **ein** Umgebungs-Node (PMREM), dessen Textur zwischen Himmel und Raum-Lightprobe getauscht wird; Nebel immer aktiv (im Dollhouse mit 5–10 km Reichweite, also unsichtbar); die Sonne hat am Abend Intensität 0, statt ausgeblendet zu werden (den Bodenschatten im Dollhouse blendet die App dann aus). Lichtstimmung, Raum, Lightprobe und Kameramodus ändern nur noch Uniforms |
+| **Ein Shader je Material** | Bewegtbild und Lightprobe rendern mit demselben AO-Kontext wie das SSAO-Ruhebild, lesen aber ein 1 × 1-Weiß-Ziel – der erzeugte Shader-Code ist identisch, jedes Material kompiliert ein beleuchtetes Programm statt zwei |
+| **Shader-Vorkompilierung** | alle Varianten (Bewegtbild, Normal-Prepass mit dem vom SSAO geerbten Kontext, Lightprobe, auf Wunsch *Realistisch*) werden hinter Ladebildschirm bzw. Stilwechsel-Overlay **asynchron** kompiliert (WebGL 2: `KHR_parallel_shader_compile`, WebGPU: asynchrone Pipelines) – mit Decken, Außenraum, Himmel und Dollhouse-Boden und ohne Frustum-Culling. *Realistisch* und ein Qualitätswechsel kompilieren beim ersten Gebrauch ebenso asynchron (Statusanzeige „… wird vorbereitet“), statt einen eingefrorenen Frame zu erzeugen |
+| **Stilwelt-Cache** | besuchte Stilwelten bleiben (abgehängt) auf der GPU: Schnell 2, Mittel 3, Hoch alle 4; ältere geben ihren Speicher frei |
+| **Texturbudget** | Stufe *Schnell* (Smartphones) begrenzt Texturen auf 1024 px (Verkleinerung per `createImageBitmap` außerhalb des Hauptthreads) |
+| **Bewegtbild auf Mobil-GPUs** | *Schnell* rendert in Bewegung ohne Bloom (teuerste Stufe, in Bewegung unsichtbar); die adaptive Auflösung greift schon unter 40 fps (vorher 28 fps) |
+| **Bildratenunabhängige Dämpfung** | das Nachgleiten der Kamera ist auf 60-Hz-, 120-Hz-Displays und langsamen Telefonen gleich lang (vorher Zeitlupen-Nachlauf auf trägen Geräten) |
+| **Himmel vorab** | der Tageslicht-Himmel lädt parallel zu den Materialien; die übrigen Himmel laden im Leerlauf nach (nicht bei *Datensparen*/2G) – Lichtstimmungswechsel ohne Wartezeit; solange ein Himmel noch lädt, pulsiert die Schaltfläche, bei schnellem Umschalten gewinnt die zuletzt gewählte Stimmung |
+| **Grundriss ohne Neuaufbau** | Pan/Zoom/Pinch ändern nur die `viewBox` (einmal je Bildschirmbild), eine Auswahl nur eine CSS-Klasse, der Maßstabsbalken ist ein HTML-Overlay; Raumfokus und Zoom-Knöpfe mit weichem Übergang |
+| **Touch-Oberfläche** | Blur-Glas auf Touch-Geräten durch deckende Flächen ersetzt; Hover nur mit echter Maus; Tipp-Feedback (leichtes Eindrücken); `touch-action: manipulation` (kein Doppeltipp-Zoom auf Knöpfen), keine Textauswahl/Callouts auf der App-Oberfläche; Eingabefelder ≥ 16 px (kein iOS-Zoom); Touch-Ziele ≥ 40–44 px; Überblendung der Overlays nur in der 3D-Ansicht statt am ganzen Dokument; Tipp-Erkennung über Ereignis-Zeitstempel (ein langer Frame zwischen Aufsetzen und Loslassen gilt nicht als langes Drücken); die Gesten-Hilfe verschwindet bei der ersten Berührung |
+| **Start & Wiederbesuch** | `modulepreload` für die Engine-Module (paralleler statt gestufter Abruf), Web-Schriften blockieren das erste Bild nicht mehr, **Service Worker** (`sw.js`): `assets/` *cache first*, `vendor/` *stale-while-revalidate*, App-Code *network first* (online immer aktuell, offline lauffähig), **Web-App-Manifest** mit Symbolen |
+| **Barrierefreiheit & Kleinigkeiten** | `aria-pressed` an allen Umschaltern, `aria-expanded` am Grundriss-Sheet; Kameraflüge und Übergänge respektieren *Bewegung reduzieren*; Doppelklick auf den Belichtungsregler setzt ihn zurück; Dialoge schließen per Tipp auf den abgedunkelten Hintergrund |
+
+> **Service Worker und Asset-Änderungen:** Dateien unter `assets/` liefert der Service Worker dauerhaft vom Gerät. Wer dort eine Datei unter gleichem Namen ersetzt (z. B. neu gebackene Texturen), erhöht `VERSION` in `sw.js`; der neue Worker startet dann mit leerem Asset-Cache. Code, Styles und HTML sind davon nicht betroffen.
 
 ## Rendering
 
@@ -213,15 +263,15 @@ Gemeinsame Grundlagen:
 | **Pathtracer nur im Stillstand** | Beim Bewegen rendert ausschließlich die schlanke WebGPU-Pipeline; der Pathtracer startet erst nach 160 ms Ruhe, rechnet in Kacheln (Mittel: 3 × 3 → ≈ 1/9 Bild je Frame), stoppt bei der ersten Bewegung und legt die GPU nach Erreichen des Sample-Budgets still. Engine, BVH-Worker und Denoiser-Gewichte werden erst bei Bedarf geladen; die Texturatlas-Größe folgt der Qualitätsstufe (1024 / 640 / 512 px) |
 | **Zusammengefasste Geometrie** (`scene.js`) | Statische, opake Möbel-, Fenster- und Türteile je Raum und Material zu einem Mesh vereint: ≈ 560 → ≈ 290 Draw-Calls in der Wohnung. Frustum-Culling und Front-to-Back-Sortierung bleiben je Raum erhalten; die Einzelobjekte liegen auf einem eigenen Layer nur für Auswahl, Hervorhebung und Grundriss |
 | **Pixelbudget** | Zeichenpuffer höchstens 3,7 / 2,1 / 1,1 Megapixel (Hoch/Mittel/Schnell) – ein 4K-Bildschirm mit 150 % Skalierung rendert sonst 8,3 MP je Bild |
-| **Automatische Qualitätsstufe** | nach GPU: integrierte Grafik (Intel Iris Xe/UHD wie im NUC 11–13, AMD-APUs, Apple M) → *Mittel*; dedizierte GPU → *Hoch*; Software-Renderer/Mobilgeräte → *Schnell*. Eine manuelle Wahl wird gespeichert |
+| **Automatische Qualitätsstufe** | nach GPU: integrierte Grafik (Intel Iris Xe/UHD wie im NUC 11–13, AMD-APUs, Apple M) → *Mittel*; dedizierte GPU → *Hoch*; Software-Renderer, Mali/Adreno/PowerVR und Smartphones → *Schnell*; Tablets (Touch, kürzere Bildschirmseite ≥ 700 px) → *Mittel*. Eine manuelle Wahl wird gespeichert |
 | **Außenraum schlank** | Baumkronen mit 80 statt 320 Dreiecken je Blattballen (Park 420 k → 105 k Dreiecke) |
-| **Zweistufige Qualität** | Standard in Bewegung ohne AO/MSAA, nach 160 ms Stillstand ein Bild mit AO; auf Schnell ohne 4× MSAA |
+| **Zweistufige Qualität** | Standard in Bewegung ohne AO/MSAA (auf *Schnell* auch ohne Bloom), nach 160 ms Stillstand ein Bild mit AO; auf Schnell ohne 4× MSAA |
 | **Statische Schatten** | Sonnen-Shadow-Map nur nach Szenen-, Stil-, Modus- oder Stimmungswechsel |
-| **Licht-Budget** (`lighting.js`) | Feste Punkt-/Spot-Slots (8/8, 5/5, 3/3 nach Qualitätsstufe), belegt mit den Leuchten des aktuellen Raums – kein Lichtdurchschlag durch Wände, jeder Slot kostet eine BRDF-Auswertung je Pixel |
-| **Adaptive Auflösung** | Pixel-Ratio sinkt stufenweise bei < 28 fps in Bewegung und steigt bei Reserve |
+| **Licht-Budget** (`lighting.js`) | Feste Proxy-Slots (Punkt/Spot/Fläche 8/8/2, 5/5/1, 3/3/1 nach Qualitätsstufe), belegt mit den Leuchten des aktuellen Raums (Dollhouse: stärkste je Raum) – kein Lichtdurchschlag durch Wände, jeder Slot kostet eine BRDF-Auswertung je Pixel; die Slot-Objekte bleiben immer dieselben (stabile Shader, siehe *Tempo & Touch*) |
+| **Adaptive Auflösung** | Pixel-Ratio sinkt stufenweise bei < 40 fps in Bewegung und steigt bei Reserve |
 | **Halbe Auflösung für AO/SSR** | SSAO und SSR in halber Auflösung; Metall/Rauheit liegen in den Alphakanälen der 8-Bit-Albedo-/Normalenpuffer. Vier Renderziele halten das WebGPU-Basislimit ein. |
 | **Vorberechnete Texturen** | prozedurale Texturen als WebP (3,7 MB), Dekodierung außerhalb des Hauptthreads |
-| **Asynchrone Shader-Kompilierung** | `compileAsync` vor dem ersten Bild; WebGPU-Pipelines werden gecacht |
+| **Asynchrone Shader-Kompilierung** | alle Pass-Varianten vor dem ersten Bild bzw. hinter dem Stilwechsel-Overlay (siehe *Tempo & Touch*); WebGPU-Pipelines und WebGL-Programme werden über den Shader-Code geteilt und gecacht |
 
 Qualitätsstufen *Hoch/Mittel/Schnell* steuern Pixel-Ratio (maximal 1,5/1,25/1) und Pixelbudget, Schattenauflösung, Licht-Slots, Raum-Lightprobe und die Sample-Zahlen von SSAO, SSGI und SSR.
 
@@ -238,6 +288,8 @@ Qualitätsstufen *Hoch/Mittel/Schnell* steuern Pixel-Ratio (maximal 1,5/1,25/1) 
 | Ausrichtung | Sofa zur Medienwand, Bettfuß in den Raum, Schlafsofa vom Wandrücken weg |
 
 Stand dieser Planung: **alle vier Stilwelten bestehen sämtliche Prüfungen** (je ≈ 440–470 Einzelprüfungen), auch mit den neuen Wandfeldern, Bilderleuchten und Vorhangvouten.
+
+`node tools/flow.mjs` spielt den UI-Ablauf im Desktop-Layout (1280 × 720) durch: alle Stilwelten, Fotorealistisch starten, Lichtstimmung, Dollhouse, zurück zu Standard. `node tools/touch.mjs` prüft die Touch-Bedienung im Smartphone-Hochformat mit echten Mehrfinger-Ereignissen (17 Prüfungen: Antippen → Detailkarte, Wegwischen, Doppeltippen im Dollhouse und in der Begehung, Pinch-Gehen, Umsehen, Sheets, Werkzeugleiste vollständig sichtbar, kein seitliches Verrutschen, Grundriss-Verschieben/-Pinch/-Doppeltippen/-Raumauswahl).
 
 Ein Browser-Smoke-Test prüft zusätzlich alle vier Stilwelten, die geschlossene Wandrückführung, den Sockel unter einem Außenfenster, alle Fassadenabschnitte im 25-cm-Raster sowie die Modi Standard, Realistisch und Fotorealistisch (BVH-Aufbau + Samples). Bei laufendem Entwicklungsserver: `node tools/smoke.mjs` (lokal installiertes Chrome; ohne Chrome `CHANNEL=chromium node tools/smoke.mjs`).
 
@@ -259,7 +311,9 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 
 ```text
 .
-├── index.html                    # App-Shell, Import-Map (three → vendor/three.webgpu.min.js, three/tsl)
+├── index.html                    # App-Shell, Import-Map (three → vendor/three.webgpu.min.js, three/tsl), Modul-Preloads
+├── manifest.webmanifest          # Web-App-Manifest (Installation auf dem Home-Bildschirm)
+├── sw.js                         # Service Worker: Assets cache-first, vendor/ stale-while-revalidate, Code network-first
 ├── styles/app.css                # UI (Japandi-Designsprache, Geräteklassen, Sheets, Druckansicht, Stilwelt-Leiste)
 ├── src/
 │   ├── main.js                   # Bootstrap, UI-Logik, Stilwechsel (Leiste + Tasten 1–4), Export
@@ -269,10 +323,11 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   ├── data/styles.js            # vier Stilwelten, Luxus-Prinzipien, gemeinsame Raumtexte
 │   ├── data/design.js            # gemeinsamer Bestand (Küche, Bäder nach HLS-Plan, HWR, Diele) + Stil-Möblierung
 │   ├── engine/
-│   │   ├── viewer.js             # WebGPU-Renderer, Render-Modi, Lightprobe, Belichtung, Spiegel, Kameras, Stimmungen
+│   │   ├── viewer.js             # WebGPU-Renderer, Render-Modi, Shader-Vorkompilierung, Lightprobe, Belichtung, Spiegel,
+│   │   │                         # Kameras, Stimmungen, Gesten (Tippen, Doppeltippen, Pinch-/Mausrad-Gehen)
 │   │   ├── render.js             # TSL-Pipelines: Standard (SSAO, MSAA, SMAA) und Realistisch (SSGI, SSR, TRAA)
 │   │   ├── photo.js              # Fotorealistisch: Pathtracer, Sky-Portale, Belichtung, KI-Entrauschung (OIDN)
-│   │   ├── lighting.js           # Licht-Budget je Raum (feste Slots, fensterlose Räume)
+│   │   ├── lighting.js           # Licht-Budget je Raum (feste Proxy-Slots, fensterlose Räume)
 │   │   ├── scene.js              # Szenenaufbau je Stilwelt + Positionsregister
 │   │   ├── materials.js          # PBR-Materialbibliothek, Stil-Themen, prozedurale Textur-Tabelle
 │   │   ├── textures.js · uv.js · models.js
@@ -283,15 +338,16 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   │       ├── surroundings.js   # Park (9,28 m tiefer), Bäume, Straße, Stadtkante, Gebäude unter/über WE 13
 │   │       ├── bath.js           # Vorwände 1,18 m, Maßspiegel, Waschtrockner-Nische, Laufen VAL/Meda, V&B Collaro, Duravit Tulum
 │   │       └── kitchen.js · decor.js · textiles.js · common.js
-│   ├── ui/layout.js              # Geräteklasse/Eingabeart, Bottom-Sheets, Joystick, Vollbild, Umhängen der Bedienelemente
-│   └── ui/plan2d.js              # SVG-Grundriss (Maus, Touch, Pinch-Zoom)
+│   ├── ui/layout.js              # Geräteklasse/Eingabeart, Bottom-Sheets (Wischgesten), Joystick, Vollbild, Umhängen der Bedienelemente
+│   └── ui/plan2d.js              # SVG-Grundriss (Maus, Touch, Pinch-Zoom, Doppeltippen, Maßstabsbalken – ohne Neuaufbau beim Zoomen)
 ├── vendor/                       # three.js r186 (WebGPU + TSL, gemeinsamer Kern), Add-ons, Pathtracer-Bundle,
 │                                 # BVH-Worker (lokal, offline, versionsfest)
-├── assets/                       # CC0-Assets (lib/), OIDN-Gewichte (lib/oidn/), Ausführungsplan (PDF), Moodboards
+├── assets/                       # CC0-Assets (lib/), OIDN-Gewichte (lib/oidn/), App-Symbole (icons/), Ausführungsplan (PDF), Moodboards
 └── tools/
     ├── build-vendor.mjs          # erzeugt vendor/ aus npm-Paketen (esbuild; auch unter Windows)
     ├── smoke.mjs                 # Browserprüfung aller Stile, Wandhülle und aller drei Render-Modi
     ├── flow.mjs                  # UI-Ablauf: Stilwechsel, Fotorealistisch starten/stoppen, Stimmung, Dollhouse
+    ├── touch.mjs                 # Touch-Regressionstest (Smartphone): Tippen, Doppeltippen, Pinch, Sheets, Grundriss
     ├── shot.mjs · probe.mjs      # Screenshots von Stationen bzw. frei gewählten Kameras (headless)
     ├── pathtracer-entry.js       # Einstieg des Pathtracer-Bundles
     ├── bake-textures.mjs · bake.html

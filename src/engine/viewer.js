@@ -10,6 +10,14 @@
 //
 // Performance model
 //  · Static shadows: the sun's shadow map is re-rendered only after scene/mood/style changes.
+//  · Stable shaders: the renderer keys every compiled material on the visible lights, the
+//    environment node and the fog. All three are kept constant – fixed proxy light slots
+//    (lighting.js), one PMREM node whose texture is swapped (sky ↔ room probe), fog always attached
+//    (its range makes it invisible in the dollhouse view) and the sun kept at zero intensity in the
+//    evening. Moods, rooms, probe updates and dollhouse ↔ walk therefore never rebuild a shader.
+//  · Shader warm-up: every pass variant (moving, normal pre-pass, SSAO frame, room probe,
+//    walk-mode scenery) is compiled asynchronously (parallel compile / async pipelines) behind the
+//    loader and the style-switch overlay – no compile hitch on the first drag, walk or mood change.
 //  · Light budget (lighting.js): fixed slot count, only lamps relevant for the current room.
 //  · Quality presets (auto-detected from the GPU, integrated graphics → "Mittel"): pixel budget,
 //    shadow-map size, light slots, probe size and post-processing sample counts.
@@ -24,11 +32,11 @@
 //  · Frame cap: at most 60 rendered frames per second, also on 120/144 Hz displays.
 //  · Mirrors: room-probe reflections on WebGPU; planar reflectors on WebGL 2 in walk mode.
 import * as THREE from 'three/webgpu';
-import { reflector, vec4 } from 'three/tsl';
+import { reflector, vec4, pmremTexture, context } from 'three/tsl';
 import { OrbitControls, HDRLoader, RectAreaLightTexturesLib } from '../../vendor/three-addons.js';
 import { OFFSET, APARTMENT_BOUNDS, ROOM_HEIGHT, ROOMS, pointInPolygon } from '../core/geometry.js';
 import { setMaxAnisotropy } from './textures.js';
-import { LightRig, LAMP_SCALE, INTERIOR_LEVEL } from './lighting.js';
+import { LightRig, LightSlots, LAMP_SCALE, INTERIOR_LEVEL } from './lighting.js';
 import { createPipelines } from './render.js';
 import { PICK_LAYER } from './scene.js';
 import { PhotoRenderer } from './photo.js';
@@ -51,20 +59,20 @@ export const RENDER_MODES = {
 };
 
 export const STATIONS = [
-  { id: 'overview', label: 'Übersicht (Dollhouse)', mode: 'orbit', pos: [0.8, 21, 28], target: [10.4, -0.6, 14.4], fov: 36 },
-  { id: 'top', label: 'Draufsicht', mode: 'orbit', pos: [10.2, 27, 14.4], target: [10.2, 0, 13.7], fov: 36 },
-  { id: 'living', label: 'Wohnen · Blick zur Medienwand', mode: 'walk', pos: [8.35, 1.38, 14.55], target: [6.2, 1.0, 9.6], fov: 62 },
-  { id: 'sofa', label: 'Wohnen · Sofa & Fensterfront', mode: 'walk', pos: [6.55, 1.5, 9.95], target: [9.4, 0.7, 13.4], fov: 66 },
-  { id: 'dining', label: 'Essen · Sideboard & Pendel', mode: 'walk', pos: [8.9, 1.5, 12.7], target: [7.6, 0.95, 16.9], fov: 62 },
-  { id: 'hall', label: 'Diele · Eingang', mode: 'walk', pos: [9.35, 1.55, 8.35], target: [13.0, 1.1, 6.3], fov: 64 },
-  { id: 'kitchen', label: 'Küche', mode: 'walk', pos: [5.85, 1.5, 16.2], target: [3.0, 1.05, 16.9], fov: 64 },
-  { id: 'bedroom', label: 'Schlafen', mode: 'walk', pos: [7.0, 1.5, 17.5], target: [9.3, 0.95, 20.0], fov: 66 },
-  { id: 'wardrobe', label: 'Schlafen · Blick zum Schrank', mode: 'walk', pos: [8.75, 1.5, 17.5], target: [6.0, 1.05, 19.8], fov: 66 },
-  { id: 'office', label: 'Arbeiten / Gäste', mode: 'walk', pos: [14.05, 1.5, 10.1], target: [16.5, 0.85, 7.9], fov: 66 },
-  { id: 'library', label: 'Arbeiten · Bibliothekswand', mode: 'walk', pos: [16.2, 1.5, 8.75], target: [13.7, 1.2, 9.8], fov: 64 },
-  { id: 'bath', label: 'Bad · Waschplatz & Spiegelwand', mode: 'walk', pos: [15.2, 1.6, 7.3], target: [16.1, 1.2, 5.6], fov: 72 },
-  { id: 'guestbath', label: 'Dusche / Gäste-WC', mode: 'walk', pos: [10.2, 1.6, 7.35], target: [11.0, 1.2, 5.6], fov: 72 },
-  { id: 'balcony', label: 'Balkon 1', mode: 'walk', pos: [13.1, 1.55, 10.4], target: [10.6, 0.8, 9.6], fov: 66 },
+  { id: 'overview', short: 'Übersicht', label: 'Übersicht (Dollhouse)', mode: 'orbit', pos: [0.8, 21, 28], target: [10.4, -0.6, 14.4], fov: 36 },
+  { id: 'top', short: 'Draufsicht', label: 'Draufsicht', mode: 'orbit', pos: [10.2, 27, 14.4], target: [10.2, 0, 13.7], fov: 36 },
+  { id: 'living', short: 'Wohnen · Medienwand', label: 'Wohnen · Blick zur Medienwand', mode: 'walk', pos: [8.35, 1.38, 14.55], target: [6.2, 1.0, 9.6], fov: 62 },
+  { id: 'sofa', short: 'Wohnen · Sofa', label: 'Wohnen · Sofa & Fensterfront', mode: 'walk', pos: [6.55, 1.5, 9.95], target: [9.4, 0.7, 13.4], fov: 66 },
+  { id: 'dining', short: 'Essen', label: 'Essen · Sideboard & Pendel', mode: 'walk', pos: [8.9, 1.5, 12.7], target: [7.6, 0.95, 16.9], fov: 62 },
+  { id: 'hall', short: 'Diele', label: 'Diele · Eingang', mode: 'walk', pos: [9.35, 1.55, 8.35], target: [13.0, 1.1, 6.3], fov: 64 },
+  { id: 'kitchen', short: 'Küche', label: 'Küche', mode: 'walk', pos: [5.85, 1.5, 16.2], target: [3.0, 1.05, 16.9], fov: 64 },
+  { id: 'bedroom', short: 'Schlafen', label: 'Schlafen', mode: 'walk', pos: [7.0, 1.5, 17.5], target: [9.3, 0.95, 20.0], fov: 66 },
+  { id: 'wardrobe', short: 'Schlafen · Schrank', label: 'Schlafen · Blick zum Schrank', mode: 'walk', pos: [8.75, 1.5, 17.5], target: [6.0, 1.05, 19.8], fov: 66 },
+  { id: 'office', short: 'Arbeiten / Gäste', label: 'Arbeiten / Gäste', mode: 'walk', pos: [14.05, 1.5, 10.1], target: [16.5, 0.85, 7.9], fov: 66 },
+  { id: 'library', short: 'Bibliothekswand', label: 'Arbeiten · Bibliothekswand', mode: 'walk', pos: [16.2, 1.5, 8.75], target: [13.7, 1.2, 9.8], fov: 64 },
+  { id: 'bath', short: 'Bad', label: 'Bad · Waschplatz & Spiegelwand', mode: 'walk', pos: [15.2, 1.6, 7.3], target: [16.1, 1.2, 5.6], fov: 72 },
+  { id: 'guestbath', short: 'Dusche / WC', label: 'Dusche / Gäste-WC', mode: 'walk', pos: [10.2, 1.6, 7.35], target: [11.0, 1.2, 5.6], fov: 72 },
+  { id: 'balcony', short: 'Balkon 1', label: 'Balkon 1', mode: 'walk', pos: [13.1, 1.55, 10.4], target: [10.6, 0.8, 9.6], fov: 66 },
 ];
 
 const PROBE_SIZE = { high: 256, medium: 128, low: 128 };
@@ -80,6 +88,11 @@ const PROBE_MOVE = 1.0;         // re-capture the room probe after this many met
 const SETTLE_MS = 160;          // camera must be still this long before the refined frame
 const CONVERGE_FRAMES = { high: 40, medium: 24, low: 12 }; // temporal budget at rest
 const FRAME_MS = 1000 / 60 - 1; // frame cap: high-refresh displays render at most ~60 fps
+const DAMPING = 0.1;            // orbit damping per 60 Hz frame (made frame-rate independent)
+/** Fog range per camera mode: aerial perspective outdoors, none at all in the dollhouse view. */
+const FOG = { walk: [50, 520], orbit: [5000, 10000] };
+const _size = new THREE.Vector2();
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 const w3 = ([x, y, z]) => new THREE.Vector3(x - OFFSET.x, y, z - OFFSET.y);
 
 export class Viewer {
@@ -102,7 +115,9 @@ export class Viewer {
     this.camera = new THREE.PerspectiveCamera(40, 1, ...CLIP.orbit);
     this.controls = new OrbitControls(this.camera, r.domElement);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.08;
+    this.controls.dampingFactor = DAMPING;
+    // one finger: rotate / look, two fingers: zoom + pan (dollhouse) – as in every map app
+    this.controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     this.mode = 'orbit';
     this.mood = 'day';
     this.quality = 'high';
@@ -112,6 +127,7 @@ export class Viewer {
     this.moveInput = { x: 0, y: 0 }; // analogue walk input (touch joystick), -1 … 1
     this.timer = new THREE.Timer();
     this.hdris = new Map();
+    this.hdriReady = new Set();
     this.listeners = new Set();
     this.needsRender = true;
     this.refined = false;
@@ -134,6 +150,7 @@ export class Viewer {
     this.center = new THREE.Vector3((b.minX + b.maxX) / 2 - OFFSET.x, 0, (b.minY + b.maxY) / 2 - OFFSET.y);
     sun.target.position.copy(this.center);
     this.scene.add(sun, sun.target);
+    this.lightSlots = new LightSlots(this.scene);
     // Raster stand-in for multi-bounce light; weak in walk mode where the room probe takes over.
     this.fill = new THREE.HemisphereLight('#8f8a82', '#efe3d2', 0.8);
     this.scene.add(this.fill);
@@ -141,7 +158,8 @@ export class Viewer {
     // backdrop for the dollhouse view
     this.studioBg = new THREE.Color('#e9e5de');
     // aerial perspective for the park and the city edge; starts beyond the apartment (50 m)
-    this.fog = new THREE.Fog('#c3cdd6', 50, 520);
+    this.fog = new THREE.Fog('#c3cdd6', ...FOG.orbit);
+    this.scene.fog = this.fog; // always attached (stable shaders), range per camera mode
     this.outdoorEmissive = new Set();
     const ground = this.ground = new THREE.Mesh(new THREE.CircleGeometry(40, 64), new THREE.ShadowMaterial({ opacity: 0.18 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.29; ground.receiveShadow = true;
@@ -152,10 +170,7 @@ export class Viewer {
     window.addEventListener('keydown', (e) => { if (!e.target.closest?.('input,textarea,select')) { this.keys.add(e.key.toLowerCase()); this.invalidate(); } });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('blur', () => this.keys.clear());
-    r.domElement.addEventListener('pointerdown', (e) => { this._down = [e.clientX, e.clientY]; });
-    r.domElement.addEventListener('pointerup', (e) => {
-      if (this._down && Math.hypot(e.clientX - this._down[0], e.clientY - this._down[1]) < 4) this.pick(e);
-    });
+    this.bindPointer(r.domElement);
   }
 
   /** Initialises the GPU backend (WebGPU, otherwise WebGL 2) and the render pipelines. */
@@ -166,6 +181,9 @@ export class Viewer {
     setMaxAnisotropy(r.backend.capabilities?.getMaxAnisotropy?.() ?? (r.backend.isWebGPUBackend ? 16 : 8));
     THREE.RectAreaLightNode.setLTC(RectAreaLightTexturesLib.init());
     this.pmrem = new THREE.PMREMGenerator(r);
+    // one environment node for the whole session; sky and room probe only swap its texture
+    this.envNode = pmremTexture(this.blackEnv());
+    this.scene.environmentNode = this.envNode;
     this.pipelines = createPipelines(r, this.scene, this.camera);
     this.gpu = gpuName(r);
     const stored = readStoredQuality();
@@ -184,25 +202,31 @@ export class Viewer {
   /** Scene content changed: shadows, mirrors and probe must be re-rendered as well. */
   sceneChanged() { this.sun.shadow.needsUpdate = true; this.probeDirty = true; this.cancelProbe(); this.invalidate(); }
 
-  /** Replaces the apartment (initial load and style switch). */
-  async setApartment(apartment) {
+  /**
+   * Replaces the apartment (initial load and style switch). keepPrevious: the old apartment is
+   * only detached – the UI caches it, so switching back later is instant (geometry and compiled
+   * shaders stay on the GPU).
+   */
+  async setApartment(apartment, { keepPrevious = false } = {}) {
     this.suspended = true;
     try {
       this.photo?.stop(); this.photo?.invalidateScene();
-      if (this.apartment) { this.select(null); this.apartment.dispose(); }
+      if (this.apartment && this.apartment !== apartment) {
+        this.select(null);
+        if (keepPrevious) this.apartment.root.removeFromParent(); else this.apartment.dispose();
+      }
       this.apartment = apartment;
       this.scene.add(apartment.root);
       this.setupMirrors(apartment);
-      this.rig = new LightRig(apartment, this.quality);
+      this.rig = new LightRig(apartment, this.lightSlots, this.quality);
       this.emissive = new Set();
       apartment.root.traverse((o) => { if (o.isMesh && o.material?.userData?.emissiveOn) this.emissive.add(o.material); });
       const m = MOODS[this.mood];
-      const { env } = await this.loadHDRI(m.hdri);
-      this.hdriEnv = env;
-      this.scene.environment = env;
+      const { tex, env } = await this.loadHDRI(m.hdri);
+      this.hdriEnv = env; this.hdriTex ??= tex;
+      this.setEnv(env);
       this.rig.setLevel(m.lamps);
-      apartment.setCeilingsVisible(true);
-      await this.precompile();
+      await this.warmup({ realistic: this.renderMode === 'realistic' });
       apartment.setCeilingsVisible(this.mode === 'walk');
       this.probeDirty = true;
       await this.applyMood(this.mood);
@@ -225,6 +249,7 @@ export class Viewer {
     // reflection and costs no extra scene passes, so use it on WebGPU.
     if (this.renderer.backend.isWebGPUBackend) return;
     for (const m of this.mirrors) {
+      if (m.userData.mirrorMats) continue; // re-attached (cached) apartment: reflector exists
       const rf = reflector({ resolutionScale: this.quality === 'low' ? 0.5 : 0.75, bounces: false });
       m.add(rf.target);
       const live = new THREE.MeshBasicNodeMaterial();
@@ -244,19 +269,46 @@ export class Viewer {
   /** HDRI → (equirect for the background, PMREM for image-based light). */
   async loadHDRI(name) {
     if (this.hdris.has(name)) return this.hdris.get(name);
-    const p = new HDRLoader().loadAsync(`./assets/lib/hdri/${name}.hdr`).then((tex) => {
+    const p = new HDRLoader().loadAsync(`./assets/lib/hdri/${name}.hdr`).then(async (tex) => {
+      await this.warmBusy; // the PMREM render must not see the warm-up's render state
       tex.mapping = THREE.EquirectangularReflectionMapping;
       const sun = analyseSky(tex);
       const env = this.pmrem.fromEquirectangular(tex).texture;
+      this.hdriReady.add(name);
       return { tex, env, sun };
     });
+    p.catch(() => this.hdris.delete(name)); // a failed download may be retried
     this.hdris.set(name, p);
     return p;
   }
 
+  /** Downloads and prepares the other moods' skies in idle time (instant mood switches later). */
+  prefetchMoods() {
+    const c = navigator.connection;
+    if (c?.saveData || /(^|-)2g$/.test(c?.effectiveType ?? '')) return;
+    const names = [...new Set(Object.values(MOODS).map((m) => m.hdri))].filter((n) => !this.hdris.has(n));
+    const next = () => {
+      const n = names.shift();
+      if (!n) return;
+      const idle = window.requestIdleCallback ?? ((f) => setTimeout(f, 400));
+      idle(() => this.loadHDRI(n).catch(() => {}).finally(next), { timeout: 4000 });
+    };
+    next();
+  }
+
+  /** Swaps the texture of the (single) environment node: no shader rebuild. */
+  setEnv(tex) { if (tex && this.envNode.value !== tex) this.envNode.value = tex; }
+
   async applyMood(name) {
-    const m = MOODS[name]; this.mood = name;
-    const { tex, env, sun } = await this.loadHDRI(m.hdri);
+    const m = MOODS[name];
+    if (!m) return;
+    const token = (this._moodToken = (this._moodToken ?? 0) + 1);
+    if (!this.hdriReady.has(m.hdri)) this.emit('mood-loading', name); // download → button shows progress
+    let loaded;
+    try { loaded = await this.loadHDRI(m.hdri); } catch (e) { this.emit('mood-error', name); throw e; }
+    if (token !== this._moodToken) return; // a newer mood was chosen meanwhile
+    this.mood = name;
+    const { tex, env, sun } = loaded;
     this.hdriEnv = env;
     this.hdriTex = tex;
     // rotate the panorama so that its sun disc lies at the mood's azimuth (verified by render:
@@ -267,8 +319,8 @@ export class Viewer {
     this.sunDir = new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el));
     this.scene.backgroundRotation.set(0, this.rot, 0);
     this.fog.color.set(m.fog);
-    this.sun.intensity = m.sun;
-    this.sun.visible = m.sun > 0;
+    this.sun.intensity = m.sun; // stays visible at 0 in the evening: same light set, same shaders
+    this.ground.material.opacity = m.sun > 0 ? 0.18 : 0; // …so the studio floor must drop its shadow
     this.sun.color.set(m.sunColor);
     this.sun.position.copy(this.center).addScaledVector(this.sunDir, 30);
     this.setLamps(m.lamps);
@@ -284,8 +336,8 @@ export class Viewer {
     const m = MOODS[this.mood], s = this.scene, walk = this.mode === 'walk', probe = walk && this.probeEnv;
     // In the realistic mode SSGI adds short-range bounce light itself → slightly less probe light.
     const giTrim = this.renderMode === 'realistic' ? 0.82 : 1;
-    if (probe) { s.environment = this.probeEnv; s.environmentIntensity = giTrim; s.environmentRotation.set(0, 0, 0); }
-    else { s.environment = this.hdriEnv; s.environmentIntensity = m.env * giTrim; s.environmentRotation.set(0, this.rot ?? 0, 0); }
+    if (probe) { this.setEnv(this.probeEnv); s.environmentIntensity = giTrim; s.environmentRotation.set(0, 0, 0); }
+    else { this.setEnv(this.hdriEnv); s.environmentIntensity = m.env * giTrim; s.environmentRotation.set(0, this.rot ?? 0, 0); }
     this.fill.intensity = m.fill[probe ? 1 : 0];
     // Interior metering sees bright window pixels on several cube faces. A modest
     // camera-like exposure bias preserves readable fabrics and plaster in the room.
@@ -317,7 +369,7 @@ export class Viewer {
     // outdoor scene (park 9.28 m below, building, city) and aerial perspective: walk mode only
     const walk = this.mode === 'walk';
     if (this.surroundings) this.surroundings.visible = walk;
-    s.fog = walk ? this.fog : null;
+    [this.fog.near, this.fog.far] = FOG[walk ? 'walk' : 'orbit'];
     this.invalidate();
   }
 
@@ -339,9 +391,13 @@ export class Viewer {
     if (mode === 'orbit') {
       c.enableZoom = true; c.enablePan = true; c.minDistance = 2; c.maxDistance = 45; c.maxPolarAngle = Math.PI * 0.49;
       c.rotateSpeed = 0.8;
+      c.touches.TWO = THREE.TOUCH.DOLLY_PAN;
     } else {
       c.enableZoom = false; c.enablePan = false; c.minDistance = 0; c.maxDistance = Infinity; c.maxPolarAngle = Math.PI;
       c.rotateSpeed = -0.35;
+      // two fingers: look with their midpoint (no jump when the second finger lands); the pinch
+      // itself walks forward / back (bindPointer)
+      c.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
     }
     this.updateMirrors();
     this.sceneChanged(); // ceilings toggled → shadow map must be re-rendered
@@ -355,6 +411,8 @@ export class Viewer {
     if (!RENDER_MODES[mode] || mode === this.renderMode) return;
     this.renderMode = mode;
     if (mode !== 'photo') this.photo?.stop();
+    // first use: compile the G-buffer variants asynchronously instead of one long frozen frame
+    if (mode === 'realistic' && this.apartment && this.apartment.realisticReady !== this.quality) this.warmup({ realistic: true, label: 'Realistisch wird vorbereitet …' });
     this.applyEnvironment();
     this.emit('render', mode);
   }
@@ -404,12 +462,7 @@ export class Viewer {
     const r = this.renderer, s = this.scene, m = MOODS[this.mood];
     let job = this.probeJob;
     if (!job) {
-      const size = PROBE_SIZE[this.quality];
-      if (this.probeRT && this.probeRT.width !== size) {
-        this.probeRT.dispose(); this.probeRT = null; this.probeCam = null;
-      }
-      this.probeRT ??= new THREE.CubeRenderTarget(size, { type: THREE.HalfFloatType });
-      this.probeCam ??= new THREE.CubeCamera(0.05, 60, this.probeRT);
+      this.ensureProbeTarget();
       const pos = probePoint(this.camera.position);
       pos.y = THREE.MathUtils.clamp(this.camera.position.y, 0.9, 1.6);
       // the lamps of the room the probe is taken in must be active before the first face renders
@@ -444,7 +497,6 @@ export class Viewer {
   /** Renders one face of the probe cube (same face order and orientation as CubeCamera.update). */
   probeFace(job, face, m) {
     const r = this.renderer, s = this.scene, cam = this.probeCam, rt = this.probeRT;
-    if (cam.coordinateSystem !== r.coordinateSystem) { cam.coordinateSystem = r.coordinateSystem; cam.updateCoordinateSystem(); }
     cam.position.copy(job.pos);
     cam.updateMatrixWorld();
     const sel = this.selHelper?.visible; if (this.selHelper) this.selHelper.visible = false;
@@ -454,15 +506,17 @@ export class Viewer {
     for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.still;
     // pass 0: direct light only (sun, lamps, faint fill) + sky through the windows;
     // pass n: lit additionally by pass n−1 → the stored probe carries n + 1 bounces.
-    s.environment = job.target?.texture ?? this.blackEnv();
+    this.setEnv(job.target?.texture ?? this.blackEnv());
     s.environmentIntensity = 1;
     s.environmentRotation.set(0, 0, 0);
     this.fill.intensity = m.fill[1];
-    const prevRT = r.getRenderTarget(), prevFace = r.getActiveCubeFace(), prevMip = r.getActiveMipmapLevel();
+    const prevRT = r.getRenderTarget(), prevFace = r.getActiveCubeFace(), prevMip = r.getActiveMipmapLevel(), prevCtx = r.contextNode;
     const mips = rt.texture.generateMipmaps;
     rt.texture.generateMipmaps = face === 5 && mips; // mip chain once, after the last face
     r.setRenderTarget(rt, face, 0);
+    r.contextNode = this.probeContext(); // same shaders as the view (see render.js)
     r.render(s, cam.children[face]);
+    r.contextNode = prevCtx;
     rt.texture.generateMipmaps = mips;
     r.setRenderTarget(prevRT, prevFace, prevMip);
     if (face === 5) rt.texture.needsPMREMUpdate = true;
@@ -568,16 +622,135 @@ export class Viewer {
     this.baseFov = st.fov ?? 45; this.applyFov();
     this.station = st.id;
     this.emit('station', st.id);
-    if (!animate) { this.camera.position.copy(pos); this.controls.target.copy(endTarget); this.controls.update(); this.onCameraChange(); return; }
-    const p0 = this.camera.position.clone(), t0 = this.controls.target.clone(), start = performance.now(), dur = 900;
+    if (!animate) { this._anim = null; this.camera.position.copy(pos); this.controls.target.copy(endTarget); this.controls.update(); this.onCameraChange(); return; }
+    this.animateTo(pos, endTarget, 900);
+  }
+
+  /** Eased camera flight (cubic in-out); any new flight or drag replaces it. */
+  animateTo(pos, target, dur = 900) {
+    if (REDUCED_MOTION.matches) dur = 1;
+    const p0 = this.camera.position.clone(), t0 = this.controls.target.clone(), start = performance.now();
+    const p1 = pos.clone(), t1 = target.clone();
     this._anim = (now) => {
       const k = Math.min(1, (now - start) / dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-      this.camera.position.lerpVectors(p0, pos, e);
-      this.controls.target.lerpVectors(t0, endTarget, e);
+      this.camera.position.lerpVectors(p0, p1, e);
+      this.controls.target.lerpVectors(t0, t1, e);
       this.controls.update();
       if (k >= 1) this._anim = null;
     };
     this.invalidate();
+  }
+
+  // ------------------------------------------------------------------ pointer gestures
+  /**
+   * Gestures on the canvas besides the OrbitControls drags:
+   *  · tap / click (finger ≤ 10 px, mouse ≤ 4 px, < 450 ms, one pointer) → furniture details
+   *  · double tap / double click → dollhouse: fly in towards that point; walk: walk there
+   *  · walk mode: mouse wheel and two-finger pinch step forward / back
+   * A drag or a flight in progress is cancelled by a new touch (the user takes over).
+   */
+  bindPointer(el) {
+    const pts = new Map();
+    let down = null, multi = false, pinch = null, lastTap = null;
+    const spread = () => { const [a, b] = [...pts.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+    el.addEventListener('pointerdown', (e) => {
+      this._anim = null; // grabbing the view stops a running flight
+      pts.set(e.pointerId, [e.clientX, e.clientY]);
+      // event timestamps, not handler time: a long frame between down and up is not a long press
+      if (pts.size === 1) { down = { x: e.clientX, y: e.clientY, t: e.timeStamp, type: e.pointerType }; multi = false; }
+      else { multi = true; pinch = pts.size === 2 ? spread() : null; }
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pinch !== null && pts.size === 2 && this.mode === 'walk') {
+        const d = spread();
+        this.step((d - pinch) * 0.01);
+        pinch = d;
+      }
+    });
+    const up = (e) => {
+      if (!pts.delete(e.pointerId)) return;
+      if (pts.size < 2) pinch = null;
+      const d = down;
+      if (!pts.size) down = null;
+      if (e.type !== 'pointerup' || !d || multi || pts.size || e.button > 0) return;
+      const now = e.timeStamp, moved = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+      if (moved > (d.type === 'mouse' ? 4 : 10) || now - d.t > 450) { lastTap = null; return; }
+      if (lastTap && now - lastTap.t < 330 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 36) {
+        clearTimeout(lastTap.timer);
+        lastTap = null;
+        this.travelTo(e);
+        return;
+      }
+      // touch: the pick waits out the double-tap window, so a double tap does not first open the
+      // details card underneath the second tap; mouse clicks pick at once
+      const at = { clientX: e.clientX, clientY: e.clientY };
+      lastTap = { t: now, x: e.clientX, y: e.clientY, timer: d.type === 'mouse' ? 0 : setTimeout(() => this.pick(at), 280) };
+      if (d.type === 'mouse') this.pick(at);
+    };
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('wheel', (e) => {
+      if (this.mode !== 'walk') return;
+      e.preventDefault();
+      const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      this.step(-Math.sign(px) * Math.min(0.5, Math.abs(px) * 0.004));
+    }, { passive: false });
+  }
+
+  /** Walk mode: moves the eye d metres along the horizontal view direction. */
+  step(d) {
+    if (this.mode !== 'walk' || !d) return;
+    const fwd = this.camera.getWorldDirection(new THREE.Vector3()); fwd.y = 0;
+    if (fwd.lengthSq() < 1e-6) return;
+    fwd.normalize().multiplyScalar(d);
+    this._anim = null;
+    this.camera.position.add(fwd); this.controls.target.add(fwd);
+    this.controls.update();
+    this.onCameraChange();
+  }
+
+  /** Ray from a pointer event into the apartment (architecture + per-item furniture originals). */
+  raycast(e, { furnitureOnly = false } = {}) {
+    if (!this.apartment) return [];
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+    const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, this.camera);
+    ray.layers.enable(PICK_LAYER); // per-item originals of the merged furniture
+    const targets = furnitureOnly ? [this.apartment.furniture] : [this.apartment.furniture, this.apartment.architecture];
+    // merged draw meshes (layer 0 of the furniture group) duplicate the originals: skip them
+    return ray.intersectObjects(targets, true).filter((h) => h.object.visible && (furnitureOnly || h.object.parent !== this.apartment.merged) && isShown(h.object));
+  }
+
+  /**
+   * Double tap: dollhouse → fly in, orbiting the tapped point at half the distance;
+   * walk → walk to the tapped floor spot (or stop 60 cm in front of a wall / piece of furniture).
+   */
+  travelTo(e) {
+    const hit = this.raycast(e)[0];
+    if (!hit) return;
+    const cam = this.camera.position, target = this.controls.target;
+    if (this.mode === 'orbit') {
+      const dir = cam.clone().sub(target);
+      const dist = THREE.MathUtils.clamp(dir.length() * 0.5, this.controls.minDistance + 1, this.controls.maxDistance);
+      this.animateTo(hit.point.clone().add(dir.normalize().multiplyScalar(dist)), hit.point, 650);
+      this.station = 'free'; this.emit('station', 'free');
+      return;
+    }
+    const n = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld) : new THREE.Vector3();
+    const dest = hit.point.clone();
+    if (n.y < 0.7) {
+      const back = cam.clone().sub(dest); back.y = 0;
+      const len = back.length();
+      if (len < 0.7) return;
+      dest.add(back.multiplyScalar(0.6 / len));
+    }
+    dest.y = cam.y;
+    const delta = dest.clone().sub(cam), dist = delta.length();
+    if (dist < 0.05) return;
+    this.animateTo(dest, target.clone().add(delta), THREE.MathUtils.clamp(300 + dist * 180, 350, 1300));
+    this.station = 'free'; this.emit('station', 'free');
   }
 
   /**
@@ -632,6 +805,8 @@ export class Viewer {
     this.photo?.stop(); this.photo?.invalidateScene();
     this.sceneChanged();
     this.resize();
+    // new light slots and pass targets: recompile off the main thread (not during the first init)
+    if (this.apartment) this.warmup({ realistic: this.renderMode === 'realistic', label: 'Qualität wird umgestellt …' });
     this.emit('quality', q);
   }
 
@@ -642,7 +817,7 @@ export class Viewer {
     const avg = ft.reduce((a, b) => a + b, 0) / ft.length; ft.length = 0;
     let s = this.prScale;
     const min = this.renderMode === 'realistic' ? 0.5 : 0.55;
-    if (avg > 1 / 28 && s > min) s = Math.max(min, s - 0.15);
+    if (avg > 1 / 40 && s > min) s = Math.max(min, s - 0.15);
     else if (avg < 1 / 55 && s < 1) s = Math.min(1, s + 0.15);
     if (s !== this.prScale) { this.prScale = s; this.resize(); }
   }
@@ -681,11 +856,7 @@ export class Viewer {
 
   pick(e) {
     if (!this.apartment) return;
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
-    const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, this.camera);
-    ray.layers.enable(PICK_LAYER); // per-item originals of the merged furniture
-    const hits = ray.intersectObject(this.apartment.furniture, true).filter((h) => h.object.visible && !h.object.material?.userData?.glass);
+    const hits = this.raycast(e, { furnitureOnly: true }).filter((h) => !h.object.material?.userData?.glass);
     const id = hits[0]?.object.userData.itemId ?? null;
     this.select(id);
     this.emit('pick', id);
@@ -725,6 +896,8 @@ export class Viewer {
     let moving = false;
     if (this._anim) { this._anim(now); moving = true; }
     if (this.walkUpdate(Math.min(dt, 0.05))) moving = true;
+    // frame-rate independent damping: the same glide on 60 Hz, 120 Hz and on a slow phone
+    this.controls.dampingFactor = 1 - Math.pow(1 - DAMPING, Math.max(dt, 1 / 240) * 60);
     if (this.controls.update()) moving = true;
     if (moving) { this.lastMove = now; this.invalidate(); }
     if (this.suspended || !this.pipelines) return;
@@ -744,7 +917,7 @@ export class Viewer {
       if (!this.needsRender && this.accum >= targetFrames) return;
       // Screen-space GI, reflections and temporal AA are expensive while their history is
       // invalidated every frame. Reserve them for the stationary, converging image.
-      (still ? this.pipelines.realistic : this.pipelines.fast).render();
+      (still ? this.pipelines.realistic : this.movingPipeline()).render();
       this.needsRender = false;
       this.accum = still ? this.accum + 1 : 0;
       this.refined = this.accum >= targetFrames;
@@ -753,7 +926,7 @@ export class Viewer {
     } else {
       if (!this.needsRender && (this.refined || !still)) return;
       const hq = still;
-      (hq ? this.quality === 'low' ? this.pipelines.refinedLow : this.pipelines.refined : this.pipelines.fast).render();
+      (hq ? this.quality === 'low' ? this.pipelines.refinedLow : this.pipelines.refined : this.movingPipeline()).render();
       this.needsRender = false;
       this.refined = still;
       if (hq) this.stats.refined++;
@@ -765,11 +938,14 @@ export class Viewer {
     this.emit('frame', frameDt);
   }
 
+  movingPipeline() { return this.quality === 'low' ? this.pipelines.fastLow : this.pipelines.fast; }
+
   /**
    * Waits until the current view is final: room probe and exposure measured and – in the
    * realistic mode – the temporal accumulation converged (TRAA/SSGI need real animation frames).
    */
   async settle() {
+    await this.warmBusy;
     // Exports may follow a jump to another station directly: select that room's lamps first,
     // otherwise the probe (and the exposure metered from it) sees the previous room's light.
     if (this.rig?.update(this.mode, this.camera.position)) this.invalidate();
@@ -782,10 +958,13 @@ export class Viewer {
   }
 
   /** Renders a finished frame immediately (first frame, screenshots, exports). */
-  renderNow() {
+  renderNow({ prime = false } = {}) {
     this.rig?.update(this.mode, this.camera.position);
     if (this.probeStale()) this.captureProbe();
     const p = this.pipelines;
+    // first frame: also run the moving pipeline once, so its post-processing shaders exist
+    // before the first drag (the scene shaders themselves come from the warm-up)
+    if (prime) this.movingPipeline().render();
     (this.renderMode === 'realistic' ? p.realistic : this.quality === 'low' ? p.refinedLow : p.refined).render();
     this.refined = true; this.needsRender = false;
   }
@@ -804,17 +983,120 @@ export class Viewer {
     return this.renderer.domElement.toDataURL('image/png');
   }
 
-  /** Compiles the shader variants of the current scene state (parallel where supported). */
-  async precompile() {
-    const was = this.suspended;
-    this.suspended = true;
+  /**
+   * Shader warm-up. Compiles, asynchronously (KHR_parallel_shader_compile on WebGL 2, async
+   * pipelines on WebGPU), every material variant the render pipelines will ask for: the moving
+   * frame, the normal pre-pass and the SSAO frame of the resting view, the room probe and – on
+   * request – the realistic G-buffer. The scene is put into the union of all camera modes for it
+   * (ceilings, outdoor scenery, sky background, dollhouse ground) with frustum culling off, so
+   * later camera moves, walks and mood changes find every shader ready. Rendering pauses meanwhile
+   * (the render state of a pass is held until its compile finishes); callers show an overlay.
+   */
+  warmup({ realistic = false, label = null } = {}) {
+    const run = async () => {
+      if (!this.apartment || !this.pipelines) return;
+      if (realistic) this.apartment.realisticReady = this.quality; // light slots differ per preset
+      if (label) this.emit('busy', label);
+      const r = this.renderer, P = this.pipelines.passes, s = this.scene;
+      const was = this.suspended;
+      this.suspended = true;
+      const t0 = performance.now();
+      const saved = { bg: s.background, ceilings: this.apartment.architecture.getObjectByName('ceilings').visible, outdoor: this.surroundings?.visible, ground: this.ground.visible, sel: this.selHelper?.visible };
+      if (this.hdriTex) s.background = this.hdriTex;
+      this.apartment.setCeilingsVisible(true);
+      if (this.surroundings) this.surroundings.visible = true;
+      this.ground.visible = true;
+      if (this.selHelper) this.selHelper.visible = false;
+      const culled = [];
+      s.traverse((o) => { if (o.frustumCulled && (o.isMesh || o.isLine || o.isPoints || o.isSprite)) { o.frustumCulled = false; culled.push(o); } });
+      r.getDrawingBufferSize(_size);
+      // The resting SSAO frame shares the moving frame's lit shaders (render.js); compiling its
+      // pass here would also run the SSAO node for every object (its texture is a dependency).
+      // The normal pre-pass renders nested inside that frame (SSAO pulls it) and so inherits its
+      // AO context – the moving frame's context yields the identical code without the SSAO run.
+      const fastCtx = this.passContext(P.fast);
+      const passes = [[P.fast, fastCtx], [P.pre, fastCtx]];
+      if (realistic) passes.push([P.realistic, null]);
+      try {
+        for (const [pass, ctx] of passes) await this.compilePass(pass, ctx);
+        // the room probe renders straight into its cube map (one face stands for all six)
+        const probe = this.ensureProbeTarget();
+        await this.compileInto(probe.rt, 0, probe.cam.children[0], { ctx: this.probeContext() });
+      } catch (e) {
+        console.warn('Shader-Vorkompilierung unvollständig', e);
+      } finally {
+        for (const o of culled) o.frustumCulled = true;
+        s.background = saved.bg;
+        this.apartment.setCeilingsVisible(saved.ceilings);
+        if (this.surroundings) this.surroundings.visible = saved.outdoor;
+        this.ground.visible = saved.ground;
+        if (this.selHelper) this.selHelper.visible = saved.sel;
+        this.suspended = was;
+        this.stats.warmup = Math.round(performance.now() - t0);
+        if (label) this.emit('busy', null);
+        this.invalidate();
+      }
+    };
+    const job = (this.warmBusy ?? Promise.resolve()).then(run);
+    this.warmBusy = job.catch(() => {});
+    return job;
+  }
+
+  /** The merged render context a pass renders with (the object PassNode.updateBefore() caches). */
+  passContext(pass) {
+    if (!pass.contextNode) return null;
+    const r = this.renderer;
+    if (pass._contextNodeCache?.version !== pass.version) {
+      pass._contextNodeCache = { version: pass.version, context: context({ ...r.contextNode.getFlowContextData(), ...pass.contextNode.getFlowContextData() }) };
+    }
+    return pass._contextNodeCache.context;
+  }
+
+  /** Compiles the scene for one scene pass, with exactly the render state the pass renders with. */
+  compilePass(pass, ctx = this.passContext(pass)) {
+    pass.setSize(_size.x, _size.y);
+    return this.compileInto(pass.renderTarget, 0, this.camera, { mrt: pass.getMRT(), ctx, transparent: pass.transparent, opaque: pass.opaque });
+  }
+
+  /** compileAsync() into a given target; the render state is held until compilation has finished. */
+  async compileInto(target, face, camera, { mrt = null, ctx = null, transparent = true, opaque = true } = {}) {
+    const r = this.renderer;
+    const prev = { rt: r.getRenderTarget(), face: r.getActiveCubeFace(), mip: r.getActiveMipmapLevel(), mrt: r.getMRT(), ctx: r.contextNode, transparent: r.transparent, opaque: r.opaque };
+    r.setRenderTarget(target, face, 0);
+    r.setMRT(mrt);
+    if (ctx) r.contextNode = ctx;
+    r.transparent = transparent; r.opaque = opaque;
     try {
-      await this.renderer.compileAsync(this.scene, this.camera).catch((e) => console.warn(e));
+      await r.compileAsync(this.scene, camera);
     } finally {
-      this.suspended = was;
-      this.invalidate();
+      r.setRenderTarget(prev.rt, prev.face, prev.mip);
+      r.setMRT(prev.mrt);
+      r.contextNode = prev.ctx;
+      r.transparent = prev.transparent; r.opaque = prev.opaque;
     }
   }
+
+  /** Render context of the probe faces: the moving frame's "no occlusion" AO context. */
+  probeContext() {
+    return this.passContext(this.pipelines.passes.fast);
+  }
+
+  /** Cube target + camera of the room probe (size per quality preset). */
+  ensureProbeTarget() {
+    const size = PROBE_SIZE[this.quality];
+    if (this.probeRT && this.probeRT.width !== size) { this.probeRT.dispose(); this.probeRT = null; this.probeCam = null; }
+    this.probeRT ??= new THREE.CubeRenderTarget(size, { type: THREE.HalfFloatType });
+    this.probeCam ??= new THREE.CubeCamera(0.05, 60, this.probeRT);
+    const cam = this.probeCam, r = this.renderer;
+    if (cam.coordinateSystem !== r.coordinateSystem) { cam.coordinateSystem = r.coordinateSystem; cam.updateCoordinateSystem(); }
+    return { rt: this.probeRT, cam };
+  }
+}
+
+/** True if the object and all its ancestors are visible (hidden ceilings, cut-away parts). */
+function isShown(o) {
+  for (let p = o; p; p = p.parent) if (!p.visible) return false;
+  return true;
 }
 
 /**
@@ -901,7 +1183,9 @@ function gpuName(renderer) {
  */
 export function suggestQuality(gpu = '') {
   const g = gpu.toLowerCase();
-  if (/swiftshader|llvmpipe|software|basic render|mali|adreno|powervr/.test(g) || matchMedia?.('(pointer: coarse)').matches) return 'low';
+  if (/swiftshader|llvmpipe|software|basic render|mali|adreno|powervr/.test(g)) return 'low';
+  // touch devices: phones → "Schnell"; tablets (larger screen, usually faster GPU) → "Mittel"
+  if (matchMedia?.('(pointer: coarse)').matches) return Math.min(screen.width, screen.height) >= 700 ? 'medium' : 'low';
   if (/\barc\b|xe-hpg|geforce|nvidia|quadro|rtx|radeon rx|radeon pro|apple m\d (pro|max|ultra)/.test(g)) return 'high';
   if (/intel|iris|uhd|xe-lp|gen-1\d|radeon\(tm\) graphics|radeon graphics|vega \d+ graphics|apple/.test(g)) return 'medium';
   return 'high';

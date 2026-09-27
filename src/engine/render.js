@@ -2,9 +2,16 @@
 // browser offers it, otherwise the renderer's built-in WebGL 2 backend – same nodes, same image.
 //
 //  fast       Standard view while the camera moves: one scene pass + bloom + SMAA.
+//  fastLow    "Schnell" (phones) while moving: scene pass + SMAA – the bloom mip chain is the most
+//             expensive part of the moving frame on mobile GPUs and invisible in motion anyway.
 //  refined    Standard view at rest: normal pre-pass → SSAO (denoised, half resolution) fed into
 //             the ambient term only (builtinAOContext: direct sun/lamp light is not darkened),
 //             4× MSAA scene pass, bloom, SMAA. One frame, then the GPU idles.
+//
+//  One shader per material: the moving frame and the room probe render through the same ambient-
+//  occlusion context as the resting SSAO frame – they merely sample a 1×1 white target instead of
+//  the SSAO result. The generated shader code is identical, so each material compiles ONE lit
+//  program for all three instead of two (half the compile work at load and after a style switch).
 //  realistic  "Realistisch": screen-space global illumination (SSGI, visibility-bitmask GI incl.
 //             AO and colour bleeding), screen-space reflections on glossy/metal surfaces (SSR),
 //             bloom and temporal reprojection anti-aliasing (TRAA). Converges over ≈ 40 frames
@@ -12,7 +19,7 @@
 import * as THREE from 'three/webgpu';
 import {
   pass, mrt, output, normalView, diffuseColor, velocity, metalness, roughness, vec4, screenUV, sample,
-  packNormalToRGB, unpackRGBToNormal, builtinAOContext, uniform,
+  packNormalToRGB, unpackRGBToNormal, builtinAOContext, uniform, texture,
 } from 'three/tsl';
 import { ssao, ssgi, ssr, traa, smaa, bloom } from '../../vendor/three-addons.js';
 
@@ -22,11 +29,22 @@ const BLOOM = { strength: 0.12, radius: 0.5, threshold: 1.25 };
 const normalFrom = (texNode) => sample((uv) => unpackRGBToNormal(texNode.sample(uv)));
 
 export function createPipelines(renderer, scene, camera) {
+  // "no occlusion": same format as the SSAO target (single channel), cleared to 1
+  const noAO = new THREE.RenderTarget(1, 1, { depthBuffer: false, format: THREE.RedFormat });
+  const prevTarget = renderer.getRenderTarget(), prevClear = renderer.getClearColor(new THREE.Color()), prevAlpha = renderer.getClearAlpha();
+  renderer.setRenderTarget(noAO); renderer.setClearColor(0xffffff, 1); renderer.clear();
+  renderer.setRenderTarget(prevTarget); renderer.setClearColor(prevClear, prevAlpha);
+  const aoContext = (aoSample) => builtinAOContext(aoSample.r);
+
   // ------------------------------------------------------------------ standard (moving)
   const fast = new THREE.RenderPipeline(renderer);
   const fastPass = pass(scene, camera);
+  // sampled like the SSAO pass texture (no uv-transform uniform), else the shader code would differ
+  fastPass.contextNode = aoContext(texture(noAO.texture, screenUV));
   const fastColor = fastPass.getTextureNode();
   fast.outputNode = smaa(fastColor.add(bloom(fastColor, BLOOM.strength, BLOOM.radius, BLOOM.threshold)));
+  const fastLow = new THREE.RenderPipeline(renderer);
+  fastLow.outputNode = smaa(fastColor);
 
   // ------------------------------------------------------------------ standard (at rest)
   const refined = new THREE.RenderPipeline(renderer);
@@ -41,7 +59,7 @@ export function createPipelines(renderer, scene, camera) {
   aoNode.intensity.value = 1.35;
   aoNode.samples.value = 16;
   const refPass = pass(scene, camera, { samples: 4 }); // MSAA: fine slats and edges without moiré
-  refPass.contextNode = builtinAOContext(aoNode.getTextureNode().sample(screenUV).r);
+  refPass.contextNode = aoContext(aoNode.getTextureNode().sample(screenUV));
   const refColor = refPass.getTextureNode();
   refined.outputNode = smaa(refColor.add(bloom(refColor, BLOOM.strength, BLOOM.radius, BLOOM.threshold)));
   // Integrated/low-end GPUs still get contact AO when stationary, without a 4× colour buffer.
@@ -91,8 +109,10 @@ export function createPipelines(renderer, scene, camera) {
   realistic.outputNode = aa;
 
   return {
-    fast, refined, refinedLow, realistic,
+    fast, fastLow, refined, refinedLow, realistic,
     nodes: { ao: aoNode, gi, refl, reflStrength, traa: aa },
+    /** Scene passes per pipeline – the viewer precompiles their shader variants (warm-up). */
+    passes: { fast: fastPass, pre, refined: refPass, refinedLow: refPassLow, realistic: rp },
     /** Quality presets: sample counts only (resolution is handled by the pixel ratio). */
     setQuality(q) {
       aoNode.samples.value = q === 'low' ? 8 : 16;
@@ -100,6 +120,6 @@ export function createPipelines(renderer, scene, camera) {
       gi.stepCount.value = q === 'high' ? 10 : q === 'medium' ? 7 : 5;
       refl.quality.value = q === 'high' ? 0.6 : q === 'medium' ? 0.3 : 0.2;
     },
-    dispose() { fast.dispose(); refined.dispose(); refinedLow.dispose(); realistic.dispose(); },
+    dispose() { noAO.dispose(); fast.dispose(); fastLow.dispose(); refined.dispose(); refinedLow.dispose(); realistic.dispose(); },
   };
 }
