@@ -110,7 +110,11 @@ export class Layout {
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.openSheet) this.closeSheet(); });
     for (const sheet of $$('.sheet')) this.swipeToClose(sheet, $('.sheet-grip', sheet), () => this.closeSheet(), $('.sheet-head', sheet));
     // choosing a station or style in a sheet closes it – the view is what the user wants to see
-    $('#stationList').addEventListener('click', (e) => { if (e.target.closest('button') && this.state?.compact) this.closeSheet(); });
+    $('#stationList').addEventListener('click', (e) => {
+      if (!e.target.closest('button')) return;
+      if (this.state?.compact) this.closeSheet();
+      else if (this.state?.layout === 'tablet') this.collapseStations(true); // tablets: free the view again
+    });
     $('#styleSheet').addEventListener('click', (e) => { if (e.target.closest('button')) this.closeSheet(); });
   }
 

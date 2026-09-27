@@ -237,7 +237,7 @@ body:not(.is-photo) .photo-status { opacity: 0; }
 .fab:hover { background: #fff; }
 .fab.immersive-exit { display: none; }
 .immersive-btn { position: absolute; right: 16px; bottom: 16px; z-index: 4; }
-.engine-badge { right: auto; left: 16px; bottom: 26px; }
+.engine-badge { right: auto; left: 16px; bottom: 76px; }
 .toolbar { max-width: calc(100% - 150px); }
 .style-card { position: relative; }
 .style-card .dots i { width: 12px; height: 12px; }
@@ -321,7 +321,7 @@ body:is([data-layout="phone"], [data-layout="phone-land"]) .details .close { top
 body:is([data-layout="phone"], [data-layout="phone-land"]) .details .sheet-grip { display: block; position: absolute; top: 0; left: 0; right: 0; height: 22px; cursor: pointer; touch-action: none; }
 body:is([data-layout="phone"], [data-layout="phone-land"]) .details .sheet-grip::before,
 .sheet .sheet-grip::before, .plan-grip::before { content: ''; position: absolute; left: 50%; top: 8px; width: 38px; height: 4px; margin-left: -19px; border-radius: 4px; background: rgba(38,36,31,.22); }
-body.show-joystick .details:not(.expanded) { left: 150px; }
+body.show-joystick[data-layout="phone"] .details:not(.expanded) { left: 150px; }
 
 /* sheets */
 body.use-sheets .sheet { display: flex; flex-direction: column; position: absolute; left: 0; right: 0; bottom: 0; max-height: 74%; background: var(--paper); border-radius: 20px 20px 0 0; box-shadow: 0 -12px 40px rgba(38,32,24,.2); transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1); z-index: 7; padding-bottom: 8px; visibility: hidden; }
@@ -427,3 +427,6 @@ body[data-layout="phone-land"] .brand { display: none; }
 body[data-layout="phone-land"] .tabs button { padding: 4px 2px; }
 body[data-layout="phone-land"] .tabs .ico { width: 20px; height: 20px; }
 body[data-layout="phone-land"] .actions button { width: 36px; height: 36px; }
+body[data-layout="tablet"] .joystick { bottom: 150px; }
+body[data-layout="phone-land"] .tabs .short { display: none; }
+body[data-layout="phone-land"] .tabs button { padding: 9px 2px; }

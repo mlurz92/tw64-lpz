@@ -19,7 +19,7 @@ python3 -m http.server 8000
 # oder: node tools/dev-server.mjs
 ```
 
-Danach <http://localhost:8000> öffnen. Die Pathtracing-Engine (≈ 1 MB) und die Denoiser-Gewichte (1,8 MB) werden erst beim ersten Wechsel auf *Fotorealistisch* geladen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten rechts im 3D-Viewer. Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
+Danach <http://localhost:8000> öffnen. Die Pathtracing-Engine (≈ 1 MB) und die Denoiser-Gewichte (1,8 MB) werden erst beim ersten Wechsel auf *Fotorealistisch* geladen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten links im 3D-Viewer (Desktop). Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
 
 ## Stilwelten (Möblierungsvarianten)
 
