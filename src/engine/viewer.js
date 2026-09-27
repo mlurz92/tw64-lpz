@@ -31,6 +31,7 @@ import { setMaxAnisotropy } from './textures.js';
 import { LightRig, LAMP_SCALE, INTERIOR_LEVEL } from './lighting.js';
 import { createPipelines } from './render.js';
 import { PICK_LAYER } from './scene.js';
+import { PhotoRenderer } from './photo.js';
 
 export { LAMP_SCALE };
 
@@ -38,14 +39,15 @@ export const MOODS = {
   // Pure-sky panoramas (no ground scenery – park and city are real geometry 9.28 m below).
   // sunAz: world azimuth of the sun (°, atan2(z, x)); the panorama is rotated so that its sun
   // disc sits exactly there, the elevation is measured from the panorama (minEl = lower bound).
-  day: { label: 'Tageslicht', hdri: 'kloofendal_48d_partly_cloudy_puresky', env: 0.9, bg: 1.0, sun: 3.2, sunColor: '#fff4e6', sunAz: 38, minEl: 20, maxEl: 90, lamps: 0, exposure: 1.0, key: 0.28, maxExp: 4.5, fill: [0.85, 0.18], fog: '#c3cdd6' },
-  golden: { label: 'Goldene Stunde', hdri: 'qwantani_late_afternoon_puresky', env: 0.8, bg: 0.95, sun: 2.4, sunColor: '#ffc690', sunAz: 112, minEl: 6, maxEl: 90, lamps: 0.35, exposure: 0.95, key: 0.21, maxExp: 3.5, fill: [0.45, 0.09], fog: '#d8b99a' },
-  evening: { label: 'Abend', hdri: 'qwantani_dusk_2_puresky', env: 0.35, bg: 0.45, sun: 0, sunColor: '#ffffff', sunAz: 112, minEl: 0, maxEl: 90, lamps: 1, exposure: 0.95, key: 0.1, maxExp: 3, fill: [0.12, 0.015], fog: '#3a4152' },
+  day: { label: 'Tageslicht', hdri: 'kloofendal_48d_partly_cloudy_puresky', env: 0.9, bg: 1.0, sun: 3.2, sunColor: '#fff4e6', sunAz: 38, minEl: 20, maxEl: 90, lamps: 0, exposure: 1.0, key: 0.28, maxExp: 4.5, fill: [0.85, 0.18], fog: '#c3cdd6', photoKey: 0.18 },
+  golden: { label: 'Goldene Stunde', hdri: 'qwantani_late_afternoon_puresky', env: 0.8, bg: 0.95, sun: 2.4, sunColor: '#ffc690', sunAz: 112, minEl: 6, maxEl: 90, lamps: 0.35, exposure: 0.95, key: 0.21, maxExp: 3.5, fill: [0.45, 0.09], fog: '#d8b99a', photoKey: 0.17 },
+  evening: { label: 'Abend', hdri: 'qwantani_dusk_2_puresky', env: 0.35, bg: 0.45, sun: 0, sunColor: '#ffffff', sunAz: 112, minEl: 0, maxEl: 90, lamps: 1, exposure: 0.95, key: 0.1, maxExp: 3, fill: [0.12, 0.015], fog: '#3a4152', photoKey: 0.13 },
 };
 
 export const RENDER_MODES = {
   standard: { label: 'Standard', title: 'Echtzeit-PBR mit Umgebungsverdeckung (SSAO), schnell' },
-  realistic: { label: 'Realistisch', title: 'Globale Beleuchtung (SSGI), Spiegelungen (SSR), temporales Anti-Aliasing' },
+  realistic: { label: 'Realistisch', title: 'Globale Beleuchtung (SSGI), Spiegelungen (SSR), temporales Anti-Aliasing – in Echtzeit' },
+  photo: { label: 'Fotorealistisch', title: 'Pathtracing (physikalisch korrekte Lichtausbreitung) + KI-Entrauschung (Open Image Denoise) – startet im Stillstand' },
 };
 
 export const STATIONS = [
@@ -56,10 +58,10 @@ export const STATIONS = [
   { id: 'dining', label: 'Essen · Sideboard & Pendel', mode: 'walk', pos: [8.9, 1.5, 12.7], target: [7.6, 0.95, 16.9], fov: 62 },
   { id: 'hall', label: 'Diele · Eingang', mode: 'walk', pos: [9.35, 1.55, 8.35], target: [13.0, 1.1, 6.3], fov: 64 },
   { id: 'kitchen', label: 'Küche', mode: 'walk', pos: [5.85, 1.5, 16.2], target: [3.0, 1.05, 16.9], fov: 64 },
-  { id: 'bedroom', label: 'Schlafen', mode: 'walk', pos: [6.35, 1.5, 17.6], target: [9.4, 0.9, 19.9], fov: 64 },
-  { id: 'wardrobe', label: 'Schlafen · Blick zum Schrank', mode: 'walk', pos: [8.7, 1.45, 21.1], target: [6.0, 1.1, 18.9], fov: 64 },
+  { id: 'bedroom', label: 'Schlafen', mode: 'walk', pos: [7.0, 1.5, 17.5], target: [9.3, 0.95, 20.0], fov: 66 },
+  { id: 'wardrobe', label: 'Schlafen · Blick zum Schrank', mode: 'walk', pos: [8.75, 1.5, 17.5], target: [6.0, 1.05, 19.8], fov: 66 },
   { id: 'office', label: 'Arbeiten / Gäste', mode: 'walk', pos: [14.05, 1.5, 10.1], target: [16.5, 0.85, 7.9], fov: 66 },
-  { id: 'library', label: 'Arbeiten · Bibliothekswand', mode: 'walk', pos: [16.45, 1.5, 9.75], target: [13.7, 1.25, 9.55], fov: 64 },
+  { id: 'library', label: 'Arbeiten · Bibliothekswand', mode: 'walk', pos: [16.2, 1.5, 8.75], target: [13.7, 1.2, 9.8], fov: 64 },
   { id: 'bath', label: 'Bad · Waschplatz & Spiegelwand', mode: 'walk', pos: [15.2, 1.6, 7.3], target: [16.1, 1.2, 5.6], fov: 72 },
   { id: 'guestbath', label: 'Dusche / Gäste-WC', mode: 'walk', pos: [10.2, 1.6, 7.35], target: [11.0, 1.2, 5.6], fov: 72 },
   { id: 'balcony', label: 'Balkon 1', mode: 'walk', pos: [13.1, 1.55, 10.4], target: [10.6, 0.8, 9.6], fov: 66 },
@@ -185,6 +187,7 @@ export class Viewer {
   async setApartment(apartment) {
     this.suspended = true;
     try {
+      this.photo?.stop(); this.photo?.invalidateScene();
       if (this.apartment) { this.select(null); this.apartment.dispose(); }
       this.apartment = apartment;
       this.scene.add(apartment.root);
@@ -271,6 +274,7 @@ export class Viewer {
     this.sceneChanged();
     this.applyEnvironment();
     this.updateBackground();
+    this.photo?.stop();
     this.emit('mood', name);
   }
 
@@ -288,7 +292,7 @@ export class Viewer {
     this.invalidate();
   }
 
-  setExposure(v) { this.exposureTrim = v; this.applyEnvironment(); }
+  setExposure(v) { this.exposureTrim = v; this.applyEnvironment(); this.photo?.applyExposure(); }
 
   setLamps(level) {
     if (!this.apartment) return;
@@ -345,12 +349,36 @@ export class Viewer {
     this.emit('mode', mode);
   }
 
-  /** 'standard' | 'realistic' */
+  /** 'standard' | 'realistic' | 'photo' */
   setRenderMode(mode) {
     if (!RENDER_MODES[mode] || mode === this.renderMode) return;
     this.renderMode = mode;
+    if (mode !== 'photo') this.photo?.stop();
     this.applyEnvironment();
     this.emit('render', mode);
+  }
+
+  // ------------------------------------------------------------------ photoreal (path tracing)
+  moodSettings() { return MOODS[this.mood]; }
+  /** Geometry signature of the path-traced scene (style, camera mode = ceilings, quality). */
+  photoSceneKey() { return `${this.apartment?.root.uuid}|${this.mode}|${this.quality}`; }
+
+  /**
+   * Photo mode inside the render loop. Moving: the lean real-time pipeline (the path tracer
+   * restarts from zero anyway). At rest: one refined raster frame, then the path tracer owns the
+   * GPU until its sample budget is reached. Returns true when the raster frame is skipped.
+   */
+  photoLoop(moving, still, now) {
+    const p = (this.photo ??= new PhotoRenderer(this));
+    if (!still) { if (p.active) p.stop(); return false; }
+    if (!p.active) {
+      if (!this.refined || this.needsRender) return false; // raster frame under the overlay first
+      if (this.probeStale()) return false;
+      p.start();
+      return true;
+    }
+    p.tick();
+    return true;
   }
 
   // ------------------------------------------------------------------ room probe
@@ -557,6 +585,7 @@ export class Viewer {
     this.renderer.setPixelRatio(this.pixelRatio(w, h));
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+    this.photo?.stop();
     this.invalidate();
   }
 
@@ -580,6 +609,7 @@ export class Viewer {
     }
     this.pipelines?.setQuality(q);
     this.rig?.setQuality(q);
+    this.photo?.stop(); this.photo?.invalidateScene();
     this.sceneChanged();
     this.resize();
     this.emit('quality', q);
@@ -668,6 +698,7 @@ export class Viewer {
     if (moving) { this.lastMove = now; this.invalidate(); }
     if (this.suspended || !this.pipelines) return;
     const still = now - this.lastMove > SETTLE_MS;
+    if (this.renderMode === 'photo' && this.photoLoop(moving, still, now)) return;
     // light budget follows the camera (walk mode: room of the camera)
     if (this.rig?.update(this.mode, this.camera.position)) this.invalidate();
     // Load distribution: one probe step (a cube face or the prefilter) per tick while the camera
@@ -730,6 +761,13 @@ export class Viewer {
 
   /** PNG of the current view: settle, then render and read back in the same task. */
   async screenshot() {
+    if (this.renderMode === 'photo') {
+      await this.settle();
+      this.renderNow();
+      const p = (this.photo ??= new PhotoRenderer(this));
+      if (!p.active) await p.start();
+      if (p.state !== 'error') { await p.finished(); return p.dataURL(); }
+    }
     await this.settle();
     this.renderNow();
     return this.renderer.domElement.toDataURL('image/png');

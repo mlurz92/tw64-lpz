@@ -36,7 +36,7 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
   const abs = (x, y, yaw = 0, h = 0) => ({ pos: [x, y], yaw, y: h });
   const grp = (...children) => { const g = new THREE.Group(); children.forEach(([o, x = 0, y = 0, z = 0, ry = 0]) => { o.position.set(x, y, z); o.rotation.y = ry; g.add(o); }); return g; };
   const fr = Object.fromEntries(['W02', 'W07', 'W08', 'W10', 'W11', 'W13', 'W14', 'W16', 'W18', 'W19', 'W20', 'W21', 'W22', 'W23', 'W28', 'W47', 'W48', 'W49', 'W50'].map((id) => [id, frameOf(id)]));
-  const ctx = { M, lib, add, at, abs, grp, fr, F, K, B, D, T, C, THREE, box, boxOn, cyl, rboxOn, helpers: { lemons, laptop, shelfStyled, styleShelf, chairsAround } };
+  const ctx = { M, lib, add, style, at, abs, grp, fr, F, K, B, D, T, C, THREE, box, boxOn, cyl, rboxOn, helpers: { lemons, laptop, shelfStyled, styleShelf, chairsAround } };
   const S = style.decor ?? {};
 
   // ======================================================================== STIL: Wohnen, Essen, Schlafen, Arbeiten
@@ -140,10 +140,22 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
   const curtains = [['W06', 0, 'curtain'], ['W06', 1, 'curtain'], ['W04', 0, 'curtain'], ['W03', 0, 'curtain'], ['W21', 0, 'curtainDim'], ['W21', 1, 'curtainDim'], ['W27', 0, 'curtain'], ['W27', 1, 'curtain']];
   curtains.forEach(([wid, i, mat], k) => {
     const w = WALLS.find((x) => x.id === wid), o = w.openings[i], f = frameOf(wid);
-    const span = o.u1 - o.u0;
-    add({ id: `curtain-${wid}-${i}`, room: w.room, name: 'Vorhang, Deckenschiene', cat: 'Textil', spec: mat === 'curtainDim' ? (cur.dim ?? 'IKEA MAJGULL Verdunkelung 145 × 300, grau, gekürzt') : (cur.day ?? 'Leinen Ivory, Wellenfalte'), size: [span + 0.56, 0.1], plan: false },
-      T.curtainSet(M, span, { mat, seed: k * 3 + 1, top: 2.49 }), at(f, (o.u0 + o.u1) / 2, 0.11));
+    // Stack 28 cm beyond each reveal, but never into the neighbouring wall (W06 right window
+    // ended 8 cm inside W07 before): clamp the set to the wall and keep the reveal covered.
+    const left = Math.max(0.03, o.u0 - 0.28), right = Math.min(w.length - 0.03, o.u1 + 0.28);
+    const span = right - left - 0.56;
+    add({ id: `curtain-${wid}-${i}`, room: w.room, name: 'Vorhang, Deckenschiene in Vorhangvoute', cat: 'Textil', spec: mat === 'curtainDim' ? (cur.dim ?? 'IKEA MAJGULL Verdunkelung 145 × 300, grau, gekürzt') : (cur.day ?? 'Leinen Ivory, Wellenfalte'), size: [span + 0.56, 0.1], plan: false },
+      T.curtainSet(M, span, { mat, seed: k * 3 + 1, top: 2.49 }), at(f, (left + right) / 2, 0.11));
   });
+  // Vorhangvouten (Luxus-Regel „Vorhang von Decke bis Boden“): Deckenblende wand-zu-wand vor der
+  // Vorhangschiene, darin eine LED-Linie, die den Stoff von oben streift. Konkave Ecken schließen
+  // an die Nachbarwand an, freie Enden erhalten eine Stirnblende.
+  for (const [wid, u0, u1, ret] of [['W06', 0, 5.076, [false, false]], ['W03', 0, 3.725, [false, true]], ['W04', 0, 3.373, [false, true]],
+    ['W21', 0, 3.78, [false, false]], ['W27', 0, 3.51, [false, false]]]) {
+    const w = WALLS.find((x) => x.id === wid);
+    add({ id: `pelmet-${wid}`, room: w.room, name: 'Vorhangvoute mit LED', cat: 'Leuchte', spec: 'Trockenbau-Deckenblende 20 × 10 cm, wand-zu-wand, LED-Linie 2700 K auf die Vorhänge gerichtet', size: [u1 - u0, 0.2], plan: false, ceiling: true },
+      D.curtainPelmet(M, u1 - u0, { returns: ret }), at(frameOf(wid), u0, 0.001));
+  }
 
   const spots = [
     ['living', 9.65, 8.3], ['living', 10.9, 8.3], ['living', 12.15, 8.3], ['living', 12.72, 6.55],

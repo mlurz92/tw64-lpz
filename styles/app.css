@@ -218,3 +218,13 @@ body.is-switching .switch-overlay { display: grid; }
 @media (max-width: 1180px) { .style-bar { max-width: calc(100% - 32px); top: auto; bottom: 78px; } .hint { top: 16px; } }
 @media (max-width: 1100px) { .engine-badge { display: none; } }
 @media (max-width: 700px) { .style-bar { bottom: 120px; } .style-bar button { padding: 6px 10px; } }
+
+/* Photoreal mode: path-traced canvas and denoised result above the real-time view */
+.photo-layer { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .35s ease; }
+.photo-layer.on { opacity: 1; }
+.photo-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.photo-canvas.denoised { opacity: 0; transition: opacity .4s ease; }
+.photo-layer.denoised .photo-canvas.denoised { opacity: 1; }
+.photo-status { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); font-size: 12px; letter-spacing: .04em; color: #f7f4ee; background: rgba(34,32,29,.72); backdrop-filter: blur(6px); padding: 6px 14px; border-radius: 999px; pointer-events: none; opacity: 0; transition: opacity .3s; white-space: nowrap; }
+.photo-status.show { opacity: 1; }
+body:not(.is-photo) .photo-status { opacity: 0; }
