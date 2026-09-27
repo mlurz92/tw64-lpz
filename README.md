@@ -19,7 +19,7 @@ python3 -m http.server 8000
 # oder: node tools/dev-server.mjs
 ```
 
-Danach <http://localhost:8000> öffnen. Die Pathtracing-Engine (≈ 1 MB) und die Denoiser-Gewichte (1,8 MB) werden erst beim ersten Wechsel auf *Fotorealistisch* geladen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten rechts im 3D-Viewer. Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
+Danach <http://localhost:8000> öffnen. Die Pathtracing-Engine (≈ 1 MB) und die Denoiser-Gewichte (1,8 MB) werden erst beim ersten Wechsel auf *Fotorealistisch* geladen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten links im 3D-Viewer (Desktop). Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
 
 ## Stilwelten (Möblierungsvarianten)
 
@@ -104,7 +104,7 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 
 | Ansicht | Inhalt |
 |---|---|
-| **3D-Rundgang** | Dollhouse (ohne Decke) und Begehung auf Augenhöhe, 14 Kamerastationen, drei Lichtstimmungen, **Stilwelt-Leiste**, Darstellung **Standard / Realistisch / Fotorealistisch**, Möbel anklicken → Details |
+| **3D-Rundgang** | Dollhouse (ohne Decke) und Begehung auf Augenhöhe, 14 Kamerastationen, drei Lichtstimmungen, **Stilwelt-Leiste**, Darstellung **Standard / Realistisch / Fotorealistisch**, Möbel anklicken → Details, **Vollbild**; auf Smartphones mit Chips, Bottom-Sheets und Geh-Joystick (siehe *Responsives Layout*) |
 | **Grundriss** | Maßstäblicher Plan (SVG) aus derselben Datenbasis: Wände mit Öffnungen, Wandmaße, nummerierte Möbel-Grundflächen, Raumfokus, Zoom/Pan |
 | **Wandmaße** | Alle 52 Wände mit Länge, Öffnungen, Nettoabschnitten und Prüfstatus |
 | **Konzept & Möbel** | Stilwelt-Reiter, Farbpalette, Materialität, Wandgestaltung, Lichtplanung, **Luxus-Prinzipien**, Planungsprüfung, Raumkonzepte, Möbel- und Ausstattungsliste, Moodboards |
@@ -118,6 +118,38 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 | Zoom | Mausrad | – |
 | Stilwelt wechseln | Leiste oben oder `1`–`4` | Leiste oben oder `1`–`4` |
 | Möbel-Info | Klick auf Möbel | Klick auf Möbel |
+| Vollbild (nur 3D) | `F` oder ⛶ unten rechts, `Esc` beendet | `F` oder ⛶ unten rechts, `Esc` beendet |
+
+### Bedienung auf Smartphone und Tablet
+
+| Aktion | Dollhouse | Begehung |
+|---|---|---|
+| Drehen / Umsehen | ein Finger ziehen | ein Finger ziehen |
+| Verschieben / Zoom | zwei Finger (Pinch + Verschieben) | – |
+| Gehen | – | **virtueller Joystick** unten links (Auslenkung = Tempo, Vollausschlag = schnell) |
+| Möbel-Info | antippen → Detailkarte klappt unten ein Stück auf, Tippen/Hochziehen öffnet sie ganz, Wischen nach unten schließt | dto. |
+| Grundriss | ein Finger verschieben, **zwei Finger zoomen**, +/−/⛶-Knöpfe | – |
+
+## Responsives Layout (neu)
+
+Die Oberfläche erkennt beim Laden und bei jeder Größen- oder Orientierungsänderung **Geräteklasse und Eingabeart** (`src/ui/layout.js`, CSS-Media-Queries `pointer: coarse`, `hover: none`, Breite, Höhe, Orientierung) und ordnet die Bedienelemente so an, dass die **3D-Ansicht möglichst viel Fläche** behält. Die Bedienelemente werden dabei nur umgehängt, nicht dupliziert – Zustand und Ereignisse bleiben identisch.
+
+| Gerät | Navigation | 3D-Arbeitsfläche |
+|---|---|---|
+| **Desktop** (> 1180 px) | Kopfzeile mit Reitern | Kamerastationen links, Details rechts, Stilwelt-Leiste oben, vollständige Werkzeugleiste unten; ⛶ Vollbild |
+| **Tablet** (≤ 1180 px) | Kopfzeile, Symbole für Maßgrundlage | Kamerastationen eingeklappt, Detailpanel erst bei Bedarf, Stilwelt-Leiste über der Werkzeugleiste; Werkzeugleiste auf Dollhouse/Begehung + **„Ansicht“** reduziert (Licht, Darstellung, Belichtung, Qualität, PNG im Sheet); größere Touch-Ziele |
+| **Smartphone hoch** (≤ 700 px) | kompakte Kopfzeile (Symbol-Buttons), **App-Navigation unten** (3D · Plan · Maße · Konzept) | randlose 3D-Ansicht; oben zwei Chips (**aktuelle Kamerastation**, **Stilwelt**) und ⛶; unten nur Dollhouse/Begehung + **„Ansicht“**. Stationen, Stilwelten sowie Licht/Darstellung/Belichtung/Qualität/PNG öffnen sich als **Bottom-Sheets** (Wischen nach unten oder Tippen daneben schließt; die Szene bleibt dahinter sichtbar, Änderungen wirken live) |
+| **Smartphone quer** (Höhe ≤ 520 px) | Kopfzeile wird zur **schmalen Seitenleiste** links (Symbole) – die volle Bildhöhe gehört der 3D-Ansicht | Chips oben links, Detailkarte rechts oben, Sheets zentriert |
+
+Weitere Anpassungen:
+
+- **Vollbild/Immersiv** (alle Geräte): blendet alle Bedienelemente aus und nutzt – wo der Browser es erlaubt – die native Fullscreen-API; auf dem iPhone (ohne Fullscreen-API) greift der CSS-Immersivmodus. Joystick und Pathtracing-Fortschritt bleiben sichtbar.
+- **Overlays treten zurück**, solange ein Finger das Modell bewegt (Deckkraft 18 %, nicht klickbar).
+- **Sichtfeld im Hochformat:** Die FOV-Werte der Kamerastationen sind für Querformat abgestimmt; im Hochformat würde der horizontale Bildwinkel in der Begehung auf einen schmalen Ausschnitt schrumpfen. Der vertikale Bildwinkel wird deshalb in Richtung des Querformat-Bildwinkels (Referenz 3 : 2) erweitert, begrenzt auf 85° gegen Verzerrung.
+- **Auflösung:** kleine Canvas (< 0,6 MP, also Smartphones) dürfen bis 1,5× Gerätepixel rendern, auch in der Stufe *Schnell* – das Pixelbudget der Qualitätsstufe und die adaptive Auflösung begrenzen die Last weiterhin.
+- `100dvh`, `viewport-fit=cover` und `env(safe-area-inset-*)`: kein Springen beim Ein-/Ausblenden der Browserleiste, Notch und Home-Indikator werden freigehalten.
+- Grundriss auf dem Smartphone randlos, Ebenen/Räume/Positionen als ausklappbares Sheet; Antippen eines Raums oder einer Position öffnet es automatisch.
+- Wandmaß-Tabelle mit fixierter erster Spalte beim seitlichen Scrollen, Stilwelt-Reiter im Konzept als wischbare Zeile.
 
 ## Rendering
 
@@ -228,7 +260,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 ```text
 .
 ├── index.html                    # App-Shell, Import-Map (three → vendor/three.webgpu.min.js, three/tsl)
-├── styles/app.css                # UI (Japandi-Designsprache, responsiv, Druckansicht, Stilwelt-Leiste)
+├── styles/app.css                # UI (Japandi-Designsprache, Geräteklassen, Sheets, Druckansicht, Stilwelt-Leiste)
 ├── src/
 │   ├── main.js                   # Bootstrap, UI-Logik, Stilwechsel (Leiste + Tasten 1–4), Export
 │   ├── core/geometry.js          # Planmaße → Meter, Wandrahmen, Wandstärken, Polygon-Utilities
@@ -251,7 +283,8 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   │       ├── surroundings.js   # Park (9,28 m tiefer), Bäume, Straße, Stadtkante, Gebäude unter/über WE 13
 │   │       ├── bath.js           # Vorwände 1,18 m, Maßspiegel, Waschtrockner-Nische, Laufen VAL/Meda, V&B Collaro, Duravit Tulum
 │   │       └── kitchen.js · decor.js · textiles.js · common.js
-│   └── ui/plan2d.js              # SVG-Grundriss
+│   ├── ui/layout.js              # Geräteklasse/Eingabeart, Bottom-Sheets, Joystick, Vollbild, Umhängen der Bedienelemente
+│   └── ui/plan2d.js              # SVG-Grundriss (Maus, Touch, Pinch-Zoom)
 ├── vendor/                       # three.js r186 (WebGPU + TSL, gemeinsamer Kern), Add-ons, Pathtracer-Bundle,
 │                                 # BVH-Worker (lokal, offline, versionsfest)
 ├── assets/                       # CC0-Assets (lib/), OIDN-Gewichte (lib/oidn/), Ausführungsplan (PDF), Moodboards

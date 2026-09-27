@@ -109,6 +109,7 @@ export class Viewer {
     this.qualityAuto = true;
     this.renderMode = 'standard';
     this.keys = new Set();
+    this.moveInput = { x: 0, y: 0 }; // analogue walk input (touch joystick), -1 … 1
     this.timer = new THREE.Timer();
     this.hdris = new Map();
     this.listeners = new Set();
@@ -564,7 +565,7 @@ export class Viewer {
       this._walkTarget = pos.clone().add(dir.multiplyScalar(0.05));
     }
     const endTarget = st.mode === 'walk' ? this._walkTarget : target;
-    this.camera.fov = st.fov ?? 45; this.camera.updateProjectionMatrix();
+    this.baseFov = st.fov ?? 45; this.applyFov();
     this.station = st.id;
     this.emit('station', st.id);
     if (!animate) { this.camera.position.copy(pos); this.controls.target.copy(endTarget); this.controls.update(); this.onCameraChange(); return; }
@@ -579,6 +580,21 @@ export class Viewer {
     this.invalidate();
   }
 
+  /**
+   * Station FOVs are vertical angles tuned for landscape screens. On portrait screens (phones) the
+   * horizontal angle would collapse to a narrow slit in walk mode, so the vertical FOV is widened
+   * towards the landscape field of view (reference aspect 1.5), capped at 85° against distortion.
+   */
+  applyFov() {
+    const base = this.baseFov ?? this.camera.fov, a = this.camera.aspect, ref = 1.5;
+    let fov = base;
+    if (this.mode === 'walk' && a < ref) {
+      const h = Math.atan(Math.tan(THREE.MathUtils.degToRad(base) / 2) * ref);
+      fov = Math.min(Math.max(base, 85), THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(h) / a)));
+    }
+    if (Math.abs(fov - this.camera.fov) > 1e-3) { this.camera.fov = fov; this.camera.updateProjectionMatrix(); }
+  }
+
   onCameraChange() { this.lastMove = performance.now(); this.invalidate(); }
 
   resize() {
@@ -586,6 +602,7 @@ export class Viewer {
     this.renderer.setPixelRatio(this.pixelRatio(w, h));
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+    this.applyFov();
     this.photo?.stop();
     this.invalidate();
   }
@@ -593,7 +610,9 @@ export class Viewer {
   /** Device pixel ratio capped by the preset and by its pixel budget, times the adaptive scale. */
   pixelRatio(w, h) {
     const q = this.quality, dpr = window.devicePixelRatio || 1;
-    const base = Math.min(dpr, MAX_DPR[q], Math.sqrt(MAX_PIXELS[q] / Math.max(1, w * h)));
+    // small (phone-sized) canvases may exceed the preset's DPR cap – the pixel budget still bounds the cost
+    const cap = w * h < 6e5 ? Math.max(MAX_DPR[q], 1.5) : MAX_DPR[q];
+    const base = Math.min(dpr, cap, Math.sqrt(MAX_PIXELS[q] / Math.max(1, w * h)));
     return Math.max(0.5, base) * this.prScale * (this.exportScale ?? 1);
   }
 
@@ -628,9 +647,16 @@ export class Viewer {
     if (s !== this.prScale) { this.prScale = s; this.resize(); }
   }
 
+  /** Analogue walk input from the touch joystick: x = strafe right, y = forward (each -1 … 1). */
+  setMoveInput(x, y) {
+    this.moveInput.x = x; this.moveInput.y = y;
+    if (x || y) this.invalidate();
+  }
+
   walkUpdate(dt) {
-    if (this.mode !== 'walk' || !this.keys.size) return false;
-    const speed = (this.keys.has('shift') ? 2.4 : 1.2) * dt;
+    const stick = this.moveInput, analog = Math.hypot(stick.x, stick.y);
+    if (this.mode !== 'walk' || (!this.keys.size && !analog)) return false;
+    const speed = (this.keys.has('shift') || analog > 0.92 ? 2.4 : 1.2) * dt;
     const fwd = new THREE.Vector3(); this.camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
     const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0));
     const mv = new THREE.Vector3();
@@ -640,8 +666,12 @@ export class Viewer {
     if (this.keys.has('a') || this.keys.has('arrowleft')) mv.sub(right);
     if (this.keys.has('e')) mv.y += 1;
     if (this.keys.has('q')) mv.y -= 1;
+    if (!mv.lengthSq() && !analog) return false;
+    if (mv.lengthSq()) mv.normalize();
+    // the joystick keeps its magnitude: small deflection = slow, careful steps
+    if (analog) mv.addScaledVector(fwd, stick.y).addScaledVector(right, stick.x).clampLength(0, 1);
     if (!mv.lengthSq()) return false;
-    mv.normalize().multiplyScalar(speed);
+    mv.multiplyScalar(speed);
     this.camera.position.add(mv); this.controls.target.add(mv);
     this.camera.position.y = THREE.MathUtils.clamp(this.camera.position.y, 0.4, ROOM_HEIGHT - 0.15);
     this.controls.target.y = THREE.MathUtils.clamp(this.controls.target.y, 0.3, ROOM_HEIGHT);
@@ -681,7 +711,7 @@ export class Viewer {
     const dir = this.camera.position.clone().sub(this.controls.target).normalize();
     const pos = c.clone().add(dir.multiplyScalar(Math.max(2.5, size * 1.8)));
     pos.y = Math.max(pos.y, c.y + 1.2);
-    this.goto({ id: 'item', mode: 'orbit', pos: [pos.x + OFFSET.x, pos.y, pos.z + OFFSET.y], target: [c.x + OFFSET.x, c.y, c.z + OFFSET.y], fov: this.camera.fov });
+    this.goto({ id: 'item', mode: 'orbit', pos: [pos.x + OFFSET.x, pos.y, pos.z + OFFSET.y], target: [c.x + OFFSET.x, c.y, c.z + OFFSET.y], fov: this.baseFov ?? this.camera.fov });
     this.select(id);
   }
 

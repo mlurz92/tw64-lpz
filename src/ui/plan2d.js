@@ -124,35 +124,74 @@ export class PlanView {
 
   select(id) { this.selected = id; this.render(); }
 
+  /** Zooms by factor k (> 1 = out) around a client point (default: centre of the view). */
+  zoomBy(k, clientX, clientY) {
+    const svg = this.el.querySelector('svg'); if (!svg) return;
+    const r = this.el.getBoundingClientRect();
+    const pt = svg.createSVGPoint(); pt.x = clientX ?? r.left + r.width / 2; pt.y = clientY ?? r.top + r.height / 2;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const [x, y, w, h] = this.vb, nw = Math.min(40, Math.max(1.5, w * k)), nh = h * (nw / w);
+    this.vb = [p.x - (p.x - x) * (nw / w), p.y - (p.y - y) * (nh / h), nw, nh];
+    svg.setAttribute('viewBox', this.vb.join(' '));
+  }
+
+  /** Mouse drag / wheel, touch drag and two-finger pinch (pointer events, works for pen too). */
   bind() {
     const el = this.el;
-    let drag = null;
-    const toUnits = (dx, dy) => { const r = el.getBoundingClientRect(); const k = Math.max(this.vb[2] / r.width, this.vb[3] / r.height); return [dx * k, dy * k]; };
-    el.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, vb: [...this.vb], moved: false }; el.setPointerCapture(e.pointerId); });
+    const pointers = new Map();
+    let drag = null, pinch = null;
+    const unitsPerPx = () => { const r = el.getBoundingClientRect(); return Math.max(this.vb[2] / r.width, this.vb[3] / r.height); };
+    const pinchState = () => {
+      const [a, b] = [...pointers.values()];
+      return { d: Math.hypot(a.x - b.x, a.y - b.y), cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+    };
+    el.addEventListener('pointerdown', (e) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      el.setPointerCapture(e.pointerId);
+      if (pointers.size === 2) { pinch = pinchState(); if (drag) drag.moved = true; }
+      else if (pointers.size === 1) drag = { x: e.clientX, y: e.clientY, vb: [...this.vb], moved: false };
+    });
     el.addEventListener('pointermove', (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch && pointers.size >= 2) {
+        const now = pinchState(), k = unitsPerPx();
+        // pan with the midpoint, zoom around it
+        this.vb = [this.vb[0] - (now.cx - pinch.cx) * k, this.vb[1] - (now.cy - pinch.cy) * k, this.vb[2], this.vb[3]];
+        el.querySelector('svg').setAttribute('viewBox', this.vb.join(' '));
+        if (now.d > 0 && pinch.d > 0) this.zoomBy(pinch.d / now.d, now.cx, now.cy);
+        pinch = now;
+        return;
+      }
       if (!drag) return;
-      const [dx, dy] = toUnits(e.clientX - drag.x, e.clientY - drag.y);
-      if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 3) drag.moved = true;
+      const k = unitsPerPx(), dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
+      if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > (e.pointerType === 'touch' ? 8 : 3)) drag.moved = true;
       this.vb = [drag.vb[0] - dx, drag.vb[1] - dy, drag.vb[2], drag.vb[3]];
       el.querySelector('svg').setAttribute('viewBox', this.vb.join(' '));
     });
-    el.addEventListener('pointerup', (e) => {
+    const up = (e) => {
+      if (!pointers.delete(e.pointerId)) return;
+      if (pinch) {
+        if (pointers.size < 2) pinch = null;
+        // continue panning with the remaining finger from its current position
+        if (pointers.size === 1) { const [p] = pointers.values(); drag = { x: p.x, y: p.y, vb: [...this.vb], moved: true }; }
+        else { drag = null; this.render(); }
+        return;
+      }
       const d = drag; drag = null;
+      if (e.type !== 'pointerup') { this.render(); return; }
       if (d && !d.moved) {
         const target = document.elementFromPoint(e.clientX, e.clientY);
         const item = target?.closest('[data-item]')?.dataset.item;
         const room = target?.closest('[data-room]')?.dataset.room;
         if (item) { this.select(item); this.onSelect?.({ item }); } else if (room) this.onSelect?.({ room });
       } else this.render();
-    });
+    };
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
     el.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const r = el.getBoundingClientRect(), k = Math.exp(e.deltaY * 0.0012);
-      const svg = el.querySelector('svg'), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
-      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-      const [x, y, w, h] = this.vb, nw = Math.min(40, Math.max(1.5, w * k)), nh = h * (nw / w);
-      this.vb = [p.x - (p.x - x) * (nw / w), p.y - (p.y - y) * (nh / h), nw, nh];
-      void r;
+      this.zoomBy(Math.exp(e.deltaY * 0.0012), e.clientX, e.clientY);
       this.render();
     }, { passive: false });
     el.addEventListener('dblclick', () => this.focusRoom(null));

@@ -5,6 +5,7 @@ import { ModelLibrary } from './engine/models.js';
 import { ApartmentScene } from './engine/scene.js';
 import { buildSurroundings } from './engine/builders/surroundings.js';
 import { PlanView } from './ui/plan2d.js';
+import { Layout } from './ui/layout.js';
 import { ROOMS, WALLS, BALCONIES } from './core/geometry.js';
 import { STYLES, DEFAULT_STYLE } from './data/design.js';
 import { roomNotes, LUXURY_PRINCIPLES } from './data/styles.js';
@@ -79,9 +80,15 @@ class UI {
 
   init() {
     this.tabs(); this.toolbar(); this.stylePicker(); this.stations(); this.details(); this.planView(); this.wallsView(); this.conceptView(); this.dialogs();
+    this.layout = new Layout(this.v).init();
+    this.layout.planView = this.plan;
     this.v.on((type, data) => {
       if (type === 'pick') { this.showItem(data); this.plan?.select(data); }
-      if (type === 'station') $$('#stationList button').forEach((b) => b.classList.toggle('active', b.dataset.id === data));
+      if (type === 'station') {
+        $$('#stationList button').forEach((b) => b.classList.toggle('active', b.dataset.id === data));
+        const st = STATIONS.find((s) => s.id === data);
+        $('#chipStationLabel').textContent = st ? st.label : data === 'item' ? 'Objektansicht' : 'Freie Ansicht';
+      }
       if (type === 'mode') $$('#modeSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mode === data));
       if (type === 'mood') $$('#moodSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mood === data));
       if (type === 'render') {
@@ -90,15 +97,17 @@ class UI {
         document.body.classList.toggle('is-photo', data === 'photo');
       }
       if (type === 'photo') this.photoStatus(data);
-      if (type === 'converge') $('#converge i').style.width = `${Math.round(data * 100)}%`;
+      if (type === 'converge') this.setConverge(data);
     });
-    this.showRoom('living');
-    if (window.matchMedia('(max-width: 700px)').matches) { $('#details').classList.add('hidden'); $('#stations').classList.add('collapsed'); $('[data-collapse="stations"]').textContent = '+'; }
+    this.showRoom('living', { reveal: this.layout.state.layout === 'desktop' });
   }
+
+  setConverge(k) { $$('.converge i').forEach((i) => { i.style.width = `${Math.round(k * 100)}%`; }); }
 
   tabs() {
     $$('.tabs button').forEach((b) => b.addEventListener('click', () => {
-      $$('.tabs button').forEach((x) => x.classList.toggle('active', x === b));
+      $$('.tabs button').forEach((x) => { x.classList.toggle('active', x === b); x.setAttribute('aria-selected', String(x === b)); });
+      this.layout?.closeSheet(); this.layout?.setImmersive(false);
       $$('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + b.dataset.view));
       if (b.dataset.view === 'plan') this.plan.render();
       this.v.renderer.setAnimationLoop(b.dataset.view === '3d' ? () => this.v.loop() : null);
@@ -137,7 +146,7 @@ class UI {
       denoising: 'KI-Entrauschung (Open Image Denoise) …', done: `Fertig · ${s.target} Samples · KI-entrauscht`, error: s.message ?? 'Pathtracing nicht verfügbar', idle: '' }[s.state] ?? '';
     el.textContent = label;
     el.classList.toggle('show', !!label);
-    $('#converge i').style.width = `${Math.round(Math.min(1, s.samples / s.target) * 100)}%`;
+    this.setConverge(Math.min(1, s.samples / s.target));
   }
 
   stations() {
@@ -146,7 +155,7 @@ class UI {
       this.v.goto(b.dataset.id);
       const st = STATIONS.find((s) => s.id === b.dataset.id);
       const room = { living: 'living', sofa: 'living', dining: 'living', hall: 'living', kitchen: 'kitchen', bedroom: 'bedroom', wardrobe: 'bedroom', office: 'office', library: 'office', bath: 'bath', guestbath: 'guestbath', balcony: 'balcony1' }[st.id];
-      if (room) this.showRoom(room);
+      if (room) this.showRoom(room, { reveal: !this.layout?.state.compact });
     }));
   }
 
@@ -156,10 +165,11 @@ class UI {
     setTimeout(() => $('#hint').classList.add('off'), 9000);
   }
 
-  showRoom(id) {
+  /** Room concept in the details panel; on phones it only updates (reveal = false keeps the view free). */
+  showRoom(id, { reveal = true } = {}) {
     const n = this.notes[id]; if (!n) return;
     this.lastRoom = id;
-    $('#details').classList.remove('hidden');
+    if (reveal) $('#details').classList.remove('hidden');
     const r = ROOMS.find((x) => x.id === id), items = this.a.byRoom.get(id) ?? [];
     this.detailEl.innerHTML = `<span class="chip">Raum</span><h3>${esc(n.title)}</h3>
       ${r ? `<div class="sub">${f2(r.wfl)} m² Wohnfläche · Plan ${f2(r.planArea)} m²</div>` : ''}
@@ -177,6 +187,7 @@ class UI {
       <p style="margin-top:14px"><button class="ghost" id="btnFocus">Heranzoomen</button> <button class="ghost" id="btnRoom">Raumkonzept</button></p>`;
     $('#btnFocus').onclick = () => this.v.focusItem(id);
     $('#btnRoom').onclick = () => this.showRoom(it.room);
+    if (this.layout?.state.compact) $('#btnFocus').addEventListener('click', () => $('#details').classList.remove('expanded'));
   }
 
   planView() {
@@ -269,8 +280,15 @@ class UI {
     const bar = $('#styleBar'), ids = Object.keys(STYLES);
     const render = () => {
       bar.innerHTML = Object.values(STYLES).map((x, i) => `<button role="tab" data-style="${x.id}" aria-selected="${x.id === this.style.id}" class="${x.id === this.style.id ? 'active' : ''}" title="${esc(x.label)} – ${esc(x.claim)}">
-        <span class="dots">${x.palette.slice(1, 6).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span>${esc(x.short)}<kbd>${i + 1}</kbd></button>`).join('');
+        <span class="dots">${x.palette.slice(1, 6).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span><span class="lbl">${esc(x.short)}</span><kbd>${i + 1}</kbd></button>`).join('');
       $$('#styleBar button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
+      // compact layouts: chip with the current style + bottom sheet with all four
+      const cur = this.style;
+      $('#chipStyleDots').innerHTML = cur.palette.slice(1, 5).map(([, c]) => `<i style="background:${c}"></i>`).join('');
+      $('#chipStyleLabel').textContent = cur.short;
+      $('#styleSheet').innerHTML = Object.values(STYLES).map((x, i) => `<button class="style-card ${x.id === cur.id ? 'active' : ''}" data-style="${x.id}" aria-pressed="${x.id === cur.id}">
+        <span class="dots">${x.palette.slice(1, 8).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span><strong>${esc(x.label)}</strong><small>${esc(x.claim)}</small><kbd>${i + 1}</kbd></button>`).join('');
+      $$('#styleSheet button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
     };
     this.renderStylePicker = render;
     render();
@@ -300,7 +318,7 @@ class UI {
       this.planInfoRoom('living');
       this.conceptView();
       this.renderStylePicker();
-      this.showRoom(ROOMS.some((r) => r.id === this.lastRoom) ? this.lastRoom : 'living');
+      this.showRoom(ROOMS.some((r) => r.id === this.lastRoom) ? this.lastRoom : 'living', { reveal: !$('#details').classList.contains('hidden') });
       document.title = `WE 13 · ${STYLES[id].short} · Raumatelier`;
       toast(`Stilwelt: ${STYLES[id].label}`);
     } catch (e) {
