@@ -11,6 +11,7 @@ import { STYLES, DEFAULT_STYLE } from './data/design.js';
 import { roomNotes, LUXURY_PRINCIPLES } from './data/styles.js';
 import PLAN from './data/plan.js';
 import { validateLayout } from './core/validate.js';
+import { setTextureCap } from './engine/textures.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -35,6 +36,9 @@ function toast(msg) {
 }
 
 async function boot() {
+  // repeat visits load textures, skies and models from the device (see sw.js); registered first
+  // thing so that already this visit's downloads end up in its cache
+  if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('sw.js').catch(() => {});
   let viewer;
   try {
     viewer = await new Viewer($('#stage')).init();
@@ -44,6 +48,9 @@ async function boot() {
     return;
   }
   const T = { t0: performance.now() }; const mark = (k) => { T[k] = Math.round(performance.now() - T.t0); };
+  // phones: 1K textures (GPU memory, upload time); the sky downloads while materials build
+  setTextureCap(viewer.quality === 'low' ? 1024 : 4096);
+  viewer.loadHDRI(MOODS[viewer.mood].hdri).catch(() => {});
   progress(0.05, 'Materialien, Hölzer und Stein werden erzeugt …');
   const [M, lib] = await Promise.all([
     createMaterials().then((m) => { mark('materials'); return m; }),
@@ -61,19 +68,25 @@ async function boot() {
   await viewer.setApartment(apartment);
   mark('scene');
   viewer.goto('overview', false);
-  viewer.renderNow();
+  viewer.renderNow({ prime: true });
   mark('firstFrame');
   progress(1, 'Fertig');
   setTimeout(() => $('#loader').classList.add('done'), 250);
   setTimeout(() => { $('#loader').style.display = 'none'; }, 1300);
 
   const ui = new UI(viewer, apartment, { M, lib });
-  window.__app = { viewer, get apartment() { return ui.a; }, M, lib, timing: T, setVariant: (id) => ui.setStyle(id), validate: () => validateLayout(ui.a.items) };
+  window.__app = { viewer, ui, get layout() { return ui.layout; }, get apartment() { return ui.a; }, M, lib, timing: T, setVariant: (id) => ui.setStyle(id), validate: () => validateLayout(ui.a.items) };
   ui.init();
+  // the other moods' skies download in idle time → later mood changes are instant
+  setTimeout(() => viewer.prefetchMoods(), 2500);
 }
 
 class UI {
-  constructor(viewer, apartment, { M, lib }) { this.v = viewer; this.a = apartment; this.M = M; this.lib = lib; }
+  constructor(viewer, apartment, { M, lib }) {
+    this.v = viewer; this.a = apartment; this.M = M; this.lib = lib;
+    // built styles stay cached (detached from the scene): switching back is instant
+    this.cache = new Map([[apartment.style.id, apartment]]);
+  }
 
   get style() { return this.a.style; }
   get notes() { return roomNotes(this.a.style); }
@@ -85,14 +98,17 @@ class UI {
     this.v.on((type, data) => {
       if (type === 'pick') { this.showItem(data); this.plan?.select(data); }
       if (type === 'station') {
-        $$('#stationList button').forEach((b) => b.classList.toggle('active', b.dataset.id === data));
+        $$('#stationList button').forEach((b) => { b.classList.toggle('active', b.dataset.id === data); b.setAttribute('aria-pressed', String(b.dataset.id === data)); });
         const st = STATIONS.find((s) => s.id === data);
-        $('#chipStationLabel').textContent = st ? st.label : data === 'item' ? 'Objektansicht' : 'Freie Ansicht';
+        $('#chipStationLabel').textContent = st ? st.short : data === 'item' ? 'Objektansicht' : 'Freie Ansicht';
       }
-      if (type === 'mode') $$('#modeSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mode === data));
-      if (type === 'mood') $$('#moodSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mood === data));
+      if (type === 'mode') $$('#modeSeg button').forEach((b) => { b.classList.toggle('active', b.dataset.mode === data); b.setAttribute('aria-pressed', String(b.dataset.mode === data)); });
+      if (type === 'mood-loading') $$(`#moodSeg button[data-mood="${data}"]`).forEach((b) => b.classList.add('loading'));
+      if (type === 'mood-error') { $$('#moodSeg button').forEach((b) => b.classList.remove('loading')); toast('Himmel konnte nicht geladen werden – Verbindung prüfen'); }
+      if (type === 'mood') $$('#moodSeg button').forEach((b) => { b.classList.remove('loading'); b.classList.toggle('active', b.dataset.mood === data); b.setAttribute('aria-pressed', String(b.dataset.mood === data)); });
+      if (type === 'busy') { const el = $('#busy'); el.textContent = data ?? ''; el.classList.toggle('show', !!data); }
       if (type === 'render') {
-        $$('#renderSeg button').forEach((b) => b.classList.toggle('active', b.dataset.render === data));
+        $$('#renderSeg button').forEach((b) => { b.classList.toggle('active', b.dataset.render === data); b.setAttribute('aria-pressed', String(b.dataset.render === data)); });
         document.body.classList.toggle('is-realistic', data !== 'standard');
         document.body.classList.toggle('is-photo', data === 'photo');
       }
@@ -121,16 +137,19 @@ class UI {
       if (b.dataset.mode === 'walk') v.goto(STATIONS.find((s) => s.id === v.station)?.mode === 'walk' ? v.station : 'living');
       else v.goto('overview');
     }));
-    $('#moodSeg').innerHTML = Object.entries(MOODS).map(([k, m]) => `<button data-mood="${k}" class="${k === v.mood ? 'active' : ''}">${m.label}</button>`).join('');
+    $('#moodSeg').innerHTML = Object.entries(MOODS).map(([k, m]) => `<button data-mood="${k}" class="${k === v.mood ? 'active' : ''}" aria-pressed="${k === v.mood}">${m.label}</button>`).join('');
     $$('#moodSeg button').forEach((b) => b.addEventListener('click', () => v.applyMood(b.dataset.mood)));
-    $('#renderSeg').innerHTML = Object.entries(RENDER_MODES).map(([k, m]) => `<button data-render="${k}" title="${esc(m.title)}" class="${k === v.renderMode ? 'active' : ''}">${esc(m.label)}</button>`).join('');
+    $('#renderSeg').innerHTML = Object.entries(RENDER_MODES).map(([k, m]) => `<button data-render="${k}" title="${esc(m.title)}" class="${k === v.renderMode ? 'active' : ''}" aria-pressed="${k === v.renderMode}">${esc(m.label)}</button>`).join('');
     $$('#renderSeg button').forEach((b) => b.addEventListener('click', () => {
       v.setRenderMode(b.dataset.render);
       if (b.dataset.render === 'realistic') toast('Realistisch: globale Beleuchtung und Spiegelungen in Echtzeit – das Bild beruhigt sich nach ≈ 1 s Stillstand.');
       if (b.dataset.render === 'photo') toast('Fotorealistisch: Pathtracing startet, sobald die Kamera ruht – nach wenigen Sekunden entrauscht die KI das Bild.');
     }));
     $('#engineBadge').textContent = `${v.backend} · three.js r186`;
-    $('#exposure').addEventListener('input', (e) => v.setExposure(+e.target.value));
+    const exp = $('#exposure');
+    exp.addEventListener('input', (e) => v.setExposure(+e.target.value));
+    // double click / double tap on the slider: back to neutral exposure
+    exp.addEventListener('dblclick', () => { exp.value = '1'; v.setExposure(1); });
     const q = $('#quality');
     q.value = v.quality;
     if (v.qualityAuto) q.title += ` · automatisch gewählt für ${v.gpu || 'diese GPU'}`;
@@ -150,7 +169,7 @@ class UI {
   }
 
   stations() {
-    $('#stationList').innerHTML = STATIONS.map((s) => `<button data-id="${s.id}">${esc(s.label)}</button>`).join('');
+    $('#stationList').innerHTML = STATIONS.map((s) => `<button data-id="${s.id}" aria-pressed="false">${esc(s.label)}</button>`).join('');
     $$('#stationList button').forEach((b) => b.addEventListener('click', () => {
       this.v.goto(b.dataset.id);
       const st = STATIONS.find((s) => s.id === b.dataset.id);
@@ -162,7 +181,6 @@ class UI {
   details() {
     this.detailEl = $('#detailBody');
     $('#detailClose').onclick = () => $('#details').classList.add('hidden');
-    setTimeout(() => $('#hint').classList.add('off'), 9000);
   }
 
   /** Room concept in the details panel; on phones it only updates (reveal = false keeps the view free). */
@@ -195,6 +213,7 @@ class UI {
       onSelect: ({ item, room }) => {
         if (item) { this.planInfoItem(item); this.v.select(item); }
         if (room) this.planInfoRoom(room);
+        this.layout?.revealPlanInfo();
       },
     });
     for (const [id, key] of [['#layerFurniture', 'furniture'], ['#layerDims', 'dims'], ['#layerLabels', 'labels'], ['#layerSoft', 'soft']]) {
@@ -206,6 +225,8 @@ class UI {
       $$('#roomList button').forEach((x) => x.classList.toggle('active', x === b));
       this.plan.focusRoom(b.dataset.room || null);
       if (b.dataset.room) this.planInfoRoom(b.dataset.room);
+      // phones: the chosen room becomes visible above the sheet
+      if (this.layout?.state.compact) this.layout.setPlanSheet('peek');
     }));
     this.planInfoRoom('living');
   }
@@ -214,7 +235,7 @@ class UI {
     const n = this.notes[id]; const items = (this.a.byRoom.get(id) ?? []).filter((i) => i.footprint && i.plan !== false && i.plan !== 'soft');
     $('#planInfo').innerHTML = `<div class="eyebrow">Raum</div><h4>${esc(n?.title ?? roomName(id))}</h4><p class="sub">${esc(n?.zoning ?? '')}</p>
       <table class="inv">${items.map((i) => `<tr data-item="${i.id}"><td>${this.plan.number(i.id)}</td><td>${esc(i.name)}</td></tr>`).join('')}</table>`;
-    $$('#planInfo tr').forEach((tr) => tr.addEventListener('click', () => { this.plan.select(tr.dataset.item); this.planInfoItem(tr.dataset.item); }));
+    $$('#planInfo tr').forEach((tr) => tr.addEventListener('click', () => { this.plan.select(tr.dataset.item); this.planInfoItem(tr.dataset.item); $('#planSide').scrollTop = 0; }));
   }
 
   planInfoItem(id) {
@@ -307,9 +328,13 @@ class UI {
     $('#switching').textContent = `${STYLES[id].label} wird eingerichtet …`;
     try {
       await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 20)));
-      const a = new ApartmentScene(this.M, this.lib, id).build();
+      const a = this.cache.get(id) ?? new ApartmentScene(this.M, this.lib, id).build();
+      this.cache.delete(id); this.cache.set(id, a); // most recently used last
       const cam = { pos: this.v.camera.position.clone(), target: this.v.controls.target.clone() };
-      await this.v.setApartment(a);
+      await this.v.setApartment(a, { keepPrevious: true });
+      // keep the most recent styles (phones: current + one); older ones free their GPU memory
+      const keep = { low: 2, medium: 3, high: 4 }[this.v.quality] ?? 2;
+      for (const [k, old] of this.cache) { if (this.cache.size <= keep) break; if (old !== a) { old.dispose(); this.cache.delete(k); } }
       this.v.camera.position.copy(cam.pos); this.v.controls.target.copy(cam.target); this.v.controls.update();
       this.a = a;
       try { localStorage.setItem(STORE_KEY, id); } catch { /* storage unavailable */ }
@@ -342,6 +367,12 @@ class UI {
     $('#btnExport').onclick = () => $('#dlgExport').showModal();
     $('#btnSources').onclick = () => { this.sources(); $('#dlgSources').showModal(); };
     $$('dialog [data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+    // tap on the dimmed backdrop closes (the click target is the <dialog> itself only there)
+    $$('dialog').forEach((d) => d.addEventListener('click', (e) => {
+      if (e.target !== d) return;
+      const r = d.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
+    }));
     $$('[data-export]').forEach((b) => b.addEventListener('click', () => { this.export(b.dataset.export); $('#dlgExport').close(); }));
   }
 

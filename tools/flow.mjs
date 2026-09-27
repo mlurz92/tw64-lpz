@@ -1,7 +1,10 @@
 // UI flow check: all styles validate, photo mode start/stop, mood and style switch without errors.
 import { chromium } from 'playwright';
 const browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--disable-features=WebGPU'] });
-const page = await browser.newPage({ viewport: { width: 800, height: 500 } });
+// desktop layout (> 1180 px): light, render mode and stations sit in the toolbar and side panel
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+// path tracing on a software GPU makes animation frames slow; actionability checks wait for them
+page.setDefaultTimeout(240_000);
 const errors = [];
 page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message + ' ' + (e.stack ?? '').slice(0, 400)));
 page.on('console', (m) => { if (m.type() === 'error' && !/ERR_CERT|WebGPU/.test(m.text())) errors.push(m.text().slice(0, 300)); });

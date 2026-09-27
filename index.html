@@ -10,13 +10,23 @@
   <title>WE 13 · Raumatelier</title>
   <meta name="description" content="WE 13 Täubchenweg 62–64, Leipzig – maßstäbliche, fotorealistische Einrichtungsplanung (WebGPU) in vier Stilwelten (Refined Metallic Japandi, Japandi × Soft Brutalism, Refined Brutalism, Cool Quiet Luxury) mit Westwing- und IKEA-Möbeln.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%232f2e2b%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-size=%2214%22 text-anchor=%22middle%22 fill=%22%23efe7da%22 font-family=%22serif%22%3E13%3C/text%3E%3C/svg%3E">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <!-- web fonts load without blocking the first paint (system fonts until they arrive) -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="styles/app.css">
   <script type="importmap">
     { "imports": { "three": "./vendor/three.webgpu.min.js", "three/webgpu": "./vendor/three.webgpu.min.js", "three/tsl": "./vendor/three.tsl.min.js" } }
   </script>
+  <!-- the engine's module chain, fetched in parallel instead of one level after the other -->
+  <link rel="modulepreload" href="vendor/three-core-HXAKOTEQ.js">
+  <link rel="modulepreload" href="vendor/three.webgpu.min.js">
+  <link rel="modulepreload" href="vendor/three.tsl.min.js">
+  <link rel="modulepreload" href="vendor/three-addons.js">
+  <link rel="modulepreload" href="src/engine/viewer.js">
 </head>
 <body>
   <div id="loader" class="loader" role="status" aria-live="polite">
@@ -68,10 +78,11 @@
       <button class="fab immersive-exit" id="btnImmersiveExit" title="Vollbild verlassen (F / Esc)" aria-label="Vollbild verlassen"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4 M20 9h-5V4 M15 20v-5h5 M4 15h5v5"/></svg></button>
       <div class="joystick" id="joystick" aria-hidden="true"><div class="joy-knob"></div><span class="joy-label">Gehen</span></div>
       <div class="switch-overlay" id="switching" role="status" aria-live="polite"></div>
+      <div class="busy" id="busy" role="status" aria-live="polite"></div>
       <div class="toolbar" id="toolbar">
         <div class="seg" id="modeSeg" role="group" aria-label="Kameramodus">
-          <button data-mode="orbit" class="active" title="Modellansicht ohne Decke"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 5l9 5.5v8.5H3z M3 10.5h18 M12 10.5V19"/></svg><span>Dollhouse</span></button>
-          <button data-mode="walk" title="Augenhöhe, W A S D zum Gehen"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4.5" r="1.8"/><path d="M9.5 21l2.2-6.2 2.8 2.7V21 M8 12.5l2.2-4.3 3.3-.7 2.3 3.6 2.7 1 M11.7 14.8l.9-4.6"/></svg><span>Begehung</span></button>
+          <button data-mode="orbit" class="active" aria-pressed="true" title="Modellansicht ohne Decke – Doppelklick/Doppeltippen: hinfliegen"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 5l9 5.5v8.5H3z M3 10.5h18 M12 10.5V19"/></svg><span>Dollhouse</span></button>
+          <button data-mode="walk" aria-pressed="false" title="Augenhöhe – W A S D, Mausrad oder Joystick/Pinch zum Gehen, Doppelklick/Doppeltippen: hingehen"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4.5" r="1.8"/><path d="M9.5 21l2.2-6.2 2.8 2.7V21 M8 12.5l2.2-4.3 3.3-.7 2.3 3.6 2.7 1 M11.7 14.8l.9-4.6"/></svg><span>Begehung</span></button>
         </div>
         <div class="tool-group" id="toolGroup">
           <div class="seg" id="moodSeg" role="group" aria-label="Lichtstimmung"></div>
@@ -98,7 +109,7 @@
       <div class="plan-wrap"><div id="plan" class="plan"></div>
         <div class="plan-zoom" role="group" aria-label="Grundriss zoomen"><button class="fab" data-zoom="in" aria-label="Vergrößern">+</button><button class="fab" data-zoom="out" aria-label="Verkleinern">−</button><button class="fab" data-zoom="fit" aria-label="Ganze Wohnung"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5 M15 4h5v5 M20 15v5h-5 M9 20H4v-5"/></svg></button></div></div>
       <aside class="panel plan-side" id="planSide">
-        <button class="sheet-grip plan-grip" id="planGrip" aria-label="Ebenen und Räume auf- oder zuklappen"><span>Ebenen · Räume · Positionen</span></button>
+        <button class="sheet-grip plan-grip" id="planGrip" aria-label="Ebenen und Räume auf- oder zuklappen" aria-expanded="false" aria-controls="planSide"><span>Ebenen · Räume · Positionen</span></button>
         <div class="eyebrow">Ebenen</div>
         <label class="check"><input type="checkbox" id="layerFurniture" checked> Möblierung</label>
         <label class="check"><input type="checkbox" id="layerDims" checked> Wandmaße</label>

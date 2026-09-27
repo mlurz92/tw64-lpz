@@ -1,5 +1,9 @@
 // Scaled 2D plan (SVG, units = metres) generated from the same geometry and furnishing data as
 // the 3D scene: rooms, walls with openings, dimension labels and furniture footprints.
+//
+// Interaction cost: the SVG is generated only when its content changes (layers, room focus,
+// furniture). Pan, zoom and pinch only rewrite the viewBox (rAF-batched), a selection toggles a
+// class, and the scale bar is an HTML overlay – so dragging stays at display rate on phones.
 import { ROOMS, WALLS, BALCONIES, add, mul, sub, len, polygonArea } from '../core/geometry.js';
 import { analyseWalls } from '../engine/builders/architecture.js';
 
@@ -20,25 +24,62 @@ export class PlanView {
     const b = { minX: 2.2, maxX: 17.9, minY: 5.0, maxY: 22.1 };
     this.home = [b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY];
     this.vb = [...this.home];
+    this.scale = document.createElement('div');
+    this.scale.className = 'plan-scale';
+    this.scale.setAttribute('aria-hidden', 'true');
+    this.scale.innerHTML = '<i></i><span></span>';
+    el.after(this.scale);
     this.render();
     this.bind();
+    new ResizeObserver(() => this.updateScale()).observe(el);
   }
 
   set(layer, v) { this.layers[layer] = v; this.render(); }
 
   focusRoom(id) {
+    const changed = this.room !== id;
     this.room = id;
-    if (!id) { this.vb = [...this.home]; this.render(); return; }
+    if (changed) this.render();
+    if (!id) { this.animateTo(this.home); return; }
     const r = ROOMS.find((x) => x.id === id) || BALCONIES.find((x) => x.id === id);
     const xs = r.points.map((p) => p[0]), ys = r.points.map((p) => p[1]);
     const pad = 0.8, w = Math.max(...xs) - Math.min(...xs) + pad * 2, h = Math.max(...ys) - Math.min(...ys) + pad * 2;
     const rect = this.el.getBoundingClientRect(), ar = rect.width / Math.max(1, rect.height);
     const W = Math.max(w, h * ar), H = W / ar;
-    this.vb = [(Math.min(...xs) + Math.max(...xs)) / 2 - W / 2, (Math.min(...ys) + Math.max(...ys)) / 2 - H / 2, W, H];
-    this.render();
+    this.animateTo([(Math.min(...xs) + Math.max(...xs)) / 2 - W / 2, (Math.min(...ys) + Math.max(...ys)) / 2 - H / 2, W, H]);
   }
 
-  svg({ forExport = false } = {}) {
+  /** Eased viewBox transition (≈ 320 ms); skipped when reduced motion is requested. */
+  animateTo(vb) {
+    cancelAnimationFrame(this._fly);
+    const from = [...this.vb], t0 = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 320;
+    const tick = (now) => {
+      const k = dur ? Math.min(1, (now - t0) / dur) : 1, e = 1 - Math.pow(1 - k, 3);
+      this.setViewBox(from.map((v, i) => v + (vb[i] - v) * e));
+      if (k < 1) this._fly = requestAnimationFrame(tick);
+    };
+    this._fly = requestAnimationFrame(tick);
+  }
+
+  /** Applies a viewBox (the SVG itself is not regenerated). */
+  setViewBox(vb) {
+    this.vb = vb;
+    const svg = this.el.firstElementChild;
+    if (svg) svg.setAttribute('viewBox', vb.map((v) => v.toFixed(4)).join(' '));
+    this.updateScale();
+  }
+
+  /** HTML scale bar: a round length (0,5 / 1 / 2 / 5 m …) of 60–130 px at the current zoom. */
+  updateScale() {
+    const r = this.el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const pxPerM = Math.min(r.width / this.vb[2], r.height / this.vb[3]);
+    const m = [0.25, 0.5, 1, 2, 5, 10].find((x) => x * pxPerM >= 60) ?? 10;
+    this.scale.firstChild.style.width = `${Math.round(m * pxPerM)}px`;
+    this.scale.lastChild.textContent = m < 1 ? `${m * 100} cm` : `${m} m`;
+  }
+
+  svg({ forExport = false, scaleBar = true } = {}) {
     const L = this.layers, items = this.apartment.items;
     const { info } = analyseWalls();
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${this.vb.map((v) => v.toFixed(3)).join(' ')}" font-family="Jost, Arial, sans-serif">`;
@@ -110,7 +151,7 @@ export class PlanView {
     // north / scale bar
     const [vx, vy, vw, vh] = this.vb;
     const sx = vx + vw * 0.04, sy = vy + vh * 0.96;
-    s += `<g pointer-events="none"><rect x="${sx}" y="${sy - 0.05}" width="1" height="0.05" fill="#2f2e2b"/><rect x="${sx + 1}" y="${sy - 0.05}" width="1" height="0.05" fill="#fff" stroke="#2f2e2b" stroke-width="0.01"/><text x="${sx}" y="${sy - 0.1}" font-size="0.14" fill="#2f2e2b">0</text><text x="${sx + 1.95}" y="${sy - 0.1}" font-size="0.14" fill="#2f2e2b">2 m</text></g>`;
+    if (scaleBar) s += `<g pointer-events="none"><rect x="${sx}" y="${sy - 0.05}" width="1" height="0.05" fill="#2f2e2b"/><rect x="${sx + 1}" y="${sy - 0.05}" width="1" height="0.05" fill="#fff" stroke="#2f2e2b" stroke-width="0.01"/><text x="${sx}" y="${sy - 0.1}" font-size="0.14" fill="#2f2e2b">0</text><text x="${sx + 1.95}" y="${sy - 0.1}" font-size="0.14" fill="#2f2e2b">2 m</text></g>`;
     if (forExport) {
       s += `<text x="${vx + vw * 0.04}" y="${vy + vh * 0.04}" font-size="0.28" font-family="Cormorant Garamond, serif" fill="#2f2e2b">WE 13 · Einrichtungsplan Refined Metallic Japandi</text>`;
       s += `<text x="${vx + vw * 0.04}" y="${vy + vh * 0.04 + 0.26}" font-size="0.13" fill="#7a7266">Rekonstruierte Planmaße (m) · kein Bestandsaufmaß · Legende siehe Möbelliste</text>`;
@@ -120,36 +161,52 @@ export class PlanView {
 
   number(id) { return this.apartment.items.filter((i) => i.footprint && i.plan !== false && i.plan !== 'soft').findIndex((i) => i.id === id) + 1; }
 
-  render() { this.el.innerHTML = this.svg(); }
+  render() {
+    cancelAnimationFrame(this._fly);
+    this.el.innerHTML = this.svg({ scaleBar: false });
+    this.updateScale();
+  }
 
-  select(id) { this.selected = id; this.render(); }
+  /** Highlights one position (class toggle only; CSS draws the bronze outline). */
+  select(id) {
+    this.selected = id;
+    for (const g of this.el.querySelectorAll('.furn.sel')) g.classList.remove('sel');
+    if (id) this.el.querySelector(`.furn[data-item="${CSS.escape(id)}"]`)?.classList.add('sel');
+  }
 
   /** Zooms by factor k (> 1 = out) around a client point (default: centre of the view). */
-  zoomBy(k, clientX, clientY) {
-    const svg = this.el.querySelector('svg'); if (!svg) return;
+  zoomBy(k, clientX, clientY, { animate = false } = {}) {
+    const svg = this.el.firstElementChild; if (!svg) return;
     const r = this.el.getBoundingClientRect();
     const pt = svg.createSVGPoint(); pt.x = clientX ?? r.left + r.width / 2; pt.y = clientY ?? r.top + r.height / 2;
     const p = pt.matrixTransform(svg.getScreenCTM().inverse());
     const [x, y, w, h] = this.vb, nw = Math.min(40, Math.max(1.5, w * k)), nh = h * (nw / w);
-    this.vb = [p.x - (p.x - x) * (nw / w), p.y - (p.y - y) * (nh / h), nw, nh];
-    svg.setAttribute('viewBox', this.vb.join(' '));
+    const vb = [p.x - (p.x - x) * (nw / w), p.y - (p.y - y) * (nh / h), nw, nh];
+    if (animate) this.animateTo(vb); else this.setViewBox(vb);
   }
 
-  /** Mouse drag / wheel, touch drag and two-finger pinch (pointer events, works for pen too). */
+  /**
+   * Mouse drag / wheel, one-finger pan, two-finger pinch (pointer events, pen too), tap to select,
+   * double tap / double click to zoom in (on a deeply zoomed plan: back to the whole apartment).
+   */
   bind() {
     const el = this.el;
     const pointers = new Map();
-    let drag = null, pinch = null;
+    let drag = null, pinch = null, lastTap = null, frame = 0, pending = null;
+    // viewBox writes are batched to one per display frame (pointermove fires faster on 120 Hz)
+    const commit = (vb) => { pending = vb; if (!frame) frame = requestAnimationFrame(() => { frame = 0; this.setViewBox(pending); pending = null; }); };
     const unitsPerPx = () => { const r = el.getBoundingClientRect(); return Math.max(this.vb[2] / r.width, this.vb[3] / r.height); };
     const pinchState = () => {
       const [a, b] = [...pointers.values()];
       return { d: Math.hypot(a.x - b.x, a.y - b.y), cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
     };
     el.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return;
+      cancelAnimationFrame(this._fly);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       el.setPointerCapture(e.pointerId);
       if (pointers.size === 2) { pinch = pinchState(); if (drag) drag.moved = true; }
-      else if (pointers.size === 1) drag = { x: e.clientX, y: e.clientY, vb: [...this.vb], moved: false };
+      else if (pointers.size === 1) drag = { x: e.clientX, y: e.clientY, t: e.timeStamp, vb: [...this.vb], moved: false, type: e.pointerType };
     });
     el.addEventListener('pointermove', (e) => {
       if (!pointers.has(e.pointerId)) return;
@@ -157,44 +214,58 @@ export class PlanView {
       if (pinch && pointers.size >= 2) {
         const now = pinchState(), k = unitsPerPx();
         // pan with the midpoint, zoom around it
-        this.vb = [this.vb[0] - (now.cx - pinch.cx) * k, this.vb[1] - (now.cy - pinch.cy) * k, this.vb[2], this.vb[3]];
-        el.querySelector('svg').setAttribute('viewBox', this.vb.join(' '));
-        if (now.d > 0 && pinch.d > 0) this.zoomBy(pinch.d / now.d, now.cx, now.cy);
+        let [x, y, w, h] = pending ?? this.vb;
+        x -= (now.cx - pinch.cx) * k; y -= (now.cy - pinch.cy) * k;
+        if (now.d > 0 && pinch.d > 0) {
+          const f = pinch.d / now.d, r = el.getBoundingClientRect();
+          const nw = Math.min(40, Math.max(1.5, w * f)), nh = h * (nw / w);
+          // point under the midpoint stays put
+          const px = x + ((now.cx - r.left) / r.width) * w, py = y + ((now.cy - r.top) / r.height) * h;
+          x = px - (px - x) * (nw / w); y = py - (py - y) * (nh / h); w = nw; h = nh;
+        }
         pinch = now;
+        commit([x, y, w, h]);
         return;
       }
       if (!drag) return;
+      if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > (drag.type === 'mouse' ? 3 : 9)) drag.moved = true;
+      if (!drag.moved) return;
       const k = unitsPerPx(), dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
-      if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > (e.pointerType === 'touch' ? 8 : 3)) drag.moved = true;
-      this.vb = [drag.vb[0] - dx, drag.vb[1] - dy, drag.vb[2], drag.vb[3]];
-      el.querySelector('svg').setAttribute('viewBox', this.vb.join(' '));
+      commit([drag.vb[0] - dx, drag.vb[1] - dy, drag.vb[2], drag.vb[3]]);
     });
     const up = (e) => {
       if (!pointers.delete(e.pointerId)) return;
       if (pinch) {
         if (pointers.size < 2) pinch = null;
         // continue panning with the remaining finger from its current position
-        if (pointers.size === 1) { const [p] = pointers.values(); drag = { x: p.x, y: p.y, vb: [...this.vb], moved: true }; }
-        else { drag = null; this.render(); }
+        if (pointers.size === 1) { const [p] = pointers.values(); drag = { x: p.x, y: p.y, vb: [...(pending ?? this.vb)], moved: true }; }
+        else drag = null;
         return;
       }
       const d = drag; drag = null;
-      if (e.type !== 'pointerup') { this.render(); return; }
-      if (d && !d.moved) {
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-        const item = target?.closest('[data-item]')?.dataset.item;
-        const room = target?.closest('[data-room]')?.dataset.room;
-        if (item) { this.select(item); this.onSelect?.({ item }); } else if (room) this.onSelect?.({ room });
-      } else this.render();
+      if (e.type !== 'pointerup' || !d || d.moved || e.timeStamp - d.t > 500) return;
+      // double tap / double click: zoom in around the point, or back to the whole plan
+      const now = e.timeStamp;
+      if (lastTap && now - lastTap.t < 330 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 36) {
+        lastTap = null;
+        if (this.vb[2] < 4) this.focusRoom(null); else this.zoomBy(0.45, e.clientX, e.clientY, { animate: true });
+        return;
+      }
+      lastTap = { t: now, x: e.clientX, y: e.clientY };
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const item = target?.closest('[data-item]')?.dataset.item;
+      const room = target?.closest('[data-room]')?.dataset.room;
+      if (item) { this.select(item); this.onSelect?.({ item }); } else if (room) this.onSelect?.({ room });
     };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
     el.addEventListener('wheel', (e) => {
       e.preventDefault();
-      this.zoomBy(Math.exp(e.deltaY * 0.0012), e.clientX, e.clientY);
-      this.render();
+      cancelAnimationFrame(this._fly);
+      // trackpad pinch arrives as ctrl + wheel with small deltas: zoom a bit faster there
+      const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      this.zoomBy(Math.exp(px * (e.ctrlKey ? 0.01 : 0.0012)), e.clientX, e.clientY);
     }, { passive: false });
-    el.addEventListener('dblclick', () => this.focusRoom(null));
   }
 }
 
