@@ -76,7 +76,7 @@ const CLIP = { orbit: [0.25, 200], walk: [0.05, 700] };
 const QUALITY_KEY = 'we13-quality';
 const PROBE_MOVE = 1.0;         // re-capture the room probe after this many metres
 const SETTLE_MS = 160;          // camera must be still this long before the refined frame
-const CONVERGE_FRAMES = 40;     // realistic mode: temporal accumulation frames at rest
+const CONVERGE_FRAMES = { high: 40, medium: 24, low: 12 }; // temporal budget at rest
 const FRAME_MS = 1000 / 60 - 1; // frame cap: high-refresh displays render at most ~60 fps
 const w3 = ([x, y, z]) => new THREE.Vector3(x - OFFSET.x, y, z - OFFSET.y);
 
@@ -678,19 +678,20 @@ export class Viewer {
     const frameDt = Math.min(0.1, (now - this.lastFrame) / 1000);
     if (this.renderMode === 'realistic') {
       // temporal accumulation: keep rendering until converged
-      if (!this.needsRender && this.accum >= CONVERGE_FRAMES) return;
+      const targetFrames = CONVERGE_FRAMES[this.quality];
+      if (!this.needsRender && this.accum >= targetFrames) return;
       // Screen-space GI, reflections and temporal AA are expensive while their history is
       // invalidated every frame. Reserve them for the stationary, converging image.
       (still ? this.pipelines.realistic : this.pipelines.fast).render();
       this.needsRender = false;
       this.accum = still ? this.accum + 1 : 0;
-      this.refined = this.accum >= CONVERGE_FRAMES;
-      if (still) this.emit('converge', Math.min(1, this.accum / CONVERGE_FRAMES));
+      this.refined = this.accum >= targetFrames;
+      if (still) this.emit('converge', Math.min(1, this.accum / targetFrames));
       if (this.refined) { const w = this.waiters; this.waiters = []; w?.forEach((f) => f()); }
     } else {
       if (!this.needsRender && (this.refined || !still)) return;
-      const hq = still && this.quality !== 'low';
-      (hq ? this.pipelines.refined : this.pipelines.fast).render();
+      const hq = still;
+      (hq ? this.quality === 'low' ? this.pipelines.refinedLow : this.pipelines.refined : this.pipelines.fast).render();
       this.needsRender = false;
       this.refined = still;
       if (hq) this.stats.refined++;
@@ -723,7 +724,7 @@ export class Viewer {
     this.rig?.update(this.mode, this.camera.position);
     if (this.probeStale()) this.captureProbe();
     const p = this.pipelines;
-    (this.renderMode === 'realistic' ? p.realistic : this.quality !== 'low' ? p.refined : p.fast).render();
+    (this.renderMode === 'realistic' ? p.realistic : this.quality === 'low' ? p.refinedLow : p.refined).render();
     this.refined = true; this.needsRender = false;
   }
 

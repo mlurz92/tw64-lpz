@@ -11,6 +11,18 @@ import { metricUV } from '../uv.js';
 const W = ([x, y]) => [x - OFFSET.x, y - OFFSET.y];
 const SLAB = 0.28;
 
+// The 9.9 cm return between the kitchen partition and W08 is deliberately absent from the
+// room-to-room opening in the source plan. Close this short stub in 3D; the 1.57 m opening
+// itself remains open. Its depth follows the neighbouring partition rather than a facade wall.
+const living = ROOMS.find((r) => r.id === 'living');
+const returnA = living.points[8], returnB = living.points[9];
+const returnEdge = sub(returnB, returnA), returnLength = len(returnEdge);
+const returnDir = mul(returnEdge, 1 / returnLength);
+const wallReturn = { id: 'W08-return', room: 'living', edge: 8, a: returnA, b: returnB,
+  length: returnLength, dir: returnDir, n: [-returnDir[1], returnDir[0]], openings: [],
+  thickness: 0.075 };
+const GEOMETRY_WALLS = [...WALLS, wallReturn];
+
 /** Room finishes (walls / floors). Plank direction as plan vector along the plank length. */
 export const FINISH = {
   living: { wall: 'wall', floor: 'floorOak', skirting: true },
@@ -76,17 +88,17 @@ function openingHead(o) { return o.type === 'door' ? DOOR_HEIGHT : WINDOW_HEAD; 
 export function analyseWalls() {
   const info = new Map();
   for (const r of ROOMS) {
-    const walls = WALLS.filter((w) => w.room === r.id);
+    const walls = GEOMETRY_WALLS.filter((w) => w.room === r.id);
     const byEdge = new Map(walls.map((w) => [w.edge, w]));
     const nE = r.points.length;
     for (const w of walls) {
-      const th = wallThickness(w);
+      const th = w.thickness ? { t: w.thickness, exterior: false, shared: true } : wallThickness(w);
       const prev = byEdge.get((w.edge - 1 + nE) % nE);
       const next = byEdge.get((w.edge + 1) % nE);
       let extStart = 0, extEnd = 0;
       if (prev) {
         const cross = prev.dir[0] * w.dir[1] - prev.dir[1] * w.dir[0];
-        if (cross > 1e-3) extStart = wallThickness(prev).t;
+        if (cross > 1e-3) extStart = prev.thickness ?? wallThickness(prev).t;
       }
       // convex corner at the end: overlap 1 cm into the next wall's body (closes hairline cracks)
       if (next && w.dir[0] * next.dir[1] - w.dir[1] * next.dir[0] > 1e-3) extEnd = 0.01;
@@ -113,13 +125,13 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT, finish = FINISH, wallO
 
   // ---------------------------------------------------------------- walls
   const bk = new Buckets();
-  for (const w of WALLS) {
+  for (const w of GEOMETRY_WALLS) {
     const { t, exterior, extStart, extEnd, hasPrev, hasNext } = info.get(w.id);
     const fin = WALL_OVERRIDE[w.id] ?? FINISH[w.room].wall;
     const outer = exterior ? 'facade' : fin;
     // Walls reach 2 cm above the ceiling plane so the wall/ceiling joint has no hairline crack.
     const wTop = top >= H - 1e-6 ? H + 0.02 : top;
-    const faces = (y0, y1, end0, end1) => ({ inner: fin, outer, ends: fin, end0, end1, top: y1 >= wTop - 1e-6 ? 'wallCap' : null, bottom: y0 > 0 ? fin : null });
+    const faces = (y0, y1, end0, end1) => ({ inner: fin, outer, ends: fin, end0, end1, top: y1 >= wTop - 1e-6 ? 'wallCap' : null, bottom: y0 > 0 ? fin : 'wallCap' });
     const cuts = w.openings.map((o) => ({ ...o, head: openingHead(o) })).sort((p, q) => p.u0 - q.u0);
     const start = -extStart, end = w.length + extEnd;
     let u = start;
@@ -128,6 +140,10 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT, finish = FINISH, wallO
     const solid = (u0, u1) => { if (u1 - u0 > 1e-4) prism(bk, w, u0, u1, -t, 0, -SLAB, wTop, faces(0, wTop, u0 !== start || !hasPrev, u1 !== end || !hasNext)); };
     for (const o of cuts) {
       solid(u, o.u0);
+      // A floor-to-ceiling opening must not punch through the structural band below FFB.
+      // This was visible as a slit below exterior window and balcony-door thresholds.
+      prism(bk, w, o.u0, o.u1, -t, 0, -SLAB, -0.002,
+        { inner: fin, outer, ends: fin, end0: false, end1: false, top: 'wallCap', bottom: 'wallCap' });
       if (o.head < wTop) prism(bk, w, o.u0, o.u1, -t, 0, o.head, wTop, faces(o.head, wTop, false, false));
       u = o.u1;
     }

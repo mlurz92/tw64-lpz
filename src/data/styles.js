@@ -141,13 +141,13 @@ export const STYLES = {
       ['Medienwand W11', 'Raumhohe Räuchereichen-Lamellen (dunkel, wie Bett- und Einbauten) auf schwarzem Akustikfilz, LED-Voute oben'],
       ['Essplatz W07', 'Kalkputz Taupe (tiefer Ton, stärkere Struktur) als Bühne für Sideboard und Kunst'],
       ['Schlafen W20', 'Räuchereichen-Lamellenwand hinter dem Bett'],
-      ['Arbeiten W23', 'Weiße Wand mit großformatiger Kunst hinter dem Schlafsofa'],
+      ['Arbeiten W23', 'Gedämpfter Salbei-Kalkputz als ruhiger Hintergrund für die großformatige Kunst'],
       ['Übrige Wände', 'Weiße Wandfarbe mit feiner Struktur; Sockel im Wandton'],
     ],
     lightPlan: ['Grundlicht: entblendete LED-Einbaustrahler 2700 K, CRI > 95', 'Akzent: LED-Voute an der Lamellenwand, hinterleuchtete Regalböden', 'Zonen: Bronze-Saucer Ø 80 über dem Esstisch, Opal-Pendel neben dem Bett', 'Stimmung: Pilz-Tischleuchten, Stehleuchte Kaya am Lesesessel'],
     theme: null,
     finish: FINISH,
-    wallOverride: { W07: 'wallAccent' },
+    wallOverride: { W07: 'wallAccent', W23: 'wallSage' },
     decor: { metal: 'Bronze gebürstet', builtIn: 'Räuchereiche kanneliert', bathFront: 'Räuchereiche', bathTop: 'Calacatta', vase: 'stonewareCharcoal', hallArt: { kind: 'ink', name: 'Tuschezeichnung 60 × 80' } },
     notes: {
       living: { title: 'Wohnen · Essen · Diele', zoning: 'Drei Zonen entlang der Raumtiefe: Medienwand (W11) – Lounge – Essplatz vor der Fensterfront (W06).', points: [
@@ -233,7 +233,7 @@ export const STYLES = {
     walls: [
       ['Medienwand W11', 'Strukturputz Sand (kräftige Kelle), TV wandbündig, lineare Messingleuchte'],
       ['Schlafen W20', 'Lehmputz Terrakotta-Sand hinter dem Bett, Gips-Relief als Kunst'],
-      ['Arbeiten W23', 'Weiße Wand mit großformatiger Kunst'],
+      ['Arbeiten W23', 'Feiner Lehmputz in Sandton hinter dem Schlafsofa und der großformatigen Kunst'],
       ['Übrige Wände', 'Weiße Wandfarbe mit feiner Struktur, Sockel im Wandton'],
     ],
     lightPlan: ['Grundlicht: LED-Einbaustrahler 2700 K', 'Essplatz: Westwing Nebo (linear, 3 Glasschirme, 120 cm)', 'Wandlicht: lineare Leuchte Messing an der Medienwand', 'Stimmung: Stehlampe Kaya (Betonfuß beige), Pilz-Tischleuchten, schwarze Zylinderpendel am Bett'],
@@ -244,7 +244,7 @@ export const STYLES = {
       remap: { smokedOak: 'oakNatural', marble: 'travertineVein', marbleFine: 'travertineVein', bronze: 'brassBrushed', boucle: 'boucleOat' },
     },
     finish: withWalls({}),
-    wallOverride: { W11: 'wallAccent', W20: 'wallClay' },
+    wallOverride: { W11: 'wallAccent', W20: 'wallClay', W23: 'wallClay' },
     decor: { metal: 'Messing brüniert', builtIn: 'Eiche natur', bathFront: 'Eiche natur', bathTop: 'Travertin', vase: 'stonewareSand', hallArt: { kind: 'arch', name: 'Grafik „Bogen“ 60 × 80' }, balcony: { cushion: 'linenBeige', cushionName: 'Sand', pot: 'stonewareRaw' } },
     notes: {
       living: { title: 'Wohnen · Essen · Diele', zoning: 'Medienwand in Strukturputz – Gesprächsinsel um den Travertin-Couchtisch – Essplatz vor W06.', points: [
@@ -337,7 +337,7 @@ export const STYLES = {
       ['Medienwand W11', 'Betonspachtel warmgrau über die volle Breite, zwei lineare Wandleuchten schwarz'],
       ['Essplatz W07', 'Kalkputz Pilz-Taupe, Gips-Relief'],
       ['Schlafen W20', 'Räuchereichen-Paneel H 120 cm mit LED-Ablage und integrierten Nachttischen'],
-      ['Arbeiten W23', 'Weiße Wand mit großformatiger Kunst'],
+      ['Arbeiten W23', 'Mineralischer Betonspachtel als zurückhaltende Bühne für das Kunstwerk'],
       ['Übrige Wände', 'Weiße Wandfarbe mit feiner Struktur; Sockel im Wandton'],
     ],
     lightPlan: ['Grundlicht: LED-Einbaustrahler 2700 K, gedimmt', 'Indirekt: Unterleuchtung Lowboard und Plattformbett, LED-Ablage am Bettpaneel', 'Wandlicht: lineare Wandleuchten schwarz an der Medienwand', 'Essplatz: Saucer schwarz Ø 60; Stehlampe Kaya anthrazit'],
@@ -348,7 +348,7 @@ export const STYLES = {
       remap: { boucle: 'boucleOat' },
     },
     finish: withWalls({}),
-    wallOverride: { W11: 'wallConcrete', W07: 'wallAccent' },
+    wallOverride: { W11: 'wallConcrete', W07: 'wallAccent', W23: 'wallConcrete' },
     decor: { metal: 'Stahl brüniert / Bronze', builtIn: 'Räuchereiche glatt', bathFront: 'Räuchereiche', bathTop: 'Calacatta', vase: 'stonewareRaw', hallArt: { kind: 'monolith', name: 'Grafik „Monolith“ 60 × 80' }, balcony: { cushion: 'linenCharcoal', cushionName: 'Anthrazit', pot: 'concreteDark' } },
     notes: {
       living: { title: 'Wohnen · Essen · Diele', zoning: 'Langes, schwebendes Lowboard über die volle Medienwand – tiefe Lounge – Essplatz mit dunklem Holztisch.', points: [
@@ -441,7 +441,7 @@ export const STYLES = {
       ['Medienwand W11', 'Lamellen Eiche dunkel, raumhoch, LED-Voute'],
       ['Essplatz W07', 'Kalkputz Steingrau hell'],
       ['Schlafen W20', 'Lamellen Eiche dunkel hinter dem Bett'],
-      ['Arbeiten W23', 'Weiße Wand mit großformatiger Kunst'],
+      ['Arbeiten W23', 'Helle Steinstruktur mit großformatiger Kunst und dunklem Eichenrahmen'],
       ['Übrige Wände', 'Wandfarbe Weiß (feine Kalkstruktur), Sockel weiß'],
     ],
     lightPlan: ['Grundlicht: LED-Einbaustrahler 2700 K', 'Essplatz: zwei Amber-Glaspendel', 'Akzent: LED-Voute an den Lamellenwänden', 'Stimmung: Pilzleuchte Westwing Walter schwarz, Kaya anthrazit, schwarze Zylinderpendel'],
@@ -452,7 +452,7 @@ export const STYLES = {
       remap: { smokedOak: 'oakDark', bronze: 'blackMatte', marbleFine: 'marble' },
     },
     finish: withWalls({}),
-    wallOverride: { W07: 'wallStone' },
+    wallOverride: { W07: 'wallStone', W23: 'wallStone' },
     decor: { metal: 'Mattschwarz', builtIn: 'Eiche Furnier warm dunkel', bathFront: 'Eiche dunkel', bathTop: 'Marmor hell', vase: 'stonewareCharcoal', hallArt: { kind: 'botanical', name: 'Grafik „Blätter“ 60 × 80' }, balcony: { cushion: 'linenIvory', cushionName: 'Ecru', pot: 'stonewareCharcoal' } },
     notes: {
       living: { title: 'Wohnen · Essen · Diele', zoning: 'Dunkle Lamellenwand als Rückgrat – helle Lounge – Essplatz mit Amberlicht.', points: [

@@ -35,7 +35,7 @@ Umschalten **direkt im 3D-Viewer** über die Stilwelt-Leiste oben (oder die Tast
 
 Gemeinsam für alle Stilwelten: Bestandsküche (Nussbaum/Granit), **Bäder nach HLS-Plan** (siehe unten), Einbaugarderobe Diele (PAX 35 cm tief), HWR, Vorhänge (Verdunkelung IKEA **MAJGULL** im Schlafzimmer), Grundlicht.
 
-Die **Grundwände bleiben weiß**. Nur die in der jeweiligen Stilwelt benannten Medien-, Ess- oder Bettwände erhalten einen Material- oder Farbakzent. Großformatige Kunst (im Wohnbereich bis 160 × 120 cm) ist auf die Wandabschnitte und die Breite der Möbel abgestimmt.
+Die **Grundwände bleiben weiß**. Medien-, Ess-, Bett- und Arbeitswand W23 erhalten je Stilwelt einen gezielten Material- oder Farbakzent. Hinter dem Schlafsofa bildet Salbei-Kalkputz, Sand-Lehmputz, Betonspachtel bzw. helle Steinstruktur eine ruhige Bühne für das großformatige Kunstwerk. Großformatige Kunst (im Wohnbereich bis 160 × 120 cm) ist auf die Wandabschnitte und die Breite der Möbel abgestimmt.
 
 > **Produktangaben:** Artikelnamen und Maße stammen aus den Herstellerangaben (Recherche 09/2026, u. a. Westwing-Neuheiten Zumi, Hilda, Alain; IKEA BJÖRKÖVIKEN, STOENSE). Westwing **Abby** ist derzeit nicht lieferbar und wurde durch **Sahra** Ø 116 ersetzt. Maßanfertigungen und reine Stilreferenzen sind in der Möbelliste gekennzeichnet. Vor Bestellung Verfügbarkeit, Bezug/Farbe, Liefer- und Montagemaße prüfen.
 
@@ -118,13 +118,14 @@ Der bisherige Weg (WebGL-Renderer + progressiver GPU-Pathtracer) war für die fo
 
 | Darstellung | Pipeline (TSL-Nodes, `src/engine/render.js`) | Einsatz |
 |---|---|---|
-| **Standard** | Normal-Prepass → **SSAO** (entrauscht, halbe Auflösung) nur im Umgebungslicht (`builtinAOContext`) → Szenen-Pass mit **4× MSAA** → Bloom → SMAA; in Bewegung schlanke Variante ohne AO/MSAA | schnelles Planen, schwächere Geräte |
-| **Realistisch** | Vier MRT-Renderziele (Farbe, Albedo/Metall, Normalen/Rauheit, Bewegungsvektoren) → **SSGI** (Screen-Space Global Illumination: Lichtbounce, Farbbluten, Kontaktschatten) → **SSR** (Spiegelungen auf Boden, Stein, Metall) → Bloom → **TRAA** (temporales Anti-Aliasing, konvergiert in ≈ 40 Bildern) | während der Kamerabewegung schnelle Vorschau, danach fotorealistische Konvergenz |
+| **Standard** | Normal-Prepass → **SSAO** (entrauscht, halbe Auflösung) nur im Umgebungslicht (`builtinAOContext`) → Szenen-Pass mit **4× MSAA** (Hoch/Mittel) oder ohne MSAA (Schnell) → Bloom → SMAA; in Bewegung schlanke Variante ohne AO/MSAA | schnelles Planen, schwächere Geräte |
+| **Realistisch** | Vier MRT-Renderziele (Farbe, Albedo/Metall, Normalen/Rauheit, Bewegungsvektoren) → **SSGI** (Screen-Space Global Illumination: Lichtbounce, Farbbluten, Kontaktschatten) → **SSR** (Spiegelungen auf Boden, Stein, Metall) → Bloom → **TRAA** (temporales Anti-Aliasing, 40/24/12 Konvergenzbilder nach Qualitätsstufe) | während der Kamerabewegung schnelle Vorschau, danach Konvergenz |
 
 Gemeinsame Grundlagen:
 
 - **PBR-Materialien** (automatisch in Node-Materialien übersetzt): `MeshPhysicalMaterial` nur wo eine physikalische Schicht wirkt (Sheen für Textilien, Clearcoat für Lack/Stein, IOR für Glas), sonst `MeshStandardMaterial` – identische Reflexion (F0 = 0,04 ≙ IOR 1,5) mit günstigerem Shader; CC0-Fotoscans (Poly Haven) und vorberechnete prozedurale Texturen.
-- **Weiche Sonnenschatten** (PCF mit Abtastradius – `PCFSoftShadowMap` existiert in r186/WebGPU nicht mehr; Schattenkarte 3072/2048/1536 Pixel nach Qualitätsstufe, Frustum deckt die gesamte Plandiagonale ab). Eine geschlossene Dachplatte entlang der Gebäudekontur (Raumpolygone + Außenwand, nicht die Bounding-Box – diese hing zuvor als Platte vor den Fenstern im Innenhof-Knick und über dem Balkon und verdeckte den Himmel) und vereinfachte Schattencaster verhindern die hellen Streifen auf den Böden; Möbelkontakt entsteht über AO/SSGI.
+- **Weiche Sonnenschatten** (PCF mit Abtastradius – `PCFSoftShadowMap` existiert in r186/WebGPU nicht mehr; Schattenkarte 3072/2048/1536 Pixel nach Qualitätsstufe, Frustum deckt die gesamte Plandiagonale ab). Die Dachplatte folgt der Gebäudekontur. Große, opake Möbel werfen gezielt Sonnenlichtschatten; kleine Dekoteile bleiben aus der Schattenkarte. AO/SSGI ergänzen den Möbelkontakt.
+- **Geschlossene Wandhülle:** Die 9,9-cm-Rückführung zwischen Küchen-Trennwand und W08 ist als Wandstück modelliert, während die 1,57-m-Öffnung zwischen Küche und Wohnen offen bleibt. Unter Fenster-, Balkon- und Türöffnungen schließt ein massiver Wand-Sockel bis zur Unterkante der Bodenplatte; Wandenden, Unterseiten und obere Abschlüsse sind geschlossen. So scheinen weder Außenraum noch Himmel durch konstruktive Spalten.
 - **Lokale Raum-Lightprobe:** In der Begehung wird der Raum um die Kamera in eine Cubemap mit 256 oder 128 Pixeln je Fläche aufgenommen. *Hoch/Mittel* berechnen zwei Lichtdurchgänge, *Schnell* einen; auf WebGPU liefert sie auch die Spiegelreflexion, auf WebGL 2 werden planare Spiegel während der Aufnahme ausgesetzt. Im Modus *Realistisch* ergänzt SSGI den Nahbereich.
 - **Belichtungsautomatik:** log. Mittelwert der Leuchtdichte der Lightprobe (asynchrones GPU-Readback) → Zielwert der Lichtstimmung; der Belichtungsregler wirkt als Korrektur. Vor jeder Aufnahme (auch bei PNG-Export direkt nach Stationswechsel) wird zuerst das Licht-Budget des Zielraums aktiviert – sonst wurde z. B. das Bad mit den Leuchten des Vorraums gemessen und massiv überbelichtet.
 - **Außenraum 3. OG mit Blick in den Park** (`builders/surroundings.js`, nur in der Begehung): Der Blick aus den Fenstern ist echte Geometrie statt eines Panoramafotos auf Straßenniveau – Parkrasen mit Kieswegen und Parkleuchten **9,28 m unter dem Fertigfußboden** (laut Plan „+9,28 OK FFB“), rund 150 Laubbäume (instanziert, 10–17 m hoch, spätsommerliche Grüntöne) mit freier Rasenfläche vor den Fensterfassaden, Eingangsstraße mit Gründerzeit-Häuserzeile, Stadtkante am Horizont, Luftperspektive ab 50 m. Das Gebäude selbst ist mit Erdgeschoss bis 2. OG, Geschossbändern, Fenstern und gestapelten Balkonen (je mit Kragplatte) darunter sowie dem 4. OG darüber modelliert. Die Himmel sind reine Himmelspanoramen ohne Bodenkulisse; ihre Sonnenscheibe wird automatisch vermessen (Schwerpunkt der Scheibe) und exakt auf die Richtung des Schattenwurfs gedreht (Abweichung < 0,5°), die Scheibe selbst wird im Umgebungslicht gekappt, damit die Sonne nicht doppelt wirkt.
@@ -136,14 +137,14 @@ Gemeinsame Grundlagen:
 
 | Maßnahme | Wirkung |
 |---|---|
-| **Rendern bei Bedarf** | Standard: nur bei Änderungen; Realistisch: schnelle Vorschau beim Bewegen, bis zur Konvergenz (≈ 40 Bilder) im Stillstand, danach Ruhe – im Stillstand 0 Bilder/s |
+| **Rendern bei Bedarf** | Standard: nur bei Änderungen; Realistisch: schnelle Vorschau beim Bewegen, bis zur Konvergenz (40/24/12 Bilder für Hoch/Mittel/Schnell) im Stillstand, danach Ruhe – im Stillstand 0 Bilder/s |
 | **Bildraten-Deckel** | höchstens ≈ 60 gerenderte Bilder/s, auch auf 120/144-Hz-Displays (Steuerung und Animation laufen weiter mit voller Rate) → spürbar weniger Leistungsaufnahme beim Bewegen |
 | **Lastverteilung Lightprobe** | Aufnahme der Raum-Lightprobe nur im Stillstand und je Tick nur ein Schritt (eine Würfelseite oder die Vorfilterung, 14 Schritte für zwei Lichtdurchgänge) → keine Lastspitze, auch nicht auf integrierter Grafik |
 | **Zusammengefasste Geometrie** (`scene.js`) | Statische, opake Möbel-, Fenster- und Türteile je Raum und Material zu einem Mesh vereint: ≈ 560 → ≈ 290 Draw-Calls in der Wohnung. Frustum-Culling und Front-to-Back-Sortierung bleiben je Raum erhalten; die Einzelobjekte liegen auf einem eigenen Layer nur für Auswahl, Hervorhebung und Grundriss |
 | **Pixelbudget** | Zeichenpuffer höchstens 3,7 / 2,1 / 1,1 Megapixel (Hoch/Mittel/Schnell) – ein 4K-Bildschirm mit 150 % Skalierung rendert sonst 8,3 MP je Bild |
 | **Automatische Qualitätsstufe** | nach GPU: integrierte Grafik (Intel Iris Xe/UHD wie im NUC 11–13, AMD-APUs, Apple M) → *Mittel*; dedizierte GPU → *Hoch*; Software-Renderer/Mobilgeräte → *Schnell*. Eine manuelle Wahl wird gespeichert |
 | **Außenraum schlank** | Baumkronen mit 80 statt 320 Dreiecken je Blattballen (Park 420 k → 105 k Dreiecke) |
-| **Zweistufige Qualität** | Standard in Bewegung ohne AO/MSAA, nach 160 ms Stillstand ein verfeinertes Bild |
+| **Zweistufige Qualität** | Standard in Bewegung ohne AO/MSAA, nach 160 ms Stillstand ein Bild mit AO; auf Schnell ohne 4× MSAA |
 | **Statische Schatten** | Sonnen-Shadow-Map nur nach Szenen-, Stil-, Modus- oder Stimmungswechsel |
 | **Licht-Budget** (`lighting.js`) | Feste Punkt-/Spot-Slots (8/8, 5/5, 3/3 nach Qualitätsstufe), belegt mit den Leuchten des aktuellen Raums – kein Lichtdurchschlag durch Wände, jeder Slot kostet eine BRDF-Auswertung je Pixel |
 | **Adaptive Auflösung** | Pixel-Ratio sinkt stufenweise bei < 28 fps in Bewegung und steigt bei Reserve |
@@ -163,8 +164,11 @@ Qualitätsstufen *Hoch/Mittel/Schnell* steuern Pixel-Ratio (maximal 1,5/1,25/1) 
 | Kollisionen | keine Überschneidung von Möbeln im selben Raum (SAT-Test) |
 | Türen | 90 cm tiefe Bewegungsfläche vor jeder Tür beidseitig frei |
 | Fenster / Balkontüren | 45 cm Zugang; Balkontüren vollständig frei, Fenster höchstens zur Hälfte verstellt |
+| Ausrichtung | Sofa zur Medienwand, Bettfuß in den Raum, Schlafsofa vom Wandrücken weg |
 
 Stand dieser Planung: **alle vier Stilwelten bestehen sämtliche Prüfungen** (je ≈ 440–470 Einzelprüfungen).
+
+Ein Browser-Smoke-Test prüft zusätzlich alle vier Stilwelten, die geschlossene Wandrückführung, den Sockel unter einem Außenfenster, alle Fassadenabschnitte im 25-cm-Raster sowie Standard- und Realistisch-Modus. Bei laufendem Entwicklungsserver: `node tools/smoke.mjs` (lokal installiertes Chrome und `tools`-Abhängigkeiten erforderlich).
 
 ## Maße und Genauigkeit
 
@@ -189,7 +193,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 ├── src/
 │   ├── main.js                   # Bootstrap, UI-Logik, Stilwechsel (Leiste + Tasten 1–4), Export
 │   ├── core/geometry.js          # Planmaße → Meter, Wandrahmen, Wandstärken, Polygon-Utilities
-│   ├── core/validate.js          # Planungsprüfung (Kontur, Kollision, Türen, Fenster)
+│   ├── core/validate.js          # Planungsprüfung (Kontur, Kollision, Türen, Fenster, Ausrichtung)
 │   ├── data/plan.js              # rekonstruierte Planvektoren (Quelle der Maßketten)
 │   ├── data/styles.js            # vier Stilwelten, Luxus-Prinzipien, gemeinsame Raumtexte
 │   ├── data/design.js            # gemeinsamer Bestand (Küche, Bäder nach HLS-Plan, HWR, Diele) + Stil-Möblierung
@@ -211,7 +215,8 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 ├── vendor/                       # three.js r186 (WebGPU + TSL) und Add-ons (lokal, offline, versionsfest)
 ├── assets/                       # CC0-Assets (lib/), Ausführungsplan (PDF), Moodboards
 └── tools/
-    ├── build-vendor.mjs          # erzeugt vendor/ aus npm-Paketen (esbuild)
+    ├── build-vendor.mjs          # erzeugt vendor/ aus npm-Paketen (esbuild; auch unter Windows)
+    ├── smoke.mjs                 # Browserprüfung aller Stile, Wandhülle und Render-Modi
     ├── bake-textures.mjs · bake.html
     └── fetch-assets.py
 ```
@@ -235,6 +240,7 @@ Ein Eintrag in `STYLES` (`src/data/styles.js`) genügt: `theme`, `wallOverride`,
 - Westwing Collection: [Markenseite](https://www.westwing.de/brands/westwing-collection/), [Neuheiten](https://www.westwing.de/new-products/), [TV-Lowboard Zumi](https://www.westwing.ch/zumi-lowboard-oak-marble-top-en-26wes55818.html), [Esstisch Sahra](https://www.westwing.de/runder-esstisch-sahra-o-116-cm-152091.html), [Esstisch Abby](https://www.westwing.de/runder-marmor-esstisch-abby-o-120-cm-158095.html), [Pendel Helen](https://www.westwing.ch/helen-pendant-light-terracotta-d38cm-en-26wes87525.html)
 - IKEA: [Neuheiten](https://www.ikea.com/de/de/new/new-products/), [BJÖRKÖVIKEN Tür braun gebeiztes Eichenfurnier 60 × 64](https://www.ikea.com/de/de/p/bjoerkoeviken-tuer-braun-gebeiztes-eichenfurnier-70490948/)
 - Gestaltung: [Homes & Gardens – Storage that looks expensive (2026)](https://www.homesandgardens.com/interior-design/what-storage-makes-a-house-look-expensive-in-2026), [House of Nuances – Quiet Luxury 2026](https://houseofnuances.com/blog/quiet-luxury-interior-design), [Finest Furniture Studio – Luxury ideas 2026](https://finestfurniturestudio.co.uk/luxury-interior-design-ideas/)
+- Wandflächen und Dekoration: [Westwing – Luxus Wohnen](https://www.westwing.de/inspiration/einrichten/wohnung-einrichten/luxus-wohnen/), [Westwing – Wanddeko im Wohnzimmer](https://www.westwing.de/inspiration/deko-ideen/wandgestaltung-dekorieren/wanddeko-im-wohnzimmer/), [IKEA – Wandgestaltungsideen](https://www.ikea.com/de/de/rooms/living-room/how-to/living-room-wall-decor-ideas-for-your-home-pub454dbe30/). Umgesetzt als einzelne starke Akzentwand je Zone, großformatige Kunst, gezielte Leuchten und gruppierte Accessoires.
 - Rendering: three.js r186 – [SSGI](https://threejs.org/examples/webgpu_postprocessing_ssgi.html), [SSR](https://threejs.org/examples/webgpu_postprocessing_ssr.html), [TRAA](https://threejs.org/examples/webgpu_postprocessing_traa.html), [AO](https://threejs.org/examples/webgpu_postprocessing_ao.html)
 
 ## Lizenzen

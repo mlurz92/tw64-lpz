@@ -36,9 +36,13 @@ export class ApartmentScene {
     this.furniture = new THREE.Group(); this.furniture.name = 'furniture';
     this.root.add(this.furniture);
     furnish({ M: this.M, lib: this.lib, style: this.style, add: (meta, obj, place) => this.add(meta, obj, place) });
-    // The dense furnishing meshes create repeating light leaks in the directional shadow map
-    // across multiple rooms. Keep architectural sun shadows; AO/SSGI supply furniture contact.
-    this.furniture.traverse((o) => { if (o.isMesh) o.castShadow = false; });
+    // Only the silhouettes that materially shape a room cast sun shadows. Small props and
+    // detailed joinery otherwise add hundreds of shadow draws and self-shadow artefacts.
+    const sunCasters = new Set(['sofa', 'lounge', 'dining', 'sideboard', 'coffee', 'bed',
+      'reading-chair', 'sofabed', 'desk', 'shelving', 'hall-wardrobe']);
+    for (const item of this.items) item.object.traverse((o) => {
+      if (o.isMesh) o.castShadow = sunCasters.has(item.id) && !o.material?.transparent;
+    });
 
     // Safety net: one material per mesh (picking, mirrors and the light budget rely on it).
     const multi = [];

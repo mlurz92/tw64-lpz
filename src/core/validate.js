@@ -52,9 +52,22 @@ function zone(w, o, depth) {
 }
 
 export function validateLayout(items) {
-  const issues = [], checks = { containment: 0, collisions: 0, doors: 0, windows: 0 };
+  const issues = [], checks = { containment: 0, collisions: 0, doors: 0, windows: 0, orientation: 0 };
   const polys = new Map([...ROOMS.map((r) => [r.id, r.points]), ...BALCONIES.map((b) => [b.id, b.points])]);
   const floorItems = items.filter((i) => i.footprint && i.plan !== false && i.plan !== 'soft' && !i.ceiling);
+
+  // Every model's local +Z is its front/foot end. Check the key directional pieces against
+  // the measured wall's inward normal, so a visually plausible 180° placement cannot pass.
+  for (const [id, wallId, direction] of [['sofa', 'W11', -1], ['bed', 'W20', 1], ['sofabed', 'W23', 1]]) {
+    const it = items.find((item) => item.id === id), w = WALLS.find((candidate) => candidate.id === wallId);
+    if (!it || !w) continue;
+    checks.orientation++;
+    const forward = [Math.sin(it.yaw), Math.cos(it.yaw)];
+    if (dot(forward, mul(w.n, direction)) < 0.95) {
+      issues.push({ type: 'Ausrichtung', item: id, room: it.room,
+        msg: `${it.name} ist nicht zur vorgesehenen Raumseite an ${wallId} ausgerichtet`, severity: 'error' });
+    }
+  }
 
   // 1 · containment
   for (const it of items.filter((i) => i.footprint && i.plan !== false)) {

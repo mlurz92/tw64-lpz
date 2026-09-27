@@ -44,6 +44,12 @@ export function createPipelines(renderer, scene, camera) {
   refPass.contextNode = builtinAOContext(aoNode.getTextureNode().sample(screenUV).r);
   const refColor = refPass.getTextureNode();
   refined.outputNode = smaa(refColor.add(bloom(refColor, BLOOM.strength, BLOOM.radius, BLOOM.threshold)));
+  // Integrated/low-end GPUs still get contact AO when stationary, without a 4× colour buffer.
+  const refinedLow = new THREE.RenderPipeline(renderer);
+  const refPassLow = pass(scene, camera);
+  refPassLow.contextNode = refPass.contextNode;
+  const lowColor = refPassLow.getTextureNode();
+  refinedLow.outputNode = smaa(lowColor.add(bloom(lowColor, BLOOM.strength, BLOOM.radius, BLOOM.threshold)));
 
   // ------------------------------------------------------------------ realistic
   const realistic = new THREE.RenderPipeline(renderer);
@@ -85,15 +91,15 @@ export function createPipelines(renderer, scene, camera) {
   realistic.outputNode = aa;
 
   return {
-    fast, refined, realistic,
+    fast, refined, refinedLow, realistic,
     nodes: { ao: aoNode, gi, refl, reflStrength, traa: aa },
     /** Quality presets: sample counts only (resolution is handled by the pixel ratio). */
     setQuality(q) {
       aoNode.samples.value = q === 'low' ? 8 : 16;
       gi.sliceCount.value = q === 'high' ? 2 : 1;
-      gi.stepCount.value = q === 'high' ? 10 : q === 'medium' ? 10 : 8;
-      refl.quality.value = q === 'high' ? 0.6 : 0.35;
+      gi.stepCount.value = q === 'high' ? 10 : q === 'medium' ? 7 : 5;
+      refl.quality.value = q === 'high' ? 0.6 : q === 'medium' ? 0.3 : 0.2;
     },
-    dispose() { fast.dispose(); refined.dispose(); realistic.dispose(); },
+    dispose() { fast.dispose(); refined.dispose(); refinedLow.dispose(); realistic.dispose(); },
   };
 }
