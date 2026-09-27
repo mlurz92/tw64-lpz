@@ -50,6 +50,8 @@ export function furnish({ M, lib, add, style = STYLES[DEFAULT_STYLE] }) {
     at(fr.W13, 0.75, 0.16));
   add({ id: 'art-hall', room: 'living', name: (S.hallArt?.name ?? 'Tuschezeichnung').replace(/\d+ × \d+/, '90 × 120'), cat: 'Kunst', spec: 'Rahmen Eiche, Schattenfuge', size: [0.9, 0.03], plan: false },
     D.artwork(M, S.hallArt?.kind ?? 'ink', 0.9, 1.2, { seed: 7 }), at(fr.W02, 0.55, 0.025, 0, 1.45));
+  add({ id: 'picture-light-hall', room: 'living', name: 'Bilderleuchte LED 40 cm', cat: 'Leuchte', spec: `${S.lightMetalName ?? 'Bronze gebürstet'}, 2700 K (Galerielicht im Eingang)`, size: [0.4, 0.18], plan: false },
+    D.pictureLight(M, 0.4, { mat: S.lightMetal ?? 'bronze', drop: 0.69, lumens: 160 }), at(fr.W02, 0.55, 0, 0, 1.45 + 0.69));
 
   // ======================================================================== KÜCHE (Bestand)
   add({ id: 'kitchen-row', room: 'kitchen', name: 'Küchenzeile (Bestand) 360 cm', cat: 'Küche', spec: 'Nussbaum, Granit gesprenkelt, Backofen/Kühlschrank in Hochschränken', size: [3.6, 0.6] },

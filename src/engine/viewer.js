@@ -17,7 +17,7 @@
 //    display or its scaling (a 4K screen at 150 % would otherwise render 8.3 MP per frame).
 //  · Adaptive resolution: if frames during motion stay slow, the pixel ratio steps down.
 //  · Local room probe: in walk mode the room around the camera is captured into a cube map
-//    (two bounces) and used as image-based light → indirect light and reflections of the actual
+//    (three bounces, two on "Schnell") and used as image-based light → indirect light and reflections of the actual
 //    room instead of the outdoor sky; its luminance drives the automatic exposure. The capture
 //    is spread over frames – one cube face (or the prefilter) per tick, only while the camera
 //    rests – so it never adds a hitch to an interactive frame.
@@ -26,7 +26,7 @@
 import * as THREE from 'three/webgpu';
 import { reflector, vec4 } from 'three/tsl';
 import { OrbitControls, HDRLoader, RectAreaLightTexturesLib } from '../../vendor/three-addons.js';
-import { OFFSET, APARTMENT_BOUNDS, ROOM_HEIGHT } from '../core/geometry.js';
+import { OFFSET, APARTMENT_BOUNDS, ROOM_HEIGHT, ROOMS, pointInPolygon } from '../core/geometry.js';
 import { setMaxAnisotropy } from './textures.js';
 import { LightRig, LAMP_SCALE, INTERIOR_LEVEL } from './lighting.js';
 import { createPipelines } from './render.js';
@@ -384,7 +384,8 @@ export class Viewer {
   // ------------------------------------------------------------------ room probe
   /**
    * Captures the room around the camera (ceilings on, windows showing the sky) into a cube map
-   * and prefilters it for image-based lighting. Two passes = two light bounces.
+   * and prefilters it for image-based lighting. Each pass adds one light bounce (3, on "Schnell" 2):
+   * mirrors show the probe directly, with fewer bounces the reflected room read too dark.
    */
   captureProbe() {
     while (!this.probeStep());
@@ -393,8 +394,8 @@ export class Viewer {
   /**
    * One step of the probe capture: a single cube face, or – after the sixth face – the prefilter
    * of that bounce. Returns true once the probe is complete. The render loop calls it once per
-   * tick while the camera rests, so a two-bounce capture is spread over 14 short ticks instead
-   * of rendering the scene twelve times in one or two long frames (a visible hitch on
+   * tick while the camera rests, so a three-bounce capture is spread over 21 short ticks instead
+   * of rendering the scene eighteen times in one or two long frames (a visible hitch on
    * integrated GPUs).
    */
   probeStep() {
@@ -408,11 +409,11 @@ export class Viewer {
       }
       this.probeRT ??= new THREE.CubeRenderTarget(size, { type: THREE.HalfFloatType });
       this.probeCam ??= new THREE.CubeCamera(0.05, 60, this.probeRT);
-      const pos = this.camera.position.clone();
-      pos.y = THREE.MathUtils.clamp(pos.y, 0.9, 1.6);
+      const pos = probePoint(this.camera.position);
+      pos.y = THREE.MathUtils.clamp(this.camera.position.y, 0.9, 1.6);
       // the lamps of the room the probe is taken in must be active before the first face renders
       this.rig?.update(this.mode, this.camera.position);
-      job = this.probeJob = { pos, camPos: this.camera.position.clone(), pass: 0, face: 0, passes: this.quality === 'low' ? 1 : 2, target: null };
+      job = this.probeJob = { pos, camPos: this.camera.position.clone(), pass: 0, face: 0, passes: this.quality === 'low' ? 2 : 3, target: null };
     }
     if (job.face < 6) {
       this.probeFace(job, job.face++, m);
@@ -451,7 +452,7 @@ export class Viewer {
     const liveMirrors = (this.mirrors ?? []).filter((mirror) => mirror.material === mirror.userData.mirrorMats?.live);
     for (const mirror of liveMirrors) mirror.material = mirror.userData.mirrorMats.still;
     // pass 0: direct light only (sun, lamps, faint fill) + sky through the windows;
-    // pass 1: lit additionally by pass 0 → the stored probe carries two bounces.
+    // pass n: lit additionally by pass n−1 → the stored probe carries n + 1 bounces.
     s.environment = job.target?.texture ?? this.blackEnv();
     s.environmentIntensity = 1;
     s.environmentRotation.set(0, 0, 0);
@@ -593,7 +594,7 @@ export class Viewer {
   pixelRatio(w, h) {
     const q = this.quality, dpr = window.devicePixelRatio || 1;
     const base = Math.min(dpr, MAX_DPR[q], Math.sqrt(MAX_PIXELS[q] / Math.max(1, w * h)));
-    return Math.max(0.5, base) * this.prScale;
+    return Math.max(0.5, base) * this.prScale * (this.exportScale ?? 1);
   }
 
   /** 'high' | 'medium' | 'low'. An explicit choice is remembered; the default follows the GPU. */
@@ -784,6 +785,35 @@ export class Viewer {
       this.invalidate();
     }
   }
+}
+
+/**
+ * Capture point of the room probe: near the camera, but at least ≈ 0.7 m from every wall (or as
+ * far as the room allows). A probe taken right in front of a wall sees that wall – in the bath the
+ * black towel radiator – over half of its sphere, and the mirrors, which show the probe, turned
+ * dark grey. Grid search inside the room polygon: wall clearance first, closeness second.
+ */
+function probePoint(cam) {
+  const p = [cam.x + OFFSET.x, cam.z + OFFSET.y];
+  const room = ROOMS.find((r) => pointInPolygon(p, r.points));
+  if (!room) return cam.clone();
+  const pts = room.points, edge = (q) => {
+    let d = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length], ab = [b[0] - a[0], b[1] - a[1]];
+      const t = Math.max(0, Math.min(1, ((q[0] - a[0]) * ab[0] + (q[1] - a[1]) * ab[1]) / (ab[0] ** 2 + ab[1] ** 2)));
+      d = Math.min(d, Math.hypot(q[0] - a[0] - ab[0] * t, q[1] - a[1] - ab[1] * t));
+    }
+    return d;
+  };
+  let best = p, score = -Infinity;
+  for (let dx = -2.5; dx <= 2.5; dx += 0.125) for (let dy = -2.5; dy <= 2.5; dy += 0.125) {
+    const q = [p[0] + dx, p[1] + dy];
+    if (!pointInPolygon(q, pts)) continue;
+    const s = Math.min(edge(q), 0.7) * 4 - Math.hypot(dx, dy);
+    if (s > score) { score = s; best = q; }
+  }
+  return new THREE.Vector3(best[0] - OFFSET.x, cam.y, best[1] - OFFSET.y);
 }
 
 /**

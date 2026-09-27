@@ -321,7 +321,7 @@ export class PhotoRenderer {
   resize() {
     const v = this.v, b = BUDGET[v.quality];
     const w = v.container.clientWidth || 1, h = v.container.clientHeight || 1;
-    const scale = Math.min(window.devicePixelRatio || 1, 1.25) * b.scale;
+    const scale = Math.min(window.devicePixelRatio || 1, 1.25) * b.scale * (v.exportScale ?? 1);
     this.renderer.setSize(Math.round(w * scale), Math.round(h * scale), false);
   }
 

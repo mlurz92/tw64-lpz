@@ -348,8 +348,9 @@ class UI {
     const v = this.v;
     if (kind === 'png') this.download(await v.screenshot(), this.shotName());
     if (kind === 'png4k') {
-      const pr = v.renderer.getPixelRatio(); v.renderer.setPixelRatio(pr * 2); v.resize();
-      try { this.download(await v.screenshot(), this.shotName('_2x')); } finally { v.renderer.setPixelRatio(pr); v.resize(); }
+      // resize() recomputes the pixel ratio from the preset – the export factor must go through it
+      v.exportScale = 2; v.resize();
+      try { this.download(await v.screenshot(), this.shotName('_2x')); } finally { v.exportScale = 1; v.resize(); }
     }
     if (kind === 'svg') this.download(this.blob(this.plan.svg({ forExport: true }), 'image/svg+xml'), `WE13_grundriss_${this.style.id}.svg`);
     if (kind === 'csvWalls') {
