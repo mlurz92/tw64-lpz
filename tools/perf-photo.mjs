@@ -21,5 +21,6 @@ try {
     v.setRenderMode('photo');
   });
   await page.waitForFunction(() => window.__app.viewer.photo?.samples >= 1 || window.__app.viewer.photo?.state === 'error', null, { timeout: 600000 });
-  console.log(JSON.stringify({ baseline, ...await page.evaluate(() => ({ firstSampleMs: Math.round(performance.now() - window.__photoStart), status: window.__app.viewer.photo.status() })) }, null, 2));
+  if (await page.evaluate(() => window.__app.viewer.photo.state === 'error')) throw new Error('Pathtracing fehlgeschlagen; keine gültige Messung');
+  console.log(JSON.stringify({ baseline, ...await page.evaluate(() => ({ quality:window.__app.viewer.quality, gpu:'Chrome SwiftShader (Software-GPU)', firstSampleMs: Math.round(performance.now() - window.__photoStart), status: window.__app.viewer.photo.status() })) }, null, 2));
 } finally { await browser.close(); }

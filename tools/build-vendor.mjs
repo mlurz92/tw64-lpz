@@ -39,4 +39,24 @@ await build({ ...common, entryPoints: ['node_modules/three-mesh-bvh/src/workers/
 // so the member is simply omitted.
 const core = join(out, 'three.webgpu.min.js');
 writeFileSync(core, readFileSync(core, 'utf8').replaceAll('this.swizzle="rgba"', 'this.swizzle=void 0'));
+// Mood changes alter emissive values, not texture maps. Preserve the upstream default while
+// allowing the app to update the material table without re-packing every image into the GPU array.
+const pathtracer = join(out, 'pathtracer.js');
+const source = readFileSync(pathtracer, 'utf8');
+const start = source.indexOf('updateMaterials(){'), end = source.indexOf('updateLights(){', start);
+if (start < 0 || end < 0 || source.indexOf('updateMaterials(){', start + 1) >= 0) throw new Error('Pathtracer material API changed; review upload patch');
+const method = source.slice(start, end).replace('updateMaterials(){', 'updateMaterials({uploadTextures=true}={}){')
+  .replace(/(\w+\.textures\.setTextures\([^;]+?\)),/, 'uploadTextures&&$1,');
+if (!method.includes('uploadTextures&&')) throw new Error('Pathtracer texture upload changed; review patch');
+let patched = source.slice(0, start) + method + source.slice(end);
+// onBeforeRender changes DOF, background and fog defines together. The upstream callback
+// immediately compiles each intermediate permutation. Coalesce the changes into one microtask.
+const compileStart = patched.indexOf('this._compileFunction=()=>{');
+const compileEnd = patched.indexOf('},this.material.addEventListener', compileStart);
+const renderMarker = 'update(){this.material.onBeforeRender(),!this.isCompiling';
+if (compileStart < 0 || compileEnd < 0 || patched.indexOf('this._compileFunction=()=>{',compileStart+1)>=0 || !patched.includes(renderMarker)) throw new Error('Pathtracer compilation API changed; review batching patch');
+const callback = 'this._compileFunction=()=>{if(this._compileQueued)return;this._compileQueued=true;this._compileError=null;const pending=Promise.resolve().then(()=>{this._compileQueued=false;return this.compileMaterial(this._fsQuad._mesh)});this._compilePromise=pending;pending.then(()=>{if(this._compilePromise===pending)this._compilePromise=null},error=>{if(this._compilePromise===pending){this._compilePromise=null;this._compileError=error}})';
+patched = patched.slice(0,compileStart) + callback + patched.slice(compileEnd);
+patched = patched.replace(renderMarker,'update(){if(this._compileError){const error=this._compileError;this._compileError=null;throw error}this.material.onBeforeRender(),!this.isCompiling');
+writeFileSync(pathtracer, patched);
 console.log('vendor built →', out);

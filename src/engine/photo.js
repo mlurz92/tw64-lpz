@@ -1,4 +1,4 @@
-// "Fotorealistisch": unbiased GPU path tracing + AI denoising for final-quality stills.
+// "Fotorealistisch": GPU path tracing + AI denoising for final-quality stills.
 //
 // The interactive view stays on the WebGPU rasteriser. As soon as the camera rests, this engine
 // takes over on its own canvas above it:
@@ -6,14 +6,14 @@
 //                       meshes, instanced trees expanded), same geometries/materials/textures
 //                       (one three.js core instance for both renderers, see tools/build-vendor.mjs).
 //                       Glass becomes real transmission, every lamp of the apartment is lit.
-//   2. BVH            – built in a Web Worker (three-mesh-bvh), the UI never blocks.
+//   2. BVH            – built in a Web Worker (three-mesh-bvh); upload remains on the render thread.
 //   3. Path tracing   – three-gpu-pathtracer (WebGL 2): multiple importance sampling, soft
 //                       area light, sky and sun light, 4–5 bounces, physically correct
-//                       inter-reflections, transmission and contact shadows. Rendered in tiles,
-//                       so every animation frame stays short even on integrated graphics.
+//                       inter-reflections, transmission and contact shadows. Tiles spread GPU work
+//                       across animation frames; cold shader compilation can still delay the UI.
 //   4. Exposure       – log-average luminance of the converging HDR image (like a camera meter).
 //   5. Denoising      – Intel Open Image Denoise U-Net on WebGPU (oidn-web) with albedo and
-//                       normal feature images: a clean image after 48 samples, refined once
+//                       normal feature images: a first denoised image after 48 samples, refined once
 //                       more when the sample budget is reached.
 // Any camera movement hides the overlay immediately and restarts the accumulation.
 import * as THREE from 'three';
@@ -58,7 +58,7 @@ export class PhotoRenderer {
   emit() { const st = this.status(); for (const fn of this.listeners) fn(st); this.v.emit('photo', st); }
   status() {
     const b = this.budget();
-    return { state: this.state, samples: this.samples, target: b.samples, denoised: this.denoisedAt > 0, message: this.message };
+    return { state: this.state, samples: this.samples, target: b.samples, denoised: this.denoisedAt > 0, message: this.message, timings: this.timings };
   }
 
   /** Creates the WebGL renderer, the path tracer and (if WebGPU exists) the denoiser. */
@@ -102,16 +102,20 @@ export class PhotoRenderer {
   start() {
     this.active = true;
     const request = this.request = (this.request ?? 0) + 1;
+    this.requestedAt = performance.now(); this.timings = {};
     const previous = this.startPromise;
     this.state = 'building'; this.message = 'Pathtracing wird vorbereitet …'; this.emit();
     return this.startPromise = this.runStart(previous, request);
   }
 
   async runStart(previous, request) {
+    const timings = this.timings;
     try {
       await previous;
       if (!this.active || request !== this.request) return;
+      const initAt = performance.now();
       await this.init();
+      timings.initMs = Math.round(performance.now()-initAt);
       if (!this.active || request !== this.request) return;
       const key = this.v.photoSceneKey();
       if (key !== this.sceneKey) {
@@ -271,20 +275,28 @@ export class PhotoRenderer {
       emissive: src.emissive?.clone() ?? new THREE.Color(0), emissiveIntensity: src.emissiveIntensity ?? 0,
     });
     m.userData = { ...src.userData, ptSource: src };
+    // Next-event shadow rays cannot refract through a closed window pane. Clear glazing
+    // keeps camera/reflection transmission, but must not suppress the directly sampled sun.
+    m.castShadow = !clear;
     cache.set(src, m);
     return m;
   }
 
   async buildScene() {
+    const buildAt = performance.now();
+    const timings = this.timings;
     const pt = this.pt, b = this.budget();
     const scene = this.collect();
+    timings.collectMs = Math.round(performance.now()-buildAt);
     // Set actual lamp/portal values before the library uploads them. setSceneAsync already
     // uploads materials, lights and sky; uploading them again doubles texture preparation.
     this.syncLighting({ upload: false });
     pt.textureSize.set(b.tex, b.tex);
     pt.bounces = b.bounces;
     pt.tiles.set(b.tiles, b.tiles);
+    const uploadAt = performance.now();
     await pt.setSceneAsync(scene, this.camera, { onProgress: (p) => { this.message = `BVH wird aufgebaut … ${Math.round(p * 100)} %`; this.emit(); } });
+    timings.bvhUploadMs = Math.round(performance.now()-uploadAt);
   }
 
   applyEnvironment(scene = this.scene) {
@@ -307,32 +319,39 @@ export class PhotoRenderer {
     const here = this.v.mode === 'walk' ? LightRig.roomAt(this.v.camera.position) : null;
     const lightingKey = `${this.v.mood}|${here}|${rig?.level}`;
     if (this.lightingKey === lightingKey && this.litScene === this.scene) return;
-    this.lightingKey = lightingKey; this.litScene = this.scene;
     const relevant = (r) => !here || r === here || (OPEN[here] ?? []).includes(r);
     this.scene.traverse((o) => {
       if (o.isLight && o.userData.source !== this.v.sun) o.visible = relevant(o.userData.room ?? o.userData.source?.userData.room);
       if (o.userData.portal) {
         const c = this.skyRadiance(o.userData.portal).multiplyScalar(m.env * PORTAL_SHARE);
-        // camera white balance for interiors: the blue cast of the open sky is halved
+        // Reduce a blue daylight cast without washing out the warm golden-hour sky.
         const Y = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
-        c.lerp(new THREE.Color(Y, Y, Y), 0.5);
+        if (c.b > c.r) c.lerp(new THREE.Color(Y, Y, Y), 0.5);
         const L = Math.max(c.r, c.g, c.b);
         o.intensity = L; if (L > 0) o.color.setRGB(c.r / L, c.g / L, c.b / L);
         return;
       }
       const src = o.userData.source;
       if (!o.isLight || !src) return;
-      if (src === this.v.sun) { o.intensity = src.visible ? src.intensity : 0; o.color.copy(src.color); o.position.copy(src.position); o.updateMatrix(); return; }
+      if (src === this.v.sun) {
+        o.intensity = src.visible ? src.intensity : 0; o.color.copy(src.color); o.position.copy(src.position);
+        o.target.position.copy(src.target.getWorldPosition(new THREE.Vector3()));
+        o.updateMatrix(); o.updateMatrixWorld(true); o.target.updateMatrixWorld(true);
+        return;
+      }
       const level = rig ? rig.levelOf(src) : 0;
       o.intensity = level > 0 ? src.userData.candela * level * LAMP_SCALE : 0;
     });
     this.scene.traverse((o) => { const s = o.material?.userData?.ptSource; if (s) o.material.emissiveIntensity = s.emissiveIntensity; });
     this.applyEnvironment();
+    // updateLights reads world matrices directly; a mood switch moves the sun without a raster pass.
+    this.scene.updateMatrixWorld(true);
     if (upload) {
       this.pt.updateLights();
-      this.pt.updateMaterials();
+      this.pt.updateMaterials({ uploadTextures: false }); // mood changes preserve all map identities
       this.pt.updateEnvironment();
     }
+    this.lightingKey = lightingKey; this.litScene = this.scene;
     this.meterSteps = 0;
     const r = this.renderer;
     r.toneMapping = this.v.renderer.toneMapping;
@@ -365,15 +384,21 @@ export class PhotoRenderer {
     if (this.denoising || (this.denoiserPromise && !this.denoiserSettled)) return true; // Shared Iris Xe: one GPU job at a time.
     const b = this.budget();
     if (this.samples >= b.samples) {
+      if (this.meterPending) return true; // export the measured exposure, not the pre-meter frame
       if (this.denoiser && this.denoisedAt < b.samples) { this.denoise(); return true; }
       if (this.denoiserPromise && !this.denoiserSettled) return true;
       this.state = 'done'; this.emit(); return false;
     }
-    this.pt.renderSample();
+    try { this.pt.renderSample(); }
+    catch (e) { this.state = 'error'; this.message = 'Pathtracing fehlgeschlagen: ' + e.message; this.emit(); return false; }
     const s = Math.floor(this.pt.samples);
     if (s !== this.samples) {
       this.samples = s;
-      if (s >= 1 && this.firstSampleMs === null) this.firstSampleMs = performance.now() - this.startedAt;
+      if (s >= 1 && this.firstSampleMs === null) {
+        this.firstSampleMs = performance.now() - this.startedAt;
+        this.timings.firstTraceMs = Math.round(this.firstSampleMs);
+        this.timings.totalFirstSampleMs = Math.round(performance.now()-this.requestedAt);
+      }
       if (s >= 8 && !this.denoiserPromise && navigator.gpu) {
         this.prepareDenoiser();
         this.denoiserPromise.finally(() => { this.denoiserSettled = true; });
@@ -422,8 +447,9 @@ export class PhotoRenderer {
     if (!this.pt || !this.samples) return;
     const paused = this.pt.pausePathTracing;
     this.pt.pausePathTracing = true;
-    this.pt.renderSample();
-    this.pt.pausePathTracing = paused;
+    try { this.pt.renderSample(); }
+    catch (e) { this.state = 'error'; this.message = 'Pathtracing fehlgeschlagen: ' + e.message; this.emit(); }
+    finally { this.pt.pausePathTracing = paused; }
     if (this.denoisedAt && !this.denoising && this.denoiser) { this.denoisedAt = 0; this.denoise(); }
   }
 
@@ -435,32 +461,36 @@ export class PhotoRenderer {
     if (rt.width !== w || rt.height !== h) rt.setSize(w, h);
     const read = () => { const px = new Uint8ClampedArray(w * h * 4); r.readRenderTargetPixels(rt, 0, 0, w, h, px); return flipY(px, w, h); };
     const saved = [], bg = scene.background, tm = r.toneMapping;
-    r.toneMapping = THREE.NoToneMapping;
+    const target = r.getRenderTarget(), clearColor = r.getClearColor(new THREE.Color()), clearAlpha = r.getClearAlpha();
     const albedoMats = new Map(), normalMat = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide });
-    scene.traverse((o) => {
-      if (!o.isMesh) return;
-      saved.push([o, o.material, o.visible]);
-      if (o.material.transmission > 0) { o.visible = false; return; }
-      let a = albedoMats.get(o.material);
-      if (!a) {
-        const s = o.material;
-        a = new THREE.MeshBasicMaterial({ color: s.metalness > 0.9 ? new THREE.Color(1, 1, 1).lerp(s.color, 0.5) : s.color, map: s.map ?? null, side: THREE.DoubleSide });
-        albedoMats.set(s, a);
-      }
-      o.material = a;
-    });
-    scene.background = scene.background?.isColor ? scene.background : new THREE.Color(0.8, 0.85, 0.9);
-    r.setRenderTarget(rt); r.setClearColor(0xffffff, 1); r.clear(); r.render(scene, this.camera);
-    const albedo = read();
-    for (const [o] of saved) if (o.visible) o.material = normalMat;
-    scene.background = new THREE.Color(0.5, 0.5, 1);
-    r.setRenderTarget(rt); r.clear(); r.render(scene, this.camera);
-    const normal = read();
-    r.setRenderTarget(null);
-    for (const [o, m, vis] of saved) { o.material = m; o.visible = vis; }
-    scene.background = bg; r.toneMapping = tm;
-    albedoMats.forEach((m) => m.dispose()); normalMat.dispose();
-    return { albedo, normal };
+    try {
+      r.toneMapping = THREE.NoToneMapping;
+      scene.traverse((o) => {
+        if (!o.isMesh) return;
+        saved.push([o, o.material, o.visible]);
+        if (o.material.transmission > 0) { o.visible = false; return; }
+        let a = albedoMats.get(o.material);
+        if (!a) {
+          const s = o.material;
+          a = new THREE.MeshBasicMaterial({ color: s.metalness > 0.9 ? new THREE.Color(1, 1, 1).lerp(s.color, 0.5) : s.color, map: s.map ?? null, side: THREE.DoubleSide });
+          albedoMats.set(s, a);
+        }
+        o.material = a;
+      });
+      scene.background = scene.background?.isColor ? scene.background : new THREE.Color(0.8, 0.85, 0.9);
+      r.setRenderTarget(rt); r.setClearColor(0xffffff, 1); r.clear(); r.render(scene, this.camera);
+      const albedo = read();
+      for (const [o] of saved) if (o.visible) o.material = normalMat;
+      scene.background = new THREE.Color(0.5, 0.5, 1);
+      r.setRenderTarget(rt); r.clear(); r.render(scene, this.camera);
+      const normal = read();
+      return { albedo, normal };
+    } finally {
+      r.setRenderTarget(target); r.setClearColor(clearColor, clearAlpha);
+      for (const [o, m, vis] of saved) { o.material = m; o.visible = vis; }
+      scene.background = bg; r.toneMapping = tm;
+      albedoMats.forEach((m) => m.dispose()); normalMat.dispose();
+    }
   }
 
   denoise() {
@@ -471,44 +501,53 @@ export class PhotoRenderer {
     this.denoising = true;
     this.state = final ? 'denoising' : this.state;
     this.emit();
-    const canvas = this.renderer.domElement, w = canvas.width, h = canvas.height;
-    const out = this.denoiseCanvas;
-    const scratch = (this._scratch ??= document.createElement('canvas'));
-    scratch.width = w; scratch.height = h;
-    const sctx = scratch.getContext('2d', { willReadFrequently: true });
-    sctx.drawImage(canvas, 0, 0);
-    const color = sctx.getImageData(0, 0, w, h);
-    const { albedo, normal } = this.features(w, h);
-    const outCtx = out.getContext('2d');
-    const at = this.samples;
-    this.abortDenoise = this.denoiser.tileExecute({
-      color, albedo: new ImageData(albedo, w, h), normal: new ImageData(normal, w, h),
-      done: (img) => {
-        if (!this.active || request !== this.request) return;
-        this.denoising = false; this.abortDenoise = null;
-        if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
-        if (img instanceof ImageData) outCtx.putImageData(img, 0, 0);
-        this.denoisedAt = at;
-        this.el.classList.add('denoised');
-        if (final) this.state = 'done';
-        this.emit();
-        if (final) { const ws = this.waiters; this.waiters = []; ws?.forEach((f) => f()); }
-      },
-      progress: (_, tile, rect) => {
-        if (!this.active || request !== this.request || !tile) return;
-        if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
-        outCtx.putImageData(tile, rect.x, rect.y);
-      },
-    });
+    try {
+      const canvas = this.renderer.domElement, w = canvas.width, h = canvas.height;
+      const out = this.denoiseCanvas;
+      const scratch = (this._scratch ??= document.createElement('canvas'));
+      scratch.width = w; scratch.height = h;
+      const sctx = scratch.getContext('2d', { willReadFrequently: true });
+      sctx.drawImage(canvas, 0, 0);
+      const color = sctx.getImageData(0, 0, w, h);
+      const { albedo, normal } = this.features(w, h);
+      const outCtx = out.getContext('2d');
+      const at = this.samples;
+      this.abortDenoise = this.denoiser.tileExecute({
+        color, albedo: new ImageData(albedo, w, h), normal: new ImageData(normal, w, h),
+        done: (img) => {
+          if (!this.active || request !== this.request) return;
+          this.denoising = false; this.abortDenoise = null;
+          if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
+          if (img instanceof ImageData) outCtx.putImageData(img, 0, 0);
+          this.denoisedAt = at;
+          this.el.classList.add('denoised');
+          if (final) this.state = 'done';
+          this.emit();
+        },
+        progress: (_, tile, rect) => {
+          if (!this.active || request !== this.request || !tile) return;
+          if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
+          outCtx.putImageData(tile, rect.x, rect.y);
+        },
+      });
+    } catch (e) {
+      console.warn('Entrauschung fehlgeschlagen; Pathtracing-Bild wird verwendet', e);
+      this.denoising = false; this.abortDenoise = null; this.denoiser = null;
+      this.el.classList.remove('denoised'); this.denoisedAt = 0;
+      this.state = final ? 'done' : 'tracing'; this.emit();
+    }
   }
 
   /** Resolves once the sample budget is reached and (where available) the image is denoised. */
   finished() {
-    const target = this.budget().samples;
+    if (this.state === 'error') return Promise.reject(new Error(this.message));
     if (this.state === 'done') return Promise.resolve();
-    return new Promise((res) => {
-      (this.waiters ??= []).push(res);
-      const off = this.on((s) => { if (s.state === 'error' || s.state === 'done') { off(); res(); } });
+    return new Promise((res, reject) => {
+      const off = this.on((s) => {
+        if (s.state === 'error' || s.state === 'done' || s.state === 'idle') {
+          off(); s.state === 'done' ? res() : reject(new Error(s.message ?? 'Fotorealistische Ausgabe abgebrochen.'));
+        }
+      });
     });
   }
 

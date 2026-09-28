@@ -6,6 +6,7 @@
 //   furnish()  – stilspezifische Möblierung (Wohnen, Essen, Schlafen, Arbeiten)
 // Produktangaben: reale Artikel von Westwing (Westwing Collection) und IKEA mit Herstellermaßen
 // (Stand Recherche 09/2026). Maßanfertigungen und Stilreferenzen sind als solche gekennzeichnet.
+import { styleProduct } from './products.js';
 import { FINISH } from '../engine/builders/architecture.js';
 
 const withWalls = (walls) => Object.fromEntries(Object.entries(FINISH).map(([k, v]) => [k, { ...v, ...(walls[k] ? { wall: walls[k] } : {}) }]));
@@ -109,7 +110,7 @@ function office(ctx, o) {
   const { M, lib, add, at, grp, fr, D, T, C, F } = ctx;
   const O = fr.W23;
   add({ id: 'sofabed', room: 'office', name: 'IKEA HYLTARP Bettsofa 2', cat: 'Polster', spec: `${o.sofabed.fabricName} · 182 × 93 × 82 cm, Sitzhöhe 48 cm, Liegefläche 140 × 200 cm (Westwing-Kissen)`, size: [1.82, 0.93] },
-    C.sofaBed(M, o.sofabed.opts), at(O, 1.95, 0.47));
+    C.sofaBed(M, o.sofabed.opts), at(O, 1.8, 0.47));
   add({ id: 'art-office', room: 'office', cat: 'Kunst', plan: false, ...o.art.meta, name: o.art.meta.name.replace(/\d+ × \d+/, '145 × 100'), size: [1.45, 0.03] }, D.artwork(M, o.art.kind, 1.45, 1.0, { seed: o.art.seed ?? 11, frame: o.art.frame ?? 'oakLight' }), at(O, 1.95, 0.025, 0, 1.50));
   const P = panelStyle(ctx);
   add({ id: 'picture-light-office', room: 'office', cat: 'Leuchte', name: 'Bilderleuchte LED 60 cm', spec: `${P.metalName}, 2700 K, CRI > 95`, size: [0.6, 0.18], plan: false },
@@ -560,22 +561,23 @@ export const STYLES = {
 
 export const DEFAULT_STYLE = 'metallic';
 
-// Architectural palettes remain distinct; every purchased finish follows products.js.
+// Notes and purchase palette follow exactly the same SKU selection as the scene.
 for (const style of Object.values(STYLES)) {
+  const describe = id => { const p = styleProduct(style.id,id); return p.retailer + ' ' + p.name + ' · ' + p.finish + ' · ' + p.size.map(x => Math.round(x*1000)/10).join(' × ') + ' cm'; };
   style.materials = [
-    ['Beige und Off White', 'Westwing Alba/Mikkel, IKEA TÄLLÅSEN; Kissen und Plaids setzen die Stilfarbe'],
-    ['Eiche dunkel · Eiche/Esche natur', 'Westwing Calary, IKEA STOCKHOLM 2025, TONSTAD Ablagetische und LISABO'],
-    ['Weiß und Elfenbeinweiß', 'IKEA PAX/FORSAND, BESTÅ, BILLY, ENHET und TONSTAD Schreibtisch/Regal'],
-    ['Marmor weiß-grau · Stahl schwarz · Edelstahl', 'Westwing Marisa/Zara, IKEA GLADOM und ÅRSTID'],
-    ['Blassblau', 'IKEA HYLTARP Kilanda Blassblau im Gästezimmer'],
+    ['Sitzgruppe', describe('sofa') + '; ' + describe('lounge')],
+    ['Tische und Stauraum', describe('coffee') + '; ' + describe('sideboard')],
+    ['Schlafen', describe('bed') + '; ' + describe('nightstand-n')],
+    ['Arbeiten', describe('desk') + '; ' + describe('sofabed')],
     ...style.materials.filter(([, usage]) => /Boden Wohnen|Grundwände|Bäder und HWR/.test(usage)),
   ];
   style.notes = {
-    living: { title: 'Wohnen / Essen', zoning: 'Sitzgruppe auf W11 ausgerichtet, Esstisch vor W06; Schränke an W07/W08, Wege zu Küche und Schlafzimmer frei.', points: ['Westwing Alba 185 × 114, Mikkel 66 × 77 und Marisa Ø 70; ergänzend IKEA GLADOM Ø 45.', 'IKEA STOCKHOLM 2025 Ø 115 mit vier LISABO-Stühlen; Westwing Calary 160 × 45 und IKEA TONSTAD Regal 81 × 37,1.', 'Zwei offene IKEA BESTÅ-Korpusse ergeben das 240-cm-Lowboard; zwei PAX-Korpusse mit FORSAND-Türen die flache Garderobe.'] },
-    bedroom: { title: 'Schlafen', zoning: 'Bett mittig an W20, PAX an W22; Leseplatz am Fenster.', points: ['IKEA TÄLLÅSEN Kulsta Hellbeige, Außenmaß 195 × 213, Kopfteil 107 cm; zwei TONSTAD Ablagetische Eichenfurnier.', 'Drei PAX-Korpusse 99,8 × 58 × 236,4 cm mit sechs weißen FORSAND-Türen.', 'Westwing Mikkel Off White und IKEA ÅRSTID am Leseplatz.'] },
-    office: { title: 'Arbeiten / Gäste', zoning: 'Bettsofa an W23, seitliches Tageslicht am Schreibtisch; drei kompakte BILLY-Regale an W28.', points: ['IKEA HYLTARP Kilanda Blassblau 182 × 93; zum Ausklappen werden 240 cm Tiefe benötigt.', 'IKEA TONSTAD 140 × 75 in Elfenbeinweiß, Westwing Zara Leder Hellbeige/Edelstahl.', 'Drei IKEA BILLY 40 × 28 × 202 cm bilden eine 120-cm-Regalgruppe.'] },
+    living: { title:'Wohnen / Essen', zoning:'Sitzgruppe an W11, Esstisch vor W06; Sideboard an W07 und Glasvitrine rechts neben der Küche an W08.', points:[describe('sofa') + '; ' + describe('lounge'), describe('coffee') + '; ' + describe('dining') + '; vier ' + describe('chair'), describe('sideboard') + '; ' + describe('highboard')] },
+    bedroom: { title:'Schlafen', zoning:'Bett an W20, drei PAX-Korpusse mit sechs FORSAND-Türen an W22; Leseplatz am Fenster.', points:[describe('bed'), 'Zwei ' + describe('nightstand-n'), describe('reading-chair') + '; IKEA ÅRSTID'] },
+    office: { title:'Arbeiten / Gäste', zoning:'HYLTARP an W23, Arbeitsplatz mit seitlichem Tageslicht, drei BILLY-Regale an W28.', points:[describe('sofabed'), describe('desk') + '; Westwing Zara Hellbeige/Edelstahl', 'Drei ' + describe('shelving')] },
   };
 }
+
 
 /**
  * Luxus-Einrichtungsregeln (Recherche 09/2026: Quiet-Luxury-/Designer-Leitlinien) und wie sie in
@@ -584,7 +586,7 @@ for (const style of Object.values(STYLES)) {
 export const LUXURY_PRINCIPLES = [
   ['Maßhaltige Module', '240-cm-BESTÅ-Lowboard, 120-cm-BILLY-Regalgruppe und PAX mit FORSAND-Türen: reale Serienmaße bestimmen die Platzierung.'],
   ['Ruhige Flächen und gezielte Struktur', 'Weiße Schrankfronten und offene BESTÅ-/BILLY-Fächer ergänzen Calarys geriffelte Holzfront; Dekoration bleibt zurückhaltend.'],
-  ['Materialehrlichkeit vor Dekor', 'Massivholz/Echtholzfurnier, Naturstein (Calacatta, Travertin, dunkler Naturstein), Kalk-/Lehmputz, Leinen, Wolle, Bouclé; Metalle je Stilwelt nur in einem Ton.'],
+  ['Materialehrlichkeit vor Dekor', 'Massivholz/Echtholzfurnier, Naturstein (Calacatta, Travertin, dunkler Naturstein), Kalk-/Lehmputz, Leinen, Wolle, Bouclé; Metalle gezielt wiederholen; belegte Herstelleroberflächen der Möbel bleiben erhalten.'],
   ['Mehrschichtiges Licht 2700 K, CRI > 95', 'Grundlicht entblendet, indirekte LED-Vouten und -Unterleuchtung, Zonenlicht über Tisch/Bett, Stimmungslicht auf Tisch- und Stehleuchten; Badpendel IP44 als Gesichtslicht vor den Spiegelwänden.'],
   ['Großzügige Proportionen', 'Teppich 300 × 400 cm: Sofa, Couch- und Beistelltisch stehen vollständig darauf; Vorhänge an der Decke, bodenlang und breiter als die Öffnung; Kunst mit Bildmitte ≈ 1,45 m bzw. 25 cm über dem Möbel.'],
   ['Spiegel als Architektur', 'Maßgefertigte Spiegel oberhalb der Vorwand-Ablagen (1,18 m) bis zur Decke – im Gäste-WC wandfüllend, im Bad über die volle Breite des Waschtisch-Vorsprungs – verdoppeln die Raumtiefe; Armaturen, Brausen und Heizkörper durchgehend schwarz matt.'],

@@ -973,8 +973,8 @@ export class Viewer {
   /** PNG of the current view: settle, then render and read back in the same task. */
   async screenshot() {
     if (this.renderMode === 'photo') {
-      await this.settle();
-      this.renderNow();
+      if (this.warmBusy) await this.warmBusy;
+      this.rig?.update(this.mode, this.camera.position);
       const p = (this.photo ??= new PhotoRenderer(this));
       if (!p.active) await p.start();
       if (p.state !== 'error') { await p.finished(); return p.dataURL(); }

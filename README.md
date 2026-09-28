@@ -8,7 +8,7 @@ Die Anwendung verbindet die aus dem Ausführungsplan rekonstruierte Raumgeometri
 |---|---|---|
 | **Standard** | three.js r186 **WebGPU** (Rasterisierung, PBR, SSAO, MSAA) | flüssiges Planen und Begehen |
 | **Realistisch** | WebGPU + Screen-Space-GI, Spiegelungen (SSR), temporales AA | Echtzeit-Eindruck mit Lichtbounce |
-| **Fotorealistisch** *(neu)* | **GPU-Pathtracer** (three-gpu-pathtracer, WebGL 2) + **KI-Entrauschung Intel Open Image Denoise** (oidn-web, WebGPU) | physikalisch korrekte Standbilder in Archviz-Qualität, startet automatisch, sobald die Kamera ruht |
+| **Fotorealistisch** *(neu)* | **GPU-Pathtracer** (three-gpu-pathtracer, WebGL 2) + **KI-Entrauschung Intel Open Image Denoise** (oidn-web, WebGPU) | physikalisch basierte Standbilder in Archviz-Qualität, startet automatisch, sobald die Kamera ruht |
 
 ## Schnellstart
 
@@ -25,14 +25,21 @@ Danach <http://localhost:8000> öffnen. Auf Smartphone und Tablet lässt sich di
 
 Umschalten **direkt im 3D-Viewer** über die Stilwelt-Leiste oben (oder die Tasten **1–4**) bzw. über die Reiter unter *Konzept & Möbel*. Beim Wechsel werden Möblierung, Wandgestaltung, Material-Thema, Einbaufronten und Leuchten neu aufgebaut; Kamera, Lichtstimmung, Darstellung (Standard/Realistisch) und Ansicht bleiben erhalten. Grundriss, Möbelliste, Planungsprüfung und Exporte folgen automatisch.
 
-Die vier Stilwelten variieren Architektur, Wandgestaltung, Kunst, Kissen und Licht. Die kaufbaren Möbel folgen einem gemeinsamen, maßhaltigen Katalog mit echten Ausführungen; ein Stilwechsel färbt gekaufte Produkte nicht fiktiv um.
+Die vier Stilwelten wechseln echte Möbelartikel und belegte Ausführungen: vier unterschiedliche Sofas und Bettvarianten, drei Couchtische und drei Schreibtischausführungen. Architektur, Kunst, Textilien und Licht ergänzen die Auswahl; gekaufte Möbel behalten ihre reale Farbe. Die gewünschte Glasvitrine rechts neben der Küche bleibt in allen Varianten erhalten: **IKEA RUDSTA Anthrazit, 80 × 37 × 120 cm**, mit Glasfront, Glasseiten und Glasböden.
+
+| Stilwelt | Sofa | Couchtisch / Essen | Schlafen | Arbeiten |
+|---|---|---|---|---|
+| Metallic Japandi | Westwing Alba Beige | Marisa Marmor, Sahra Hellbeige | IDANÄS Naggen Beige, TONSTAD Braun | TONSTAD Eiche, HYLTARP Hellbeige, BILLY Schwarz |
+| Soft Brutalism | IKEA SÖDERHAMN Gunnared Beige | Hilda Eiche, STOCKHOLM 2025 | TÄLLÅSEN Hellbeige, TONSTAD Eiche | TONSTAD Eiche, HYLTARP Hellbeige, BILLY Eichenachbildung |
+| Refined Brutalism | Westwing Lennon Grau | Calary Eiche, Calary Dunkleiche Ø 100 | IDANÄS Dunkelgrau, GLADOM Schwarz | MICKE Schwarzbraun, HYLTARP Grau, BILLY Schwarz |
+| Quiet Luxury | Westwing Wolke Bouclé Hellblau | Marisa Marmor, STOCKHOLM 2025 | TÄLLÅSEN Graugrün, TONSTAD Elfenbeinweiß | TONSTAD Elfenbeinweiß, HYLTARP Blassblau, BILLY Weiß |
 
 | Bereich | Recherchierte Auswahl |
 |---|---|
-| Wohnen | Westwing Alba 2-Sitzer (185 × 114), Mikkel, Marisa; IKEA GLADOM, zwei offene BESTÅ-Korpusse (240 cm) |
-| Essen | IKEA STOCKHOLM 2025 Ø 115 mit vier LISABO; Westwing Calary 160 × 45; IKEA TONSTAD Regal |
-| Schlafen | IKEA TÄLLÅSEN 180 × 200, zwei TONSTAD-Ablagetische, drei PAX-Korpusse mit sechs FORSAND-Türen; Mikkel |
-| Arbeiten / Gäste | IKEA HYLTARP Kilanda Blassblau, TONSTAD Schreibtisch Elfenbeinweiß, drei BILLY; Westwing Zara Hellbeige/Edelstahl |
+| Wohnen | Stilabhängige Sitzgruppe und Couchtische laut Tabelle; zwei BESTÅ-Korpusse (240 cm), Weiß oder Schwarzbraun |
+| Essen | Sahra, STOCKHOLM 2025 oder Calary mit vier LISABO in Esche oder Schwarz; Calary/ STOCKHOLM Sideboard; RUDSTA Glasvitrine |
+| Schlafen | Stilabhängiges Polsterbett und Nachttische; drei PAX-Korpusse mit sechs FORSAND-Türen; Mikkel oder EKENÄSET |
+| Arbeiten / Gäste | HYLTARP mit belegtem Bezug, TONSTAD oder MICKE, drei BILLY; Westwing Zara Hellbeige/Edelstahl |
 | Diele / HWR | IKEA PAX/FORSAND, LACK, ENHET und IVAR |
 | Bäder / Balkone | IKEA ENHET, VILTO, NÄMMARÖ und TÄRNÖ |
 
@@ -64,7 +71,7 @@ Die Spiegel nutzen auf WebGPU die lokale Raum-Lightprobe für stabile Reflexione
 |---|---|
 | Maßhaltige Serienmodule | BESTÅ 240 cm, BILLY 120 cm und PAX/FORSAND in realen Herstellermaßen |
 | Ruhige Flächen | weiße PAX/FORSAND-Fronten, offene BESTÅ-/BILLY-Fächer, Calary mit geriffelter Holzfront |
-| Materialehrlichkeit | Echtholz/-furnier, Naturstein, Kalk-/Lehmputz, Leinen, Wolle, Bouclé; je Stilwelt nur ein Metallton |
+| Materialehrlichkeit | Echtholz/-furnier, Naturstein, Kalk-/Lehmputz, Leinen, Wolle, Bouclé; Metalle wiederholen; recherchierte Produktoberflächen bleiben erhalten |
 | Mehrschichtiges Licht 2700 K, CRI > 95 | Grundlicht entblendet, indirekte LED-Vouten/-Unterleuchtung, Zonen- und Stimmungslicht; Bad 3000 K |
 | Großzügige Proportionen | Teppich 300 × 400 (Sofa, Couch- und Beistelltisch stehen vollständig darauf, vom Lowboard bis 35 cm hinter den Sofarücken), deckenhohe, bodenlange Vorhänge, Kunst mit Bildmitte ≈ 1,45 m |
 | Spiegel als Architektur | Maßspiegel oberhalb der Ablagen bis zur Decke: im Gäste-WC wandfüllend, im Bad über die Breite des Waschtisch-Vorsprungs (nicht über der Wanne) |
@@ -166,7 +173,7 @@ Ziel: kein spürbares Stocken mehr – weder beim ersten Drehen, beim Betreten d
 | Unschärfe-Glas (`backdrop-filter`) über dem laufenden 3D-Bild | ganzflächiges Neu-Weichzeichnen bei jedem Bild auf Mobil-GPUs |
 | Hover-Zustände „klebten“ nach dem Antippen, iOS zoomte beim Fokussieren von Eingabefeldern (< 16 px), Doppeltipp-Zoom-Verzögerung auf Bedienelementen | unruhige Touch-Bedienung |
 
-**Messung** (gleiche Maschine, Software-GPU SwiftShader ohne parallele Shader-Kompilierung, Smartphone-Viewport, Stufe *Schnell* – absolute Zeiten sind auf echter Hardware um ein Vielfaches kürzer, die Verhältnisse gelten):
+**Messung** (gleiche Maschine, Software-GPU SwiftShader ohne parallele Shader-Kompilierung, Smartphone-Viewport, Stufe *Schnell* – historische Software-GPU-Messung; absolute Zeiten und Verhältnisse sind nicht auf den NUC übertragbar):
 
 | | vorher | nachher |
 |---|---|---|
@@ -272,7 +279,7 @@ Qualitätsstufen *Hoch/Mittel/Schnell* steuern Pixel-Ratio (maximal 1,5/1,25/1) 
 
 ## Profil für Intel NUC13ANKi5
 
-Der NUC13ANKi5 verwendet einen Core i5-1340P (4 Performance- und 8 Efficient-Kerne, 16 Threads) und Iris Xe mit 80 Ausführungseinheiten; siehe [Intel-Produktbrief](https://download.intel.com/newsroom/2023/client-computing/Intel-NUC-13-Pro-Product-Brief.pdf). Die integrierte Grafik nutzt gemeinsamen Arbeitsspeicher. Als Ausgangspunkt die Qualitätsstufe **Mittel** verwenden.
+Der NUC13ANKi5 verwendet einen Core i5-1340P (4 Performance- und 8 Efficient-Kerne, 16 Threads) und Iris Xe mit 80 Ausführungseinheiten; siehe [Intel-Produktbrief](https://download.intel.com/newsroom/2023/client-computing/Intel-NUC-13-Pro-Product-Brief.pdf). Die integrierte Grafik nutzt gemeinsamen Arbeitsspeicher. Die CPU-Kernzuweisung und P-/E-Core-Verteilung übernimmt das Betriebssystem; JavaScript kann keine garantierte Hardware-Affinität setzen. Als Ausgangspunkt die Qualitätsstufe **Mittel** verwenden.
 
 - Der BVH-Aufbau läuft in einem wiederverwendeten Web Worker. Szenenaufbauten werden serialisiert; Kamerabewegungen und Stilwechsel entwerten alte Aufträge, statt konkurrierende Worker-Aufbauten auszulösen.
 - Pathtracing startet nach Kameraruhe direkt. Es wartet nicht mehr auf die zusätzlichen Raster-Lightprobe-Pässe oder auf Echtzeit-GI-Konvergenz. Der letzte Rasterframe bleibt während der Vorbereitung sichtbar.
@@ -280,9 +287,9 @@ Der NUC13ANKi5 verwendet einen Core i5-1340P (4 Performance- und 8 Efficient-Ker
 - OIDN lädt und kompiliert erst nach acht Samples. Während dieser Vorbereitung und während der Entrauschung pausiert Pathtracing, damit WebGL und WebGPU nicht gleichzeitig die Iris Xe beanspruchen.
 - Belichtungsmessung liest den HDR-Puffer asynchron aus; unveränderte Lichtdaten werden nicht erneut auf die GPU übertragen. Ohne WebGPU endet das Rendering korrekt am Sample-Ziel ohne OIDN.
 
-Das Betriebssystem und der Browser verteilen CPU-Arbeit auf P-/E-Kerne; JavaScript setzt keine Kern-Affinität. Kalte Shaderkompilierung verursacht weiterhin Startzeit. Ein direkter NUC-Hardwaretest wurde nicht durchgeführt.
+Das Betriebssystem und der Browser verteilen CPU-Arbeit auf P-/E-Kerne; JavaScript setzt keine Kern-Affinität. Kalte Shaderkompilierung verursacht weiterhin Startzeit. Der lokale Rechner wurde als NUC13ANKi5 mit Iris Xe und zwei 16-GB-RAM-Modulen (2667 MHz) bestätigt. Der erste Hardwarelauf (Chrome headless, 1280 × 720, Mittel, Quiet Luxury, Goldene Stunde) erreichte das erste Sample nach 160,271 s und 192 Samples mit OIDN nach 471,311 s. Diese erste Messung zeigte weiterhin eine erhebliche Kaltstartzeit; die nachfolgenden Korrekturen werden getrennt überprüft.
 
-Reproduzierbarer Vergleich: lokaler Server, Chrome headless/SwiftShader, 800 × 600, identische möblierte Szene, Station Bad, ein Sample, externe Netzaufrufe blockiert. Referenz-Renderer aus Commit 0ed7b95: **33,737 s**, geändert: **20,052 s** bis zum ersten Sample (ein Messpaar, rund **41 % kürzer**). Das ist ein Software-GPU-Vergleich, kein NUC-Benchmark; die Dollhouse-Kaltstartmessung zeigte keine belastbare Verbesserung. Wiederholen mit node tools/perf-photo.mjs --baseline und node tools/perf-photo.mjs, nacheinander.
+Reproduzierbarer Vergleich: lokaler Server, Chrome headless/SwiftShader, 800 × 600, identische möblierte Szene, Station Bad, ein Sample, externe Netzaufrufe blockiert. Referenz-Renderer aus Commit 0ed7b95: **33,737 s**, geändert: **20,052 s** bis zum ersten Sample (ein historisches Messpaar; daraus lässt sich keine allgemeine Beschleunigung ableiten). Das ist ein Software-GPU-Vergleich, kein NUC-Benchmark; die Dollhouse-Kaltstartmessung zeigte keine belastbare Verbesserung. Wiederholen mit node tools/perf-photo.mjs --baseline und node tools/perf-photo.mjs, nacheinander.
 
 ## Automatische Planungsprüfung
 
@@ -296,7 +303,7 @@ Reproduzierbarer Vergleich: lokaler Server, Chrome headless/SwiftShader, 800 × 
 | Fenster / Balkontüren | 45 cm Zugang; Balkontüren vollständig frei, Fenster höchstens zur Hälfte verstellt |
 | Ausrichtung | Sofa zur Medienwand, Bettfuß in den Raum, Schlafsofa vom Wandrücken weg |
 
-Alle vier Stilwelten bestehen die aktuelle Geometrie- und Möbelbelegprüfung: 26/27/25/26 Möbelpositionen, keine fehlenden Produktbelege und keine Geometriefehler. node tools/catalog-check.mjs prüft dies automatisch. HYLTARP wird dabei geschlossen geprüft; der ausgeklappte Zustand benötigt gesonderte Freifläche.
+Alle vier Stilwelten bestehen die aktuelle Geometrie- und Möbelbelegprüfung: 26/27/25/26 Möbelpositionen, keine fehlenden Produktbelege und keine Geometriefehler. node tools/catalog-check.mjs prüft zusätzlich Artikelunterschiede und die Glasflächen der Vitrine. HYLTARP wird geschlossen und mit 240 cm Ausklapptiefe geprüft; im Gästebetrieb wird der rollbare Bürostuhl zur Seite gestellt.
 
 `node tools/flow.mjs` spielt den UI-Ablauf im Desktop-Layout (1280 × 720) durch: alle Stilwelten, Fotorealistisch starten, Lichtstimmung, Dollhouse, zurück zu Standard. `node tools/touch.mjs` prüft die Touch-Bedienung im Smartphone-Hochformat mit echten Mehrfinger-Ereignissen (17 Prüfungen: Antippen → Detailkarte, Wegwischen, Doppeltippen im Dollhouse und in der Begehung, Pinch-Gehen, Umsehen, Sheets, Werkzeugleiste vollständig sichtbar, kein seitliches Verrutschen, Grundriss-Verschieben/-Pinch/-Doppeltippen/-Raumauswahl).
 
@@ -379,7 +386,7 @@ Nach Änderungen an einem Textur-Generator (`PROCEDURAL` in `src/engine/material
 
 ### Neue Stilwelt anlegen
 
-Ein Eintrag in `STYLES` (`src/data/styles.js`) genügt: `theme`, `wallOverride`, `decor`, Texte (`palette`, `materials`, `walls`, `lightPlan`, `notes`) und `furnish(ctx)` mit den Raum-Helfern `living`, `dining`, `bedroom`, `office` (inkl. `library`). Die Stilwelt-Leiste und Taste 5 ff. entstehen automatisch; die Planungsprüfung zeigt sofort, ob alles passt.
+Neue Varianten benötigen einen Eintrag in `STYLES` (`src/data/styles.js`) und eine belegte Auswahl in `STYLE_PRODUCTS` (`src/data/products.js`): `theme`, `wallOverride`, `decor`, Texte (`palette`, `materials`, `walls`, `lightPlan`, `notes`) und `furnish(ctx)` mit den Raum-Helfern `living`, `dining`, `bedroom`, `office` (inkl. `library`). Die Stilwelt-Leiste und Taste 5 ff. entstehen automatisch; die Planungsprüfung zeigt sofort, ob alles passt.
 
 ## Quellen der Produkt- und Gestaltungsrecherche (09/2026)
 
@@ -399,3 +406,19 @@ Ein Eintrag in `STYLES` (`src/data/styles.js`) genügt: `theme`, `wallOverride`,
 - Texturen, HDRIs und Modelle: [Poly Haven](https://polyhaven.com), CC0
 - Schriften: Cormorant Garamond, Jost (Google Fonts, OFL)
 - Westwing, IKEA, Laufen, Villeroy & Boch, Duravit und genannte Produktnamen sind Marken der jeweiligen Inhaber; die Modelle sind vereinfachte Nachbildungen zu Planungszwecken.
+
+### Nachprüfung vom 28.09.2026
+
+Der vorherige gemeinsame Möbelkatalog hatte die gewünschten Stilunterschiede eingeebnet. Jetzt bestimmen explizite Artikel pro Stilwelt die Szene, Raumtexte und Exporte. Der nicht verfügbare Chandler und unbestätigte Größen/Bezüge wurden verworfen. Alle Produktbelege stehen in docs/PRODUCT_RESEARCH.md. Die Modelle sind vereinfachte Nachbildungen.
+
+Im Fotomodus werden Sonnenposition und Ziel einschließlich Weltmatrizen vor dem Licht-Upload aktualisiert. Die Goldene Stunde aktualisiert HDR-Himmel, warme Sonne, Portale und Lampen und startet die Bildberechnung neu. Der PNG-Export benötigt keinen zusätzlichen Raster-Probe-Aufbau. Fehler bei der Entrauschung geben das Pathtracing-Bild frei; Exportwartezeiten enden auch bei Abbruch oder Fehler.
+
+Technische Grundlage: [Pathtracer-Dokumentation](https://github.com/gkjohnson/three-gpu-pathtracer), [OIDN-Web](https://github.com/pissang/oidn-web), [Intel NUC13AN Technical Product Specification](https://www.intel.com/content/dam/support/us/en/documents/intel-nuc/NUC13AN_NUC13LC_TechProdSpec.pdf). Der [Fachforum-Thread des Pathtracer-Autors](https://discourse.threejs.org/t/three-gpu-pathtracer-a-modular-shader-based-path-tracing-extension-for-three-js/36903?page=2) erläutert die erste Shader-Kompilierung; dies ist Kontext, kein NUC-Leistungsnachweis. Software-GPU-Tests prüfen Funktion und Regressionsfreiheit. node tools/hardware-photo.mjs <Ausgabeverzeichnis> prüft auf dem echten Chrome-Adapter; ohne SAMPLES-Override gilt das reguläre Budget. node tools/review-visual.mjs <Ausgabeverzeichnis> erzeugt ergänzende Software-GPU-Vergleichsbilder.
+
+Bei Lichtwechseln aktualisiert die gebündelte Pathtracer-Erweiterung nur Materialwerte, ohne unveränderte Bildtexturen erneut zu packen (updateMaterials({ uploadTextures: false })). Der Build reproduziert diese Änderung mit einer Prüfung der erwarteten Bibliotheksstruktur. Klare Verglasung erhält Transmission und Reflexion für Kamerastrahlen, blockiert aber direkte Sonnen-Schattenstrahlen nicht: eine gezielte Näherung, weil direkte Lichtabtastung keine Brechungskaustik durch geschlossene Scheiben verfolgt. PhotoRenderer.status().timings zeigt Initialisierung, Szenensammlung, BVH/GPU-Upload und Zeit zum ersten Sample.
+
+Die Zeitmessung trennte den Start weiter auf: Initialisierung 3,458 s, Szenensammlung 0,028 s, BVH/GPU-Upload 11,068 s und erste Shader-/Tracing-Phase 149,337 s (zweiter Hardwarelauf, 48-Sample-Ziel). Der Pathtracer löste bisher für Änderungen an Tiefenschärfe, Hintergrund und Nebel mehrere Kompilierungen innerhalb derselben Aktualisierung aus. Die Build-Erweiterung bündelt diese Änderungen in einer Microtask; der Renderer wartet auf die fertige Kompilierung, bevor er Samples zeichnet. Der folgende Hardwarelauf erreichte das erste Sample nach 131,077 s; die erste Shader-/Tracing-Phase dauerte 112,230 s. Gegenüber dem unmittelbar vorherigen Lauf (164,673 s) sind das rund 20 % weniger Startzeit. Einzelmessungen bei gleichem Viewport, Stil, Stimmung und Qualitätsprofil; daraus folgt keine universelle Beschleunigung. Der Kaltstart bleibt mit etwa zwei Minuten ein bekannter Engpass.
+
+Der abschließende Hardwarelauf erreichte regulär **192 Samples mit erfolgreicher OIDN-Entrauschung nach 716,912 s** (Bildgröße 1024 × 525). Das fertige Bild wurde visuell auf warme Beleuchtung, erhaltene Details und fehlende schwarze Fensterabschattung geprüft. Die Gesamtzeit war länger als im ersten Hardwarelauf; eine Beschleunigung des gesamten Renderns ist deshalb nicht belegt. Die Startoptimierung und die korrigierte Beleuchtung sind getrennte Ergebnisse. Die Messwerte sind Einzelmessungen ohne kontrollierte Temperatur- oder Leistungsaufnahme und kein stabiler Benchmark. Alle neun gezielten Renderer-Regressionsprüfungen in `node tools/photo-regression.mjs` bestanden, einschließlich gebündelter Kompilierung, Fehlerweitergabe, vermiedenem Textur-Neu-Upload und wiederhergestelltem Renderer-Zustand.
+
+Regressionsprüfung ohne schweren Szenenstart: node tools/photo-regression.mjs prüft gebündelte Kompilierung, erhaltene Standard-Uploads, übersprungene Textur-Uploads bei reinen Wertänderungen, Sonnenlicht durch klares Glas, Wiederherstellung der Hilfsrender-Zustände und Abschluss bei Entrauschungsfehlern. Die ausführliche UI-Prüfung node tools/flow.mjs bestand abschließend ohne Fehler: vier Stilwelten ohne Geometrieprobleme, Fotolauf, synchronisierte Goldene Stunde, Abend-/Dollhouse-Wechsel, Rückkehr zur Standardansicht und Fehlerbehandlung. node tools/catalog-check.mjs bestand zusätzlich mit geprüften Artikelquellen, Modellgrenzen und ausgeklappter HYLTARP-Liegefläche (Bürostuhl zur Seite gerollt).
