@@ -104,7 +104,7 @@ export function valBasin(M, { w = 0.6, d = 0.42, y = 0.85 } = {}) {
   return g;
 }
 
-/** Floating vanity unit with two drawers below the basin (push-to-open). Back at z = 0. */
+/** IKEA ENHET open 60 × 40 × 60 cm carcass below the existing basin. Back at z = 0. */
 export function vanityUnit(M, { w = 0.6, d = 0.4, h = 0.6, top = 0.72, front = 'plasticWhite' } = {}) {
   const g = new THREE.Group();
   for (const x of [-w / 2 + 0.009, w / 2 - 0.009]) boxOn(g, M[front], [0.018, h, d], [x, top - h, d / 2]);
@@ -199,7 +199,7 @@ export function laundryNiche(M, { w = 0.76, d = 0.64, top = 'marble', front = 's
   box(g, M.plasticWhite, [0.58, 0.07, 0.01], [0, 0.04, zb + 0.595]);
   // stone worktop over the machine, full niche width
   boxOn(g, M[top], [w, 0.03, d - 0.02], [0, 0.88, zb + (d - 0.02) / 2]);
-  // wall cabinet (35 cm deep) with LED under-light
+  // IKEA ENHET 60 × 32 × 75 cm wall cabinet with LED under-light
   boxOn(g, M.plasticWhite, [0.6, 0.75, 0.32], [0, 1.42, zb + 0.16]);
   const led = boxOn(g, M.ledStrip, [w - 0.08, 0.006, 0.01], [0, 1.412, zb + 0.3]); led.castShadow = false;
   // styling on the worktop: basket + folded towels

@@ -14,7 +14,11 @@ try {
       const scene = new ApartmentScene(a.baseM, a.lib, style).build();
       const furniture = scene.items.filter(i => ['Möbel', 'Polster', 'Bett', 'Tisch', 'Outdoor'].includes(i.cat));
       const missing = furniture.filter(i => !i.products?.length).map(i => i.id);
-      const invalid = furniture.flatMap(i => (i.products ?? []).filter(p => !['IKEA', 'Westwing', 'Höffner'].includes(p.retailer) || !p.url.startsWith('https://') || p.size.some(n => !(n > 0))).map(p => `${i.id}: ${p.name}`));
+      const hosts = { IKEA: 'www.ikea.com', Westwing: 'www.westwing.de', Höffner: 'www.hoeffner.de' };
+      const invalid = furniture.flatMap(i => (i.products ?? []).filter(p => {
+        const url = new URL(p.url);
+        return url.protocol !== 'https:' || url.hostname !== hosts[p.retailer] || !p.checked || !(p.quantity > 0) || p.size.length !== 3 || p.size.some(n => !Number.isFinite(n) || !(n > 0));
+      }).map(p => `${i.id}: ${p.name}`));
       const issues = validateLayout(scene.items).issues;
       return { style, furniture: furniture.length, missing, invalid, issues };
     });

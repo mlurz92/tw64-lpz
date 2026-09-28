@@ -129,7 +129,13 @@ export function catalogueFurniture(ctx, meta, original, placement) {
   if (key === 'table') products.push({ ...PRODUCTS.chair, quantity: 4 });
   if (['pax', 'hall'].includes(key)) products.push({ ...PRODUCTS.forsand, quantity: quantity * 2 });
   if (['pax', 'hall'].includes(key)) for (const child of g.children) child.position.z -= 0.009;
-  if (['sideboard', 'coffee', 'nightstand-n', 'nightstand-s'].includes(meta.id)) for (const child of [...original.children].slice(1)) { if (key === 'night') child.position.y += 0.012; g.add(child); }
+  if (['sideboard', 'coffee', 'nightstand-n', 'nightstand-s', 'dining'].includes(meta.id)) {
+    const oldTop = new THREE.Box3().setFromObject(original.children[0]).max.y;
+    for (const child of [...original.children].slice(meta.id === 'dining' ? 2 : 1)) {
+      child.position.y += h - oldTop;
+      g.add(child);
+    }
+  }
   const round = ['marisa', 'gladom', 'table'].includes(key);
   return { meta: { ...meta, name: `${p.retailer} ${p.name}${quantity > 1 ? ` (${quantity} ×)` : ''}${key === 'table' ? ' + 4 IKEA LISABO' : ''}`, spec: `${p.finish} · Herstellermaße ${p.size.map(x => Math.round(x * 1000) / 10).join(' × ')} cm${meta.id === 'b1-table' ? '; nur Tisch aus dem Set' : ''}`, size, round, products }, object: g, placement: place };
 }

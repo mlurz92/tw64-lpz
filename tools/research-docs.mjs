@@ -26,4 +26,3 @@ Bestandsküche, Sanitärobjekte, Elektrogeräte, bauliche Wandverkleidungen, Spi
 
 Die Detailkarte zeigt Produktlinks und Recherchedatum. CSV und JSON exportieren die Produktbelege. node tools/catalog-check.mjs prüft alle vier Stilwelten auf fehlende Belege, Händler, Maße und Geometriefehler. Produktdaten sind Recherchewerte; Verfügbarkeit, Montage und Anschlüsse vor Bestellung am konkreten Artikel bzw. vor Ort prüfen.
 `);
-
