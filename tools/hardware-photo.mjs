@@ -1,6 +1,6 @@
 // Hardware smoke/measurement: uses Chrome's actual adapter, never forces a software GPU.
 import {chromium} from 'playwright';import fs from 'node:fs';
-const out=process.argv[2];const browser=await chromium.launch({channel:'chrome',headless:true});
+const out=process.argv[2];const browser=await chromium.launch({channel: process.env.CHANNEL || undefined,headless:true});
 try { const page=await browser.newPage({viewport:{width:1280,height:720}});await page.route('https://**/*',r=>r.abort());await page.addInitScript(()=>localStorage.setItem('we13-quality','medium'));await page.goto('http://127.0.0.1:8000/#stil=quiet',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__app?.apartment&&!window.__app.viewer.suspended,null,{timeout:300000});
 page.on('pageerror',e=>console.error('PAGEERROR',e.message));
 console.log('hardware',await page.evaluate(async()=>{const adapter=await navigator.gpu?.requestAdapter();const c=document.createElement('canvas').getContext('webgl2');const ext=c?.getExtension('WEBGL_debug_renderer_info');return {webgpu:adapter ? {vendor:adapter.info.vendor,architecture:adapter.info.architecture,device:adapter.info.device,description:adapter.info.description} : null,webgl:ext?c.getParameter(ext.UNMASKED_RENDERER_WEBGL):null,backend:window.__app.viewer.backend,quality:window.__app.viewer.quality};}));

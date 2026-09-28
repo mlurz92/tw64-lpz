@@ -53,13 +53,13 @@ function ribbonGeo(planPts, width, y) {
  * Deciduous crown (linden/maple habit): 11–15 small displaced lobes inside an ellipsoid, unit
  * radius ≈ 1, base at y = 0, height ≈ 2. Many small lobes read as foliage masses, not blobs.
  */
-function crownGeo(seed) {
+function crownGeo(seed, detail = 1) {
   const r = rng(seed), parts = [];
   const k = 10 + Math.floor(r() * 4);
   for (let i = 0; i < k; i++) {
     // detail 1 (80 faces per lobe): the crowns are ≥ 7 m away and seen at most a few hundred
     // pixels large; detail 2 quadrupled the park to 420 k triangles for no visible gain
-    const g = new THREE.IcosahedronGeometry(0.3 + r() * 0.2, 1);
+    const g = new THREE.IcosahedronGeometry(0.3 + r() * 0.2, detail);
     const p = g.attributes.position, nrm = new Float32Array(p.count * 3), ph = r() * 10;
     for (let j = 0; j < p.count; j++) {
       const x = p.getX(j), y = p.getY(j), z = p.getZ(j), l = Math.hypot(x, y, z);
@@ -108,6 +108,10 @@ function buildTrees(M, paths) {
   const g = new THREE.Group(); g.name = 'trees';
   const pos = treePositions(paths);
   const variants = [crownGeo(11), crownGeo(23), crownGeo(37)].map((c) => uvGeo(c, M.foliage));
+  // Path-tracing LOD (photo mode): same lobes at icosahedron detail 0 – a quarter of the
+  // triangles. Through the windows the crowns are ≥ 7 m away and stay soft after denoising;
+  // the BVH over the park shrinks from ≈ 190 k to ≈ 50 k triangles and builds 4× faster.
+  const lods = [crownGeo(11, 0), crownGeo(23, 0), crownGeo(37, 0)].map((c) => uvGeo(c, M.foliage));
   const trunk = trunkGeo();
   // late-summer greens with the first yellowing (September)
   const tints = ['#b9d196', '#a9c98c', '#c4d89e', '#b2cf96', '#d4d69a', '#a3c28a'].map((c) => new THREE.Color(c));
@@ -116,6 +120,7 @@ function buildTrees(M, paths) {
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   byV.forEach((list, vi) => {
     const crowns = new THREE.InstancedMesh(variants[vi], M.foliage, list.length);
+    crowns.userData.ptGeometry = lods[vi];
     const trunks = new THREE.InstancedMesh(trunk, M.bark, list.length);
     list.forEach(([x, y, k], i) => {
       const [wx, wz] = W([x, y]);

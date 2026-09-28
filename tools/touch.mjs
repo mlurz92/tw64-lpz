@@ -4,7 +4,7 @@
 // double tap walk-to-point, one-finger look, sheets (open, swipe closed, no sideways shift),
 // mood switch, toolbar fully on screen, plan pan / pinch / double tap / tap-to-open sheet.
 import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: process.env.CHANNEL ?? 'chrome', headless: true, args: ['--use-angle=swiftshader', '--disable-features=WebGPU', '--enable-unsafe-swiftshader'] });
+const browser = await chromium.launch({ channel: process.env.CHANNEL || undefined, headless: true, args: ['--use-angle=swiftshader', '--disable-features=WebGPU', '--enable-unsafe-swiftshader'] });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
 const page = await ctx.newPage();
 const errors = [];

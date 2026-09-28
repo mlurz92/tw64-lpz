@@ -1,6 +1,6 @@
 // Fast renderer regressions: block app boot and exercise the actual bundled renderer on a tiny fixture.
 import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel:'chrome', headless:true });
+const browser = await chromium.launch({ channel: process.env.CHANNEL || undefined, headless:true });
 try {
   const page = await browser.newPage();
   await page.route('**/src/main.js', r=>r.fulfill({contentType:'text/javascript',body:''}));
