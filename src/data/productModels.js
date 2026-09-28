@@ -219,6 +219,22 @@ function buildModel(ctx, key, opts) {
     case 'marisaTravSide': return C.drumTable(mats(ctx), { dia: w, h, top: 'travertineVein', baseDia: w * 0.86 });
     case 'naida': return slabTable(mats(ctx, { marbleBlack: ['stoneDark', '#2c2b2a'], oakBlack: ['oakDark', '#2a2522'] }), { w, d, h, top: 'marbleBlack', legs: 'oakBlack' });
     case 'andrew': return nestingTables(mats(ctx, { mangoBlack: ['oakDark', '#231f1c'] }));
+    case 'pedraBeige': case 'pedraGrey': {
+      // Monolith: 8 cm Plattenkante, konischer Säulenfuß Ø 70 → 60 cm, alles in einem Guss
+      const M = mats(ctx, { pedra: ['concrete', key === 'pedraBeige' ? '#d8cdbb' : '#b9b6b0'] }), g = new THREE.Group();
+      lathe(g, M.pedra, [[0, 0], [0.36, 0], [0.37, 0.02], [0.33, 0.2], [0.3, h - 0.12], [0.34, h - 0.08], [0, h - 0.08]], [0, 0, 0], 96);
+      extrudePlan(g, M.pedra, circle(w / 2, 160), 0.08, h - 0.08, 0.012);
+      return g;
+    }
+    case 'tavolo': {
+      // GUBI Tavolo a Dischi: Walnuss hochglanz, Fuß aus gestapelten Scheiben unterschiedlicher Größe
+      const M = mats(ctx, { walnutGloss: ['walnut', '#5b4336'] }), g = new THREE.Group();
+      const discs = [[0.34, 0.03], [0.22, 0.14], [0.3, 0.26], [0.18, 0.39], [0.26, 0.52], [0.2, 0.64]];
+      discs.forEach(([r, y], i) => extrudePlan(g, M.walnutGloss, circle(r, 96), (i < discs.length - 1 ? discs[i + 1][1] : h - 0.026) - y + 0.005, y, 0.01));
+      extrudePlan(g, M.walnutGloss, circle(0.36, 96), 0.03, 0, 0.01);
+      extrudePlan(g, M.walnutGloss, circle(w / 2, 160), 0.026, h - 0.026, 0.006);
+      return g;
+    }
     case 'noam': return C.roundTable(mats(ctx, { marbleBeige: ['marble', '#efe6d9'] }), { dia: w, h, top: 'marbleBeige', topT: 0.03, base: 'slim', baseMat: 'steel' });
     case 'sculpt': return C.roundTable(mats(ctx), { dia: w, h, top: 'travertineVein', topT: 0.03, base: 'drum', baseMat: 'oakDark', baseDia: 0.56 });
     case 'nelly': return C.roundTable(mats(ctx), { dia: w, h, top: 'oakDark', topT: 0.02, base: 'ribbed', baseMat: 'oakDark', baseDia: 0.5 });

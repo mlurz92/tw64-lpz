@@ -80,9 +80,10 @@ function dining(ctx, o) {
   const r = dia / 2 + chair.size[1] / 2 - 0.12, span = 2 * (r + chair.size[1] / 2);
   const g = new ctx.THREE.Group();
   g.add(model(ctx, 'dining'));
-  g.add(ctx.helpers.chairsAround(4, r, () => model(ctx, 'chair')));
+  const nChairs = P(ctx, 'chair').quantity;
+  g.add(ctx.helpers.chairsAround(nChairs, r, () => model(ctx, 'chair'), nChairs === 6 ? Math.PI / 6 : Math.PI / 4));
   g.add(grp([D.vase(M, 'amphora', o.vase ?? 'stonewareCharcoal', 0.85), 0.05, th, 0.02], [D.branches(M, { h: 0.55, seed: 5 }), 0.05, th + 0.3, 0.02], [D.tray(M, o.tray ?? 'bronzeDark', 0.36, 0.24), -0.22, th, -0.12, 0.3]));
-  add({ id: 'dining', room: 'living', cat: 'Tisch', productName: `${table.retailer} ${table.name.replace(/, Ø.*$/, '')} + 4 × ${chair.name}`, size: [span, span], round: true }, g, at(L, DINING[0], DINING[1], 0.08));
+  add({ id: 'dining', room: 'living', cat: 'Tisch', productName: `${table.retailer} ${table.name.replace(/, Ø[^(]*/, ' ')} + ${chair.quantity} × ${chair.name}`, size: [span, span], round: true }, g, at(L, DINING[0], DINING[1], 0.08));
   const pend = P(ctx, 'pendant-dining');
   add({ id: 'pendant-dining', room: 'living', cat: 'Leuchte', plan: false, note: 'Unterkante 1,61 m über Boden (≈ 86 cm über der Tischplatte)', size: [Math.max(0.2, pend.size[0]), Math.max(0.2, pend.size[1])], round: true }, model(ctx, 'pendant-dining'), at(L, DINING[0], DINING[1], o.pendantRot ?? 0));
   const sb = P(ctx, 'sideboard'), [sw, sd, sh] = sb.size;
@@ -455,7 +456,7 @@ for (const style of Object.values(STYLES)) {
     living: { title: 'Wohnen / Essen', zoning: 'Medienwand W11 – Lounge auf dem 300 × 400-Teppich – Essplatz vor W06; Sideboard an W07, Glasvitrine IKEA RUDSTA rechts neben der Küche an W08.', points: [
       describe('sofa') + ', Sofarücken 0,5 m vor dem Wandversatz W09; ' + describe('coffee') + ' mit 45 cm Knieraum.',
       describe('lowboard') + ' mittig unter dem TV; ' + describe('lounge') + ' mit ' + describe('floorlamp-living') + ' in der Fensternische.',
-      describe('dining') + ' mit vier Stühlen ' + describe('chair') + '; darüber ' + describe('pendant-dining') + '.',
+      describe('dining') + ' mit sechs Stühlen ' + describe('chair') + '; darüber ' + describe('pendant-dining') + '.',
       describe('sideboard') + ' vor der Akzentwand W07; ' + describe('rug-living') + '.',
     ] },
     bedroom: { title: 'Schlafen', zoning: 'Bett mittig an W20, Einbauschrank IKEA PAX 300 cm an W22 mit ≈ 0,9 m Gang, Leseplatz in der Südostecke.', points: [

@@ -44,6 +44,9 @@ export const PRODUCTS = {
   sculpt: ww('Runder Esstisch Sculpt mit Travertin-Tischplatte, Ø 110 cm', [1.1, 1.1, 0.73], 'runder-esstisch-sculpt-mit-travertin-tischplatte-o-110-cm-162752', 'Travertin Beige 3 cm; skulpturaler Fuß Mangoholz dunkel Ø 56'),
   nelly: ww('Runder Esstisch Nelly mit Rillenstruktur, Ø 115 cm', [1.15, 1.15, 0.75], 'runder-esstisch-nelly-mit-rillenstruktur-in-verschiedenen-groessen-163520', 'Dunkles Eichenholz; kannelierter Säulenfuß'),
   yumi: ww('Runder Esstisch Yumi aus Eichenholz, Ø 115 cm', [1.15, 1.15, 0.74], 'runder-esstisch-yumi-20371', 'Helles Holz (Eichenfurnier), Beine Eiche'),
+  pedraBeige: ww('Runder Esstisch Pedra, Ø 152 cm (Gallery Direct)', [1.52, 1.52, 0.75], 'pedra-round-dining-tble-travertine-en-25gae90766', 'Beton glasfaserverstärkt, Hellbeige; monolithischer Säulenfuß, 171 kg'),
+  pedraGrey: ww('Runder Esstisch Pedra, Ø 152 cm (Gallery Direct)', [1.52, 1.52, 0.75], 'pedra-round-dining-table-linen-en-25gae48983', 'Beton glasfaserverstärkt, Hellgrau; monolithischer Säulenfuß, 171 kg'),
+  tavolo: ww('Runder Esstisch Tavolo a Dischi, Ø 150 cm (GUBI)', [1.5, 1.5, 0.74], 'tavolo-a-dischi-dining-table-round-o150-veneer-base-american-walnut-high-gloss-lacquered-base-top-american-walnut-high-gloss-lacquered-en-26gub19305', 'Amerikanisches Walnussfurnier, hochglanzlackiert; Fuß aus gestapelten Scheiben'),
   celia: ww('Bouclé-Armlehnstuhl Celia', [0.61, 0.59, 0.8], 'boucle-armlehnstuhl-celia-164171', 'Bouclé Hellbeige, Beine Schwarz matt; Sitzhöhe 48 cm'),
   imaraOffWhite: ww('Polsterstuhl Imara aus Eichenholz', [0.51, 0.48, 0.8], 'imara-chair-dark-brown-wood-color-oak-ote-chacha-140-beige-en-25wes68918', 'Bezug Off White, Gestell Dunkles Holz; Sitzhöhe 48 cm'),
   imaraOlive: ww('Polsterstuhl Imara aus Eichenholz', [0.51, 0.48, 0.8], 'imara-chair-dark-brown-wood-color-oak-ote-chacha-371-dark-green-en-25wes61212', 'Bezug Olivgrün, Gestell Dunkles Holz; Sitzhöhe 48 cm'),
@@ -134,7 +137,7 @@ const SHARED = {
 export const STYLE_PRODUCTS = {
   metallic: {
     sofa: 'albaGrey', lounge: 'mikkelOffWhite', 'reading-chair': 'mikkelOffWhite', coffee: 'alys', 'side-table': 'alysSide',
-    lowboard: 'calaryTvBrown', dining: [['noam', 1], ['celia', 4]], chair: ['celia', 4], 'pendant-dining': 'rim', sideboard: 'calarySideDark',
+    lowboard: 'calaryTvBrown', dining: [['tavolo', 1], ['celia', 6]], chair: ['celia', 6], 'pendant-dining': 'rim', sideboard: 'calarySideDark',
     bed: 'dreamGrey', 'nightstand-n': 'calaryNight', 'nightstand-s': 'calaryNight', 'nightstand-n-pendant': 'antic', 'nightstand-s-pendant': 'antic',
     wardrobe: [['paxDark', 3], ['tonstadDoorBrown', 6]], 'hall-wardrobe': [['paxFlat', 2], ['tonstadDoorBrown', 4]], console: 'larsenConsole',
     'floorlamp-living': 'bun', 'floorlamp-bed': 'bun', 'floorlamp-office': 'bun',
@@ -143,7 +146,7 @@ export const STYLE_PRODUCTS = {
   },
   soft: {
     sofa: 'melvaOffWhite', lounge: 'ekenaset', 'reading-chair': 'ekenaset', 'armchair-2': 'ekenaset', coffee: 'distinct', 'side-table': 'marisaTravSide',
-    lowboard: 'zumiTv', dining: [['sculpt', 1], ['imaraOffWhite', 4]], chair: ['imaraOffWhite', 4], 'pendant-dining': 'elettra', sideboard: 'zumiSide',
+    lowboard: 'zumiTv', dining: [['pedraBeige', 1], ['imaraOffWhite', 6]], chair: ['imaraOffWhite', 6], 'pendant-dining': 'elettra', sideboard: 'zumiSide',
     bed: 'archeTaupe', 'nightstand-n': 'farsta', 'nightstand-s': 'farsta', 'nightstand-n-pendant': 'paris', 'nightstand-s-pendant': 'paris',
     wardrobe: [['pax', 3], ['tonstadDoorOak', 6]], console: 'calaryConsole',
     'floorlamp-living': 'kayaBeige', 'floorlamp-bed': 'kayaBeige', 'floorlamp-office': 'kayaBeige',
@@ -152,7 +155,7 @@ export const STYLE_PRODUCTS = {
   },
   brutal: {
     sofa: 'lennonBoucle', lounge: 'rae', 'reading-chair': 'mikkelOffWhite', coffee: 'naida',
-    lowboard: 'calaryTvBlack', dining: [['nelly', 1], ['kris', 4]], chair: ['kris', 4], 'pendant-dining': 'level', sideboard: 'chandlerSide',
+    lowboard: 'calaryTvBlack', dining: [['pedraGrey', 1], ['kris', 6]], chair: ['kris', 6], 'pendant-dining': 'level', sideboard: 'chandlerSide',
     bed: 'sato', 'nightstand-n': 'calaryWallNight', 'nightstand-s': 'calaryWallNight', 'nightstand-n-pendant': 'paris', 'nightstand-s-pendant': 'paris',
     wardrobe: [['paxDark', 3], ['tonstadDoorBrown', 6]], 'hall-wardrobe': [['paxFlat', 2], ['tonstadDoorBrown', 4]], console: 'larsenConsole',
     'floorlamp-living': 'kayaAnthracite', 'floorlamp-bed': 'kayaAnthracite', 'floorlamp-office': 'kayaAnthracite',
@@ -161,7 +164,7 @@ export const STYLE_PRODUCTS = {
   },
   quiet: {
     sofa: 'lennonLinen', lounge: 'mikkelGreen', 'reading-chair': 'mikkelGreen', coffee: 'andrew',
-    lowboard: 'elonaXL', dining: [['yumi', 1], ['imaraOlive', 4]], chair: ['imaraOlive', 4], 'pendant-dining': 'hamilton', sideboard: 'calarySideBlack',
+    lowboard: 'elonaXL', dining: [['tavolo', 1], ['imaraOlive', 6]], chair: ['imaraOlive', 6], 'pendant-dining': 'hamilton', sideboard: 'calarySideBlack',
     bed: 'dreamAnthracite', 'nightstand-n': 'diana', 'nightstand-s': 'diana', 'nightstand-n-pendant': 'paris', 'nightstand-s-pendant': 'paris',
     wardrobe: [['paxDark', 3], ['tonstadDoorBrown', 6]], 'hall-wardrobe': [['paxFlat', 2], ['tonstadDoorBrown', 4]], console: 'larsenConsole',
     'floorlamp-living': 'neron', 'floorlamp-bed': 'neron', 'floorlamp-office': 'neron',
