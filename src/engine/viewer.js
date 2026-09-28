@@ -88,6 +88,17 @@ const PROBE_MOVE = 1.0;         // re-capture the room probe after this many met
 const SETTLE_MS = 160;          // camera must be still this long before the refined frame
 const CONVERGE_FRAMES = { high: 40, medium: 24, low: 12 }; // temporal budget at rest
 const FRAME_MS = 1000 / 60 - 1; // frame cap: high-refresh displays render at most ~60 fps
+/**
+ * Photoreal prewarm: after this long at rest, desktop-class machines (≥ 8 hardware threads,
+ * fine pointer – e.g. NUC13ANKi5 with 16 threads) prepare the path tracer in the background:
+ * BVH on a worker thread, texture array and shader compile on the idle GPU. ?prewarm=0|1 forces it.
+ */
+const PREWARM_MS = 2500;
+const PREWARM = (() => {
+  const q = new URLSearchParams(location.search).get('prewarm');
+  if (q === '0' || q === '1') return q === '1';
+  return (navigator.hardwareConcurrency ?? 4) >= 8 && !matchMedia('(pointer: coarse)').matches;
+})();
 const DAMPING = 0.1;            // orbit damping per 60 Hz frame (made frame-rate independent)
 /** Fog range per camera mode: aerial perspective outdoors, none at all in the dollhouse view. */
 const FOG = { walk: [50, 520], orbit: [5000, 10000] };
@@ -427,9 +438,17 @@ export class Viewer {
    * restarts from zero anyway). At rest: one refined raster frame, then the path tracer owns the
    * GPU until its sample budget is reached. Returns true when the raster frame is skipped.
    */
+  /** Idle-time preparation of the path tracer (see PREWARM); at most one check per second. */
+  prewarmPhoto(now) {
+    if (now - (this._prewarmAt ?? 0) < 1000) return;
+    this._prewarmAt = now;
+    (this.photo ??= new PhotoRenderer(this)).prepare();
+  }
+
   photoLoop(moving, still, now) {
     const p = (this.photo ??= new PhotoRenderer(this));
-    if (!still) { if (p.active) p.stop(); return false; }
+    // Photo mode chosen while the camera still moves: build the scene now, trace once it rests.
+    if (!still) { if (p.active) p.stop(); else p.prepare(); return false; }
     if (!p.active) {
       // Path tracing uses its own sky, portals and lamps, not the raster light probe.
       // Keep the last interactive frame underneath and begin preparation immediately.
@@ -904,6 +923,7 @@ export class Viewer {
     if (this.suspended || !this.pipelines) return;
     const still = now - this.lastMove > SETTLE_MS;
     if (this.renderMode === 'photo' && this.photoLoop(moving, still, now)) return;
+    if (PREWARM && this.quality !== 'low' && now - this.lastMove > PREWARM_MS && this.stats.frames > 0 && !this.probeJob && !this.probeStale()) this.prewarmPhoto(now);
     // light budget follows the camera (walk mode: room of the camera)
     if (this.rig?.update(this.mode, this.camera.position)) this.invalidate();
     // Load distribution: one probe step (a cube face or the prefilter) per tick while the camera

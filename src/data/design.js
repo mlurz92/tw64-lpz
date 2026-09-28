@@ -11,7 +11,8 @@ import * as C from '../engine/builders/catalog.js';
 import { box, boxOn, cyl, rboxOn, THREE } from '../engine/builders/common.js';
 import { WALLS, wall } from '../core/geometry.js';
 import { STYLES, DEFAULT_STYLE } from './styles.js';
-import { catalogueFurniture } from './products.js';
+import { catalogueFurniture, styleProduct, slotProducts } from './products.js';
+import { productModel } from './productModels.js';
 
 export { STYLES, DEFAULT_STYLE };
 
@@ -42,17 +43,23 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
   const grp = (...children) => { const g = new THREE.Group(); children.forEach(([o, x = 0, y = 0, z = 0, ry = 0]) => { o.position.set(x, y, z); o.rotation.y = ry; g.add(o); }); return g; };
   const fr = Object.fromEntries(['W02', 'W07', 'W08', 'W10', 'W11', 'W13', 'W14', 'W16', 'W18', 'W19', 'W20', 'W21', 'W22', 'W23', 'W28', 'W47', 'W48', 'W49', 'W50'].map((id) => [id, frameOf(id)]));
   const ctx = { M, productM, lib, add, style, at, abs, grp, fr, F, K, B, D, T, C, THREE, box, boxOn, cyl, rboxOn, helpers: { lemons, laptop, shelfStyled, styleShelf, chairsAround } };
+  ctx.product = (key, opts) => productModel(ctx, key, opts);
   const S = style.decor ?? {};
 
   // ======================================================================== STIL: Wohnen, Essen, Schlafen, Arbeiten
   style.furnish(ctx);
 
   // ======================================================================== DIELE (Einbau, alle Stile)
-  add({ id: 'hall-wardrobe', room: 'living', name: 'Einbaugarderobe mit Sitznische', cat: 'Möbel', spec: `IKEA PAX-Korpusse 100 × 35 × 236 cm mit Maßfronten ${S.builtIn ?? 'Räuchereiche kanneliert'}, Deckenblende · 200 × 40 cm, Nische 85 cm mit Polsterbank und LED`, size: [2.0, 0.4] },
-    F.hallWardrobe(M), at(fr.W14, 1.0095, 0.2));
-  add({ id: 'console', room: 'living', name: 'Wandkonsole + Rundspiegel Ø 80', cat: 'Möbel', spec: `Konsole ${S.builtIn ?? 'Räuchereiche'}, Spiegel mit Metallrahmen ${S.metal ?? 'Bronze'}`, size: [1.2, 0.32] },
-    grp([F.wallConsole(M)], [D.roundMirror(M, 0.8), 0, 1.58, -0.14], [D.tray(M, 'bronzeDark', 0.34, 0.2), -0.3, 0.96, 0.0], [D.vase(M, 'bottle', S.vase ?? 'stonewareCharcoal', 1.2), 0.32, 0.96, -0.02], [D.branches(M, { h: 0.5, seed: 14 }), 0.32, 1.35, -0.02]),
-    at(fr.W13, 0.75, 0.16));
+  // Garderobe: 2 IKEA PAX-Korpusse 35 cm tief mit 4 TONSTAD-Türen (Holzton der Stilwelt), deckenhoch.
+  const hw = slotProducts(style.id, 'hall-wardrobe');
+  add({ id: 'hall-wardrobe', room: 'living', cat: 'Möbel', productName: 'IKEA PAX Garderobenschrank 200 cm mit TONSTAD-Türen', note: 'Deckenblende bauseits, Innenausstattung (Stange, Schuhböden) nach Bedarf', size: [2.0, 0.4] },
+    () => ctx.product(hw[0].key, { count: 2, door: hw[1].key, ceiling: true }), at(fr.W14, 1.0095, 0.2));
+  // Konsole mit Rundspiegel: wandhängende Larsen (Oberkante 0,95 m) bzw. Calary auf Beinen.
+  const con = styleProduct(style.id, 'console'), [cw2, cd2, chh] = con.size, hanging = con.key === 'larsenConsole', conTop = hanging ? 0.95 : chh;
+  const conObj = hanging ? (() => { const g = new THREE.Group(); boxOn(g, productM.oakDark, [cw2, chh, cd2], [0, conTop - chh, 0]); box(g, M.matteBlack, [cw2 - 0.04, 0.003, 0.003], [0, conTop - chh / 2, cd2 / 2 + 0.001]); return g; })() : ctx.product(con.key);
+  add({ id: 'console', room: 'living', cat: 'Möbel', note: 'Rundspiegel Ø 80 darüber', size: [cw2, cd2] },
+    grp([conObj], [D.roundMirror(M, 0.8), 0, conTop + 0.62, -cd2 / 2 + 0.02], [D.tray(M, 'bronzeDark', 0.34, 0.2), -0.28, conTop, 0.0], [D.vase(M, 'bottle', S.vase ?? 'stonewareCharcoal', 1.2), 0.3, conTop, -0.02], [D.branches(M, { h: 0.5, seed: 14 }), 0.3, conTop + 0.39, -0.02]),
+    at(fr.W13, 0.75, cd2 / 2 + 0.01));
   add({ id: 'art-hall', room: 'living', name: (S.hallArt?.name ?? 'Tuschezeichnung').replace(/\d+ × \d+/, '90 × 120'), cat: 'Kunst', spec: 'Rahmen Eiche, Schattenfuge', size: [0.9, 0.03], plan: false },
     D.artwork(M, S.hallArt?.kind ?? 'ink', 0.9, 1.2, { seed: 7 }), at(fr.W02, 0.55, 0.025, 0, 1.45));
   add({ id: 'picture-light-hall', room: 'living', name: 'Bilderleuchte LED 40 cm', cat: 'Leuchte', spec: `${S.lightMetalName ?? 'Bronze gebürstet'}, 2700 K (Galerielicht im Eingang)`, size: [0.4, 0.18], plan: false },
@@ -72,9 +79,9 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
   // ======================================================================== BAD (nach HLS-Plan)
   // Vorwand mit Ablage 1,18 m hinter dem Waschtisch (W37) und entlang der Wanne (W38); darüber
   // raumbreite Maßspiegel. Armaturen durchgehend schwarz matt (Duravit Tulum).
-  const front = S.bathFront ?? 'Räuchereiche', top = S.bathTop ?? 'Calacatta';
+  const top = S.bathTop ?? 'Calacatta';
   const BLACK = 'schwarz matt';
-  add({ id: 'laundry', room: 'bath', name: 'Waschtrockner in der Nische neben der Tür', cat: 'Möbel', spec: `Waschtrockner (Frontlader) 60 × 60 × 85 cm in der ersten Nische direkt neben der Badtür, Arbeitsplatte ${top} über die volle Nischenbreite, Hängeschrank ${front} 76 × 35 × 72 cm mit LED darunter · Nische 76 × 65 cm`, size: [0.758, 0.62] },
+  add({ id: 'laundry', room: 'bath', cat: 'Möbel', productName: 'Waschtrockner (Bestand) + IKEA ENHET Wandschrank mit Tür', productSpec: `Waschtrockner (Frontlader) 60 × 60 × 85 cm in der ersten Nische direkt neben der Badtür, Arbeitsplatte ${top} über die volle Nischenbreite, darüber IKEA ENHET Wandschrank weiß 60 × 32 × 75 cm mit LED darunter · Nische 76 × 65 cm`, size: [0.758, 0.62] },
     B.laundryNiche(M), abs(14.076, 5.883 + 0.32, 0));
   add({ id: 'wc-bath', room: 'bath', name: 'Wand-WC Laufen Meda, spülrandlos', cat: 'Sanitär', spec: `Tiefspüler, Vorwand W35, Drückerplatte ${BLACK}`, size: [0.36, 0.56], anchor: 'back' },
     B.wc(M), abs(14.956, 5.883, 0));
@@ -82,7 +89,7 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
     grp([B.preWall(M, { w: 0.901, d: 0.249 })], [B.ledgeProps(M), -0.22, B.LEDGE_H, 0.12]), abs(15.8055, 5.634, 0));
   add({ id: 'mirror-bath', room: 'bath', name: 'Spiegel nach Maß 90 × 138 cm', cat: 'Sanitär', spec: 'Maßanfertigung: Kristallspiegel über die volle Breite des Waschtisch-Vorsprungs (W36 bis Wannenkante) oberhalb der Ablage (1,18 m) bis zur Decke, Schattenfuge 5 mm; über der Wanne bleibt die Wand gefliest', size: [0.901, 0.01], plan: false },
     B.wallMirror(M, 0.901, 2.56 - B.LEDGE_H), abs(15.8055, 5.634, 0, B.LEDGE_H));
-  add({ id: 'vanity-bath', room: 'bath', name: 'Waschtisch Laufen VAL 60 × 42 + Unterschrank', cat: 'Sanitär', spec: `SaphirKeramik weiß, Einhebelmischer Duravit Tulum ${BLACK}; Unterschrank schwebend 58 × 40 × 40 cm, 2 Schubkästen, Front ${front}`, size: [0.6, 0.42], anchor: 'back' },
+  add({ id: 'vanity-bath', room: 'bath', cat: 'Sanitär', productName: 'Waschtisch Laufen VAL 60 × 42 + IKEA ENHET Waschbeckenschrank', productSpec: `SaphirKeramik weiß, Einhebelmischer Duravit Tulum ${BLACK}; IKEA ENHET Waschbeckenschrank mit Boden, weiß, offen 60 × 40 × 60 cm`, size: [0.6, 0.42], anchor: 'back' },
     grp([B.valBasin(M)], [B.vanityUnit(M, { top: 0.705 })], [B.bathProps(M), 0.2, 0.85, 0.06]), abs(15.8055, 5.883, 0));
   for (const [k, x] of [['l', 15.47], ['r', 16.14]]) add({ id: 'pendant-bath-' + k, room: 'bath', name: 'Badpendel IP44', cat: 'Leuchte', spec: `Opalglas Ø 14, Baldachin ${BLACK}, vor der Spiegelwand (Gesichtslicht)`, size: [0.14, 0.14], round: true, plan: false },
     B.bathPendant(M, D.lampLight), abs(x, 5.634 + 0.16, 0));
@@ -92,8 +99,8 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
     grp([B.bathtub(M)], [B.exposedThermostat(M), 0.15, 0.8, -0.41]), abs(16.666, 6.534, -Math.PI / 2));
   add({ id: 'towel-bath', room: 'bath', name: 'Handtuchheizkörper 60 × 180', cat: 'Sanitär', spec: `${BLACK}, W39`, size: [0.6, 0.1], anchor: 'back' },
     B.towelRadiator(M), abs(15.006, 7.473, Math.PI));
-  add({ id: 'stool-bath', room: 'bath', name: 'Hocker Teak + Handtücher', cat: 'Deko', spec: 'Ø 32', size: [0.32, 0.32], round: true },
-    grp([teakStool(M)], [T.foldedThrow(M, 'towel', 0.3, 0.22, 0.05), 0, 0.45, 0], [D.candle(M, 0.09, 0.04), 0.08, 0.5, 0.06]),
+  add({ id: 'stool-bath', room: 'bath', cat: 'Möbel', note: 'mit Handtüchern', size: [0.4, 0.32] },
+    grp([ctx.product('stool')], [T.foldedThrow(M, 'towel', 0.3, 0.22, 0.05), 0, 0.25, 0], [D.candle(M, 0.09, 0.04), 0.1, 0.3, 0.06]),
     abs(15.62, 7.25, 0));
   add({ id: 'plant-bath', room: 'bath', name: 'Farn im Steinzeugtopf', cat: 'Pflanze', spec: '', size: [0.28, 0.28], round: true },
     D.pottedPlant(M, lib, 'fern', { height: 0.6, potR: 0.13, potH: 0.28, potMat: 'stonewareCharcoal', shape: 'cylinder', maxR: 0.2 }), abs(16.08, 7.28, 0));
@@ -105,7 +112,7 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
     grp([B.preWall(M, { w: 1.307, d: 0.149 })], [B.ledgeProps(M), 0.22, B.LEDGE_H, 0.075]), abs(11.0625, 5.583, 0));
   add({ id: 'mirror-guest', room: 'guestbath', name: 'Spiegelwand nach Maß 131 × 138 cm', cat: 'Sanitär', spec: 'Maßanfertigung: Kristallspiegel über die gesamte Wand W43 oberhalb der Ablage (1,18 m) bis zur Decke, Schattenfuge 5 mm', size: [1.307, 0.01], plan: false },
     B.wallMirror(M, 1.307, 2.56 - B.LEDGE_H), abs(11.0625, 5.583, 0, B.LEDGE_H));
-  add({ id: 'vanity-guest', room: 'guestbath', name: 'Waschtisch Laufen VAL 60 × 42 + Unterschrank', cat: 'Sanitär', spec: `SaphirKeramik weiß, Einhebelmischer Duravit Tulum ${BLACK}; Unterschrank schwebend 58 × 40 × 40 cm, Front ${front}`, size: [0.6, 0.42], anchor: 'back' },
+  add({ id: 'vanity-guest', room: 'guestbath', cat: 'Sanitär', productName: 'Waschtisch Laufen VAL 60 × 42 + IKEA ENHET Waschbeckenschrank', productSpec: `SaphirKeramik weiß, Einhebelmischer Duravit Tulum ${BLACK}; IKEA ENHET Waschbeckenschrank mit Boden, weiß, offen 60 × 40 × 60 cm`, size: [0.6, 0.42], anchor: 'back' },
     grp([B.valBasin(M)], [B.vanityUnit(M, { top: 0.705 })], [B.bathProps(M), -0.2, 0.85, 0.06]), abs(11.058, 5.732, 0));
   for (const [k, x] of [['l', 10.6], ['r', 11.52]]) add({ id: 'pendant-guest-' + k, room: 'guestbath', name: 'Badpendel IP44', cat: 'Leuchte', spec: `Opalglas Ø 14, Baldachin ${BLACK}`, size: [0.14, 0.14], round: true, plan: false },
     B.bathPendant(M, D.lampLight), abs(x, 5.583 + 0.075, 0));
@@ -115,30 +122,29 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
     B.towelRadiator(M), abs(11.716, 7.04, -Math.PI / 2));
 
   // ======================================================================== HWR
-  add({ id: 'utility-tall', room: 'utility', name: 'Hochschrank Vorräte/Sauger', cat: 'Möbel', spec: `IKEA PAX 75 × 58 × 201 bzw. Maßkorpus, Front ${front}, in der Nische W50 · 80 × 45 × 220 cm (Türschwenk frei)`, size: [0.8, 0.45] },
-    grp([boxOn(new THREE.Group(), M.smokedOak, [0.8, 2.2, 0.45], [0, 0, 0]).parent], [(() => { const g = new THREE.Group(); box(g, M.matteBlack, [0.004, 2.1, 0.004], [0, 1.1, 0.226]); box(g, M.bronze, [0.014, 0.5, 0.02], [-0.04, 1.1, 0.235]); box(g, M.bronze, [0.014, 0.5, 0.02], [0.04, 1.1, 0.235]); return g; })()]),
-    at(fr.W50, 0.42, 0.226));
+  add({ id: 'utility-tall', room: 'utility', cat: 'Möbel', note: 'Wandmontage 25 cm über Boden, in der Nische W50', size: [0.6, 0.321] },
+    () => ctx.product('utility', { count: 2 }), at(fr.W50, 0.42, 0.1605));
   add({ id: 'utility-tech', room: 'utility', name: 'Unterverteilung + Router', cat: 'Technik', spec: 'Bestand, frei zugänglich', size: [0.6, 0.1], plan: false },
     techPanel(M), at(fr.W47, 1.72, 0.0, 0, 1.0));
   add({ id: 'utility-manifold', room: 'utility', name: 'Heizkreisverteiler (Bestand)', cat: 'Technik', spec: 'Revisionsschrank', size: [0.8, 0.12] },
     grp([boxOn(new THREE.Group(), M.plasticWhite, [0.8, 0.7, 0.12], [0, 0.3, 0]).parent]), at(fr.W48, 0.55, 0.06));
-  add({ id: 'utility-shelf', room: 'utility', name: 'Regal mit Körben', cat: 'Möbel', spec: 'IKEA IVAR-Klasse, Eiche/Stahl schwarz, 100 × 35 × 190 cm', size: [1.0, 0.35] },
-    utilityShelf(M), at(fr.W49, 0.62, 0.175));
+  add({ id: 'utility-shelf', room: 'utility', cat: 'Möbel', note: 'mit zwei Körben', size: [0.89, 0.3] },
+    () => ctx.product('ivar'), at(fr.W49, 0.62, 0.15));
 
   // ======================================================================== BALKONE
   const bl = S.balcony ?? {};
-  add({ id: 'b1-lounge-a', room: 'balcony1', name: 'Outdoor-Sessel Teak', cat: 'Outdoor', spec: `Teak, Kissen Outdoor-Leinen ${bl.cushionName ?? 'Greige'}`, size: [0.74, 0.82] },
-    F.loungeChair(M, { w: 0.74, d: 0.82, fabric: bl.cushion ?? 'linenGrey', wood: 'teak' }), abs(11.84, 9.98, 0.25));
-  add({ id: 'b1-lounge-b', room: 'balcony1', name: 'Outdoor-Sessel Teak', cat: 'Outdoor', spec: `Teak, Kissen Outdoor-Leinen ${bl.cushionName ?? 'Greige'}`, size: [0.74, 0.82] },
-    F.loungeChair(M, { w: 0.74, d: 0.82, fabric: bl.cushion ?? 'linenGrey', wood: 'teak' }), abs(12.84, 9.98, -0.25));
-  add({ id: 'b1-table', room: 'balcony1', name: 'Beistelltisch Travertin', cat: 'Outdoor', spec: 'Ø 42', size: [0.42, 0.42], round: true },
-    grp([F.sideTable(M, { h: 0.45 })], [D.candle(M, 0.14, 0.05), 0, 0.45, 0]), abs(12.34, 10.22, 0));
+  add({ id: 'b1-lounge-a', room: 'balcony1', cat: 'Outdoor', note: `Auflage Outdoor-Leinen ${bl.cushionName ?? 'Greige'}`, size: [0.69, 0.78] },
+    () => ctx.product('outdoor', { cushion: bl.cushion ?? 'linenGrey' }), abs(11.6, 9.98, 0));
+  add({ id: 'b1-lounge-b', room: 'balcony1', cat: 'Outdoor', note: `Auflage Outdoor-Leinen ${bl.cushionName ?? 'Greige'}`, size: [0.69, 0.78] },
+    () => ctx.product('outdoor', { cushion: bl.cushion ?? 'linenGrey' }), abs(12.9, 9.98, 0));
+  add({ id: 'b1-table', room: 'balcony1', cat: 'Outdoor', note: 'nur Tisch aus dem Set, Stühle auf Balkon 2', size: [0.55, 0.54] },
+    grp([ctx.product('bistro')], [D.candle(M, 0.14, 0.05), 0, 0.7, 0]), abs(12.25, 10.22, 0));
   add({ id: 'b1-tree', room: 'balcony1', name: 'Kübelpflanze groß', cat: 'Pflanze', spec: 'Pflanzkübel Ø 50', size: [0.5, 0.5], round: true },
     D.pottedPlant(M, lib, 'pachira', { height: 1.9, potR: 0.25, potH: 0.55, seed: 3, maxR: 0.34, potMat: bl.pot ?? 'stonewareCharcoal' }), abs(10.74, 9.66, 0));
   add({ id: 'b1-fern', room: 'balcony1', name: 'Farn im Kübel', cat: 'Pflanze', spec: '', size: [0.4, 0.4], round: true },
     D.pottedPlant(M, lib, 'fern', { height: 0.8, potR: 0.2, potH: 0.42, potMat: 'stonewareSand', shape: 'cylinder', maxR: 0.3 }), abs(10.55, 11.7, 0));
-  add({ id: 'b2-bistro', room: 'balcony2', name: 'Bistro-Set 2 Personen', cat: 'Outdoor', spec: 'Travertin-Tisch Ø 64, Teak-Stühle', size: [1.5, 0.64] },
-    grp([F.bistroSet(M)], [D.vase(M, 'bud', 'stonewareSage', 1), 0.05, 0.75, 0]), abs(3.95, 20.15, -0.14));
+  add({ id: 'b2-bistro', room: 'balcony2', cat: 'Outdoor', size: [1.44, 0.54] },
+    grp([ctx.product('bistro', { chairs: true })], [D.vase(M, 'bud', 'stonewareSage', 1), 0.05, 0.7, 0]), abs(3.95, 20.15, -0.14));
   add({ id: 'b2-plant', room: 'balcony2', name: 'Kübelpflanze', cat: 'Pflanze', spec: '', size: [0.44, 0.44], round: true },
     D.pottedPlant(M, lib, 'pachiraMid', { height: 1.6, potR: 0.22, potH: 0.5, seed: 5, maxR: 0.3, potMat: bl.pot ?? 'stonewareCharcoal' }), abs(4.9, 19.66, 0));
 
@@ -205,25 +211,11 @@ function laptop(M) {
   return g;
 }
 
-function teakStool(M) {
-  const g = new THREE.Group();
-  cyl(g, M.teak, 0.16, 0.14, 0.45, [0, 0, 0], 32);
-  return g;
-}
-
 function techPanel(M) {
   const g = new THREE.Group();
   box(g, M.plasticWhite, [0.6, 0.9, 0.1], [0, 0.45, 0.05]);
   box(g, M.steel, [0.56, 0.004, 0.004], [0, 0.45, 0.101]);
   box(g, M.plasticWhite, [0.24, 0.04, 0.16], [-0.7, 0.3, 0.08]);
-  return g;
-}
-
-function utilityShelf(M) {
-  const g = new THREE.Group();
-  for (const x of [-0.48, 0.48]) for (const z of [-0.155, 0.155]) box(g, M.blackMetal, [0.02, 1.9, 0.02], [x, 0.95, z]);
-  for (const y of [0.1, 0.55, 1.0, 1.45, 1.88]) boxOn(g, M.oak, [1.0, 0.025, 0.35], [0, y, 0]);
-  for (const [x, y] of [[-0.25, 0.125], [0.25, 0.125], [-0.25, 0.575], [0.25, 0.575]]) rboxOn(g, M.linenTaupe, [0.4, 0.3, 0.3], [x, y, 0], 0.02, 2);
   return g;
 }
 

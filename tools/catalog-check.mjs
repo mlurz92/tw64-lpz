@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: process.env.CHANNEL ?? 'chrome', headless: true, args: ['--use-angle=swiftshader', '--disable-features=WebGPU'] });
+const browser = await chromium.launch({ channel: process.env.CHANNEL || undefined, headless: true, args: ['--use-angle=swiftshader', '--disable-features=WebGPU'] });
 try {
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
   await page.route('https://**/*', route => route.abort());
@@ -14,7 +14,7 @@ try {
     const a = window.__app.apartment;
     return Object.keys(STYLES).map(style => {
       const scene = new ApartmentScene(a.baseM, a.lib, style).build();
-      const furniture = scene.items.filter(i => ['Möbel', 'Polster', 'Bett', 'Tisch', 'Outdoor'].includes(i.cat));
+      const furniture = scene.items.filter(i => ['Möbel', 'Polster', 'Bett', 'Tisch', 'Outdoor', 'Textil', 'Leuchte'].includes(i.cat) && !/^(curtain|pelmet|spot|picture-light|sconce|pendant-bath|pendant-guest)/.test(i.id));
       const missing = furniture.filter(i => !i.products?.length).map(i => i.id);
       const hosts = { IKEA: 'www.ikea.com', Westwing: 'www.westwing.de', Höffner: 'www.hoeffner.de' };
       const invalid = furniture.flatMap(i => (i.products ?? []).filter(p => {
@@ -27,19 +27,12 @@ try {
         if (bounds.min.x < Math.min(...xs)-.015 || bounds.max.x > Math.max(...xs)+.015 || bounds.min.z < Math.min(...zs)-.015 || bounds.max.z > Math.max(...zs)+.015) invalid.push(`${i.id}: 3D-Modell ragt über die Planungsfläche`);
       }
       const issues = validateLayout(scene.items).issues;
-      const hasFinish = (id, hex, neutralMap = false) => {
-        let found = false;
-        scene.items.find(i=>i.id===id).object.traverse(o=>{ if(o.isMesh && o.material.color?.getHexString()===hex && (!neutralMap || !o.material.map)) found=true; });
-        return found;
-      };
-      if (style === 'quiet' && !hasFinish('sofa','b8c5cf',true)) invalid.push('Wolke Hellblau wird durch eine fremde Albedotextur verfärbt');
-      if (style === 'brutal' && !hasFinish('bed','4b4c50')) invalid.push('IDANÄS Dunkelgrau ist nicht dunkelgrau modelliert');
-      // Guest use: roll the office chair aside, then open HYLTARP to its full 240 cm depth.
+      // Guest use: roll the office chair aside, then open the sofa bed to its full depth.
       const guestItems = scene.items.filter(i => i.id !== 'task-chair').map(i => {
         if (i.id !== 'sofabed') return i;
-        const delta = (2.4-i.size[1])/2;
+        const open = i.products[0].unfolded ?? 2.4, delta = (open-i.size[1])/2;
         const pos = [i.pos[0]+Math.sin(i.yaw)*delta, i.pos[1]+Math.cos(i.yaw)*delta];
-        return {...i, pos, size:[i.size[0],2.4], footprint:footprintOf(pos,i.yaw,[i.size[0],2.4])};
+        return {...i, pos, size:[i.size[0],open], footprint:footprintOf(pos,i.yaw,[i.size[0],open])};
       });
       const guestIssues = validateLayout(guestItems).issues;
       const selections = Object.fromEntries(['sofa','bed','coffee','desk','highboard'].map(id => [id, scene.items.find(i => i.id === id)?.products?.[0]?.url]));

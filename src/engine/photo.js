@@ -94,8 +94,49 @@ export class PhotoRenderer {
     if (navigator.gpu && !this.denoiserPromise) {
       this.denoiserPromise = this.E.initUNetFromURL(WEIGHTS[this.v.quality], undefined, { aux: true })
         .then((u) => { this.denoiser = u; return u; })
-        .catch((e) => { console.warn('KI-Entrauschung nicht verfügbar', e); return null; });
+        .catch((e) => { console.warn('KI-Entrauschung nicht verfügbar', e); return null; })
+        .finally(() => { this.denoiserSettled = true; });
     }
+  }
+
+  /**
+   * Background preparation while the user plans (desktop class, e.g. NUC13 i5-1340P): engine
+   * module, WebGL context, proxy scene, BVH (worker thread), texture array, path-tracing shader
+   * (parallel compile) and the denoiser weights are ready before "Fotorealistisch" is chosen –
+   * the first sample then follows the camera stop directly. The viewer calls this only while the
+   * view rests; start() waits for a running preparation and reuses its result.
+   */
+  prepare() {
+    const key = this.v.photoSceneKey();
+    if (this.active || this.preparing || this.state === 'error' || this.prepareFailed === key || (key === this.sceneKey && this.warmKey === key)) return this.preparing;
+    const previous = this.startPromise;
+    this.timings ??= {};
+    const run = async () => {
+      await previous;
+      if (this.active) return;
+      const initAt = performance.now();
+      await this.init();
+      this.timings.prewarmInitMs = Math.round(performance.now() - initAt);
+      if (this.active || key !== this.v.photoSceneKey()) return;
+      if (key !== this.sceneKey) {
+        await this.buildScene();
+        if (key !== this.v.photoSceneKey()) return;
+        this.sceneKey = key;
+      }
+      if (this.active) return;
+      this.prepareDenoiser();
+      // One tiny sample off-screen: triggers the (parallel) shader compile with the final defines.
+      this.renderer.setSize(64, 36, false);
+      this.syncLighting();
+      this.syncCamera();
+      this.pt.renderSample();
+      this.pt.reset(); this.samples = 0;
+      this.warmKey = key;
+    };
+    this.preparing = this.startPromise = run()
+      .catch((e) => { this.prepareFailed = key; console.warn('Pathtracing-Vorbereitung übersprungen', e); })
+      .finally(() => { this.preparing = null; });
+    return this.preparing;
   }
 
   /** Starts (or continues) the photoreal render of the current viewer camera. */
@@ -154,7 +195,7 @@ export class PhotoRenderer {
   }
 
   /** Scene content changed (style, mode, ceilings): rebuild on the next start. */
-  invalidateScene() { this.sceneKey = null; }
+  invalidateScene() { this.sceneKey = null; this.warmKey = null; }
 
   dispose() {
     this.stop();
@@ -174,7 +215,7 @@ export class PhotoRenderer {
     const layer0 = new THREE.Layers();
     const inst = new THREE.Matrix4();
     const add = (o, matrix) => {
-      const m = new THREE.Mesh(o.geometry, this.material(o, mats));
+      const m = new THREE.Mesh(o.userData.ptGeometry ?? o.geometry, this.material(o, mats));
       m.matrixAutoUpdate = false;
       m.matrix.copy(matrix);
       scene.add(m);
@@ -399,10 +440,7 @@ export class PhotoRenderer {
         this.timings.firstTraceMs = Math.round(this.firstSampleMs);
         this.timings.totalFirstSampleMs = Math.round(performance.now()-this.requestedAt);
       }
-      if (s >= 8 && !this.denoiserPromise && navigator.gpu) {
-        this.prepareDenoiser();
-        this.denoiserPromise.finally(() => { this.denoiserSettled = true; });
-      }
+      if (s >= 8 && !this.denoiserPromise && navigator.gpu) this.prepareDenoiser();
       if (EXPOSURE_AT[this.meterSteps ?? 0] !== undefined && s >= EXPOSURE_AT[this.meterSteps ?? 0]) { this.meterSteps = (this.meterSteps ?? 0) + 1; this.meter(); }
       if (this.denoiser && ((s >= FIRST_DENOISE && !this.denoisedAt) || s >= b.samples)) this.denoise();
       this.emit();

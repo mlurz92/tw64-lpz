@@ -1,5 +1,5 @@
 import {chromium} from 'playwright';import fs from 'node:fs';
-const out=process.argv[2];const browser=await chromium.launch({channel:'chrome',headless:true,args:['--use-angle=swiftshader','--disable-features=WebGPU']});
+const out=process.argv[2];const browser=await chromium.launch({channel: process.env.CHANNEL || undefined,headless:true,args:['--use-angle=swiftshader','--disable-features=WebGPU']});
 try { const page=await browser.newPage({viewport:{width:1000,height:700}}); await page.route('https://**/*',r=>r.abort());await page.addInitScript(()=>localStorage.setItem('we13-quality','low'));
 await page.goto('http://127.0.0.1:8000/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__app?.apartment && !window.__app.viewer.suspended,null,{timeout:300000});
 for(const style of ['metallic','quiet']) {await page.evaluate(s=>window.__app.setVariant(s),style);await page.waitForFunction(s=>window.__app.apartment.style.id===s&&!window.__app.viewer.suspended,style,{timeout:300000});await page.evaluate(()=>window.__app.viewer.goto('living',false));const png=await page.evaluate(()=>window.__app.viewer.screenshot());fs.writeFileSync(out+'/'+style+'-review-living.png',Buffer.from(png.split(',')[1],'base64'));console.log('visual',style);}

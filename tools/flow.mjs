@@ -1,6 +1,6 @@
 // UI flow check: all styles validate, photo mode start/stop, mood and style switch without errors.
 import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: process.env.CHANNEL ?? 'chrome', headless: true, args: ['--use-angle=swiftshader', '--disable-features=WebGPU'] });
+const browser = await chromium.launch({ channel: process.env.CHANNEL || undefined, headless: true, args: ['--use-angle=swiftshader', '--disable-features=WebGPU'] });
 // desktop layout (> 1180 px): light, render mode and stations sit in the toolbar and side panel
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const progress = setInterval(() => page.evaluate(() => ({mood:window.__app?.viewer.mood, photo:window.__app?.viewer.photo?.status(), compiling:window.__app?.viewer.photo?.pt?.isCompiling})).then(s => console.log('progress', JSON.stringify(s))).catch(()=>{}), 20000);

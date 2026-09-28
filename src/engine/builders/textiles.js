@@ -8,7 +8,9 @@ import { box, rbox, mesh, rng, roundedRect, extrudePlan } from './common.js';
  */
 export function curtainPanel(M, { width = 0.4, top = 2.47, folds = 7, depth = 0.07, mat = 'curtain', seed = 1 } = {}) {
   const g = new THREE.Group(), r = rng(seed), h = top - 0.012;
-  const seg = folds * 12, geo = new THREE.PlaneGeometry(width, h, seg, 24);
+  // The fold displacement is linear in y (hem flare), so the surface is exact with two rows;
+  // 24 rows cost 8 k triangles per curtain set in every pass and in the path tracer's BVH.
+  const seg = folds * 12, geo = new THREE.PlaneGeometry(width, h, seg, 2);
   const pos = geo.attributes.position;
   const phase = r() * Math.PI;
   for (let i = 0; i < pos.count; i++) {

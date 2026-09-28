@@ -1,7 +1,7 @@
 // Run after starting `node tools/dev-server.mjs`: `node tools/smoke.mjs`.
 import { chromium } from 'playwright';
 
-const browser = await chromium.launch({ channel: process.env.CHANNEL ?? 'chrome', headless: true,
+const browser = await chromium.launch({ channel: process.env.CHANNEL || undefined, headless: true,
   args: ['--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];

@@ -1,223 +1,221 @@
-// Manufacturer research, 2026-09-28. Dimensions [width, depth, height] in metres.
-// This catalogue is authoritative for purchased furniture in every style world.
-const ikea = (name, size, path, finish) => ({ retailer: 'IKEA', name, size, url: `https://www.ikea.com/de/de/p/${path}/`, finish, checked: '2026-09-28' });
-const westwing = (name, size, path, finish) => ({ retailer: 'Westwing', name, size, url: `https://www.westwing.de/${path}`, finish, checked: '2026-09-28' });
+// Verified retailer catalogue for WE 13 (research 2026-09-28, product pages of westwing.de and
+// ikea.com/de read directly: name, SKU colour, manufacturer dimensions, availability "InStock").
+// Dimensions: [width, depth, height] in metres; round pieces: [Ø, Ø, height].
+//
+// Every style world selects its pieces per slot in STYLE_PRODUCTS. The 3D models in styles.js are
+// parametric reproductions built from exactly these dimensions and finishes – a theme can never
+// recolour a purchased product into a fictitious variant.
+const CHECKED = '2026-09-28';
+const ww = (name, size, path, finish, extra = {}) => ({ retailer: 'Westwing', name, size, url: `https://www.westwing.de/${path}.html`, finish, checked: CHECKED, ...extra });
+const ikea = (name, size, path, finish, extra = {}) => ({ retailer: 'IKEA', name, size, url: `https://www.ikea.com/de/de/p/${path}/`, finish, checked: CHECKED, ...extra });
+
 export const PRODUCTS = {
-  soderhamn: ikea('SÖDERHAMN 3er-Sofa', [1.98,.99,.83], 'soederhamn-3er-sofa-gunnared-beige-s79305423', 'Gunnared Beige; Sitzhöhe 40 cm'),
-  lennon: westwing('Lennon Sofa (3-Sitzer)', [2.38,1.19,.68], 'modulares-sofa-lennon-3-sitzer-120821.html', 'Webstoff Grau; Sitzhöhe 43 cm'),
-  wolke: westwing('Wolke Sofa (3-Sitzer)', [2.56,1.18,.65], 'modulares-sofa-wolke-3-sitzer-aus-boucle-159816.html', 'Bouclé Hellblau; Sitzhöhe 41 cm'),
-  ekenaset: { ...ikea('EKENÄSET Sessel', [.64,.78,.76], 'ekenaeset-armchair-oak-gunnared-beige-60506898', 'Eiche/Gunnared Beige; Sitzhöhe 45 cm'), url: 'https://www.ikea.com/de/en/p/ekenaeset-armchair-oak-gunnared-beige-60506898/' },
-  ekenasetBlack: { ...ikea('EKENÄSET Sessel', [.64,.78,.76], 'ekenaeset-armchair-jonsbyn-black-70539011', 'Dunkelbraunes Holz/Jonsbyn Schwarz; Sitzhöhe 45 cm'), url: 'https://www.ikea.com/de/en/p/ekenaeset-armchair-jonsbyn-black-70539011/' },
-  hilda: westwing('Hilda Couchtisch', [1.02,1.02,.35], 'hilda-coffee-table-d1020-x-h350-mm-fsc-solid-oak-natural-en-26wes90276.html', 'Eiche natur'),
-  calaryCoffee: westwing('Calary Couchtisch', [.8,.8,.30], 'calary-coffee-tables-round-s-light-oak-en-26wes67590.html', 'Helles Eichenholz; geriffelte Schiebetür'),
-  sahra: westwing('Sahra Esstisch', [1.16,1.16,.75], 'runder-esstisch-sahra-o-116-cm-152091.html', 'Hellbeige lackiert; MDF/Fiberglas; Säulenfuß Ø 55 cm'),
-  calaryTable: westwing('Calary Esstisch', [1,1,.75], 'runder-esstisch-calary-aus-eichenholz-150929.html', 'Dunkles Eichenholz; geriffelter Stauraumfuß'),
-  stockholmSide: ikea('STOCKHOLM 2025 Sideboard', [1.608,.42,.832], 'stockholm-2025-sideboard-eichenfurnier-10586604', 'Eichenfurnier'),
-  calaryBlack: westwing('Calary Sideboard', [1.6,.45,.75], 'holz-sideboard-calary-mit-geriffelter-front-137254.html', 'Mattschwarz; Eichenholz, geriffelte Schiebetüren'),
-  rudsta: ikea('RUDSTA Vitrine', [.8,.37,1.2], 'rudsta-vitrine-anthrazit-50450137', 'Anthrazit; Stahl/Aluminium, Glasfront, Glasseiten und Glasböden'),
-  bedGreen: ikea('TÄLLÅSEN Bettgestell 180 × 200', [1.95,2.13,1.07], 'taellasen-bettgestell-gepolstert-kulsta-graugruen-10538929', 'Kulsta Graugrün; Matratze und Lattenrost separat'),
-  idanas: ikea('IDANÄS Polsterbett mit Aufbewahrung 180 × 200', [1.9,2.24,1.2], 'idanaes-bettgestell-gepolstert-mit-aufbew-naggen-beige-50588088', 'Naggen Beige; Matratze separat'),
-  idanasGrey: ikea('IDANÄS Polsterbett mit Aufbewahrung 180 × 200', [1.9,2.24,1.2], 'idanaes-bettgestell-gepolstert-mit-aufbew-gunnared-dunkelgrau-80458976', 'Gunnared Dunkelgrau; Matratze separat'),
-  nightBrown: ikea('TONSTAD Ablagetisch', [.4,.4,.59], 'tonstad-ablagetisch-braun-gebeiztes-eichenfurnier-40489319', 'Braun gebeiztes Eichenfurnier'),
-  nightWhite: ikea('TONSTAD Ablagetisch', [.4,.4,.59], 'tonstad-ablagetisch-elfenbeinweiss-80510007', 'Elfenbeinweiß'),
-  deskOak: ikea('TONSTAD Schreibtisch', [1.4,.75,.75], 'tonstad-schreibtisch-eichenfurnier-30538198', 'Eichenfurnier'),
-  micke: ikea('MICKE Schreibtisch', [1.05,.5,.75], 'micke-schreibtisch-schwarzbraun-10244743', 'Schwarzbraun'),
-  billyOak: ikea('BILLY Bücherregal', [.4,.28,2.02], 'billy-buecherregal-eichenachbildung-60477382', 'Eichenachbildung (Papierfolie)'),
-  billyBlack: ikea('BILLY Bücherregal', [.4,.28,2.02], 'billy-buecherregal-schwarz-eichenachbildung-70477334', 'Schwarze Eichenachbildung (Papierfolie)'),
-  sofabedBeige: ikea('HYLTARP 2er-Bettsofa', [1.82,.93,.91], 'hyltarp-2er-bettsofa-hemmesta-hellbeige-s49514871', 'Hemmesta Hellbeige; ausgeklappt 240 cm tief'),
-  sofabedGrey: ikea('HYLTARP 2er-Bettsofa', [1.82,.93,.91], 'hyltarp-2er-bettsofa-gransel-grau-s99514859', 'Gransel Grau; ausgeklappt 240 cm tief'),
-  bestaBlack: ikea('BESTÅ Korpus', [1.2,.4,.38], 'besta-korpus-schwarzbraun-70245952', 'Schwarzbraun; offene Fächer, Wandmontage 25 cm'),
-  chairBlack: ikea('LISABO Stuhl', [.46,.51,.8], 'lisabo-stuhl-schwarz-60446786', 'Schwarz; Eschenfurnier/Birke; Sitzhöhe 45 cm'),
-  alba: westwing('Alba Sofa (2-Sitzer)', [1.85, 1.14, 0.69], '2-seater-sofa-alba-beige-174244.html?simple=DEQ25WES97295-225246', 'Webstoff Beige; Sitzhöhe 43 cm'),
-  mikkel: westwing('Mikkel Loungesessel', [0.66, 0.77, 0.79], 'boucle-loungesessel-mikkel-158923.html', 'Bouclé Off White, Gummibaumholz; Sitzhöhe 46 cm'),
-  marisa: westwing('Marisa Couchtisch', [0.7, 0.7, 0.35], 'runder-couchtisch-marisa-aus-marmor-161281.html', 'Naturmarmor weiß-grau'),
-  calary: westwing('Calary Sideboard', [1.6, 0.45, 0.75], 'holz-sideboard-calary-mit-geriffelter-front-147950.html', 'Dunkles Eichenholz, geriffelte Schiebetüren; Beine 17 cm'),
-  zara: westwing('Zara Bürostuhl', [0.58, 0.59, 0.95], 'office-chair-zara-with-armrests-adjustable-height-en-25wes19323.html', 'Leder Hellbeige, Edelstahl; Höhe 85–95 cm'),
-  desk: ikea('TONSTAD Schreibtisch', [1.4, 0.75, 0.75], 'tonstad-schreibtisch-elfenbeinweiss-70538200', 'Elfenbeinweiß'),
-  night: ikea('TONSTAD Ablagetisch', [0.4, 0.4, 0.59], 'tonstad-ablagetisch-eichenfurnier-80489322', 'Eichenfurnier'),
-  highboard: ikea('TONSTAD Bücherregal', [0.81, 0.371, 2.008], 'tonstad-buecherregal-elfenbeinweiss-10528464', 'Elfenbeinweiß'),
-  bed: ikea('TÄLLÅSEN Bettgestell 180 × 200', [1.95, 2.13, 1.07], 'taellasen-bettgestell-gepolstert-kulsta-hellbeige-30572795', 'Kulsta Hellbeige; Matratze und Lattenrost separat'),
-  sofabed: ikea('HYLTARP 2er-Bettsofa', [1.82, 0.93, 0.91], 'hyltarp-2er-bettsofa-kilanda-blassblau-s79489592', 'Kilanda Blassblau; Rückenstütze 82 cm, mit Kissen 91 cm; ausgeklappt 240 cm tief'),
-  table: ikea('STOCKHOLM 2025 Esstisch', [1.15, 1.15, 0.75], 'stockholm-2025-tisch-eichenfurnier-eichenfurnier-s49579985', 'Eichenfurnier'),
-  chair: ikea('LISABO Stuhl', [0.46, 0.51, 0.8], 'lisabo-stuhl-esche-00457235', 'Eschenfurnier und massive Birke; Sitzhöhe 45 cm'),
-  pax: ikea('PAX Korpus', [0.998, 0.58, 2.364], 'pax-korpus-kleiderschrank-weiss-80458207', 'Weiß; offen, Türen und Inneneinrichtung separat'),
-  forsand: ikea('FORSAND Tür', [0.495, 0.018, 2.294], 'forsand-tuer-weiss-60391091', 'Weiß; KOMPLEMENT Scharniere und Griffe separat'),
-  floorlamp: ikea('ÅRSTID Standleuchte', [0.36, 0.36, 1.55], 'arstid-standleuchte-vernickelt-weiss-60163862', 'Vernickelt/Weiß; E27-Leuchtmittel separat'),
-  hall: ikea('PAX Korpus flach', [0.998, 0.355, 2.364], 'pax-korpus-kleiderschrank-weiss-70458199', 'Weiß; offen, Inneneinrichtung separat'),
-  billy: ikea('BILLY Bücherregal', [0.4, 0.28, 2.02], 'billy-buecherregal-weiss-50263838', 'Weiß'),
+  // ------------------------------------------------------------------ sofas & lounge chairs
+  albaGrey: ww('Sofa Alba (3-Sitzer), Nierenform', [2.35, 1.14, 0.69], '3-seater-sofa-alba-grey-174231', 'Bouclé Grau, Füße Schwarz matt; Sitzhöhe 43 cm, Sitztiefe 65/86 cm'),
+  melvaOffWhite: ww('Sofa Melva (3-Sitzer)', [2.38, 1.01, 0.75], 'sofa-melva-3-sitzer-156176', 'Webstoff Off White, Füße Schwarz matt; Sitzhöhe 45 cm, Armlehnen H 58 cm'),
+  lennonBoucle: ww('Modulares Sofa Lennon (3-Sitzer) aus Bouclé', [2.38, 1.19, 0.68], 'modulares-sofa-lennon-3-sitzer-aus-boucle-156383', 'Bouclé Greige, Füße Schwarz; Sitzhöhe 43 cm, Armlehnen 32 cm breit'),
+  lennonLinen: ww('Modulares Sofa Lennon (3-Sitzer) aus Leinen-Mix', [2.38, 1.19, 0.68], 'modulares-sofa-lennon-3-sitzer-in-leinen-optik-164221', 'Leinen-Mix Grau, Füße Schwarz; Sitzhöhe 43 cm, Armlehnen 32 cm breit'),
+  mikkelOffWhite: ww('Bouclé-Loungesessel Mikkel', [0.66, 0.77, 0.79], 'boucle-loungesessel-mikkel-158924', 'Bouclé Off White, Gestell Dunkles Holz; Sitzhöhe 46 cm, Armlehnen H 58 cm'),
+  mikkelGreen: ww('Loungesessel Mikkel', [0.66, 0.77, 0.79], 'xx-de-25wes51406', 'Webstoff Dunkelgrün (Leinen-Mix), Gestell Dunkles Holz; Sitzhöhe 46 cm'),
+  rae: ww('Eichenholz-Loungesessel Rae', [0.90, 0.81, 0.77], 'rae-en-25wes99666', 'Bezug Taupe, Gestell Dunkles Eichenholz; Sitzhöhe 42 cm, Armlehnen H 60 cm'),
+  ekenaset: { ...ikea('EKENÄSET Sessel', [0.64, 0.78, 0.76], 'x', 'Eiche/Gunnared Beige; Sitzhöhe 45 cm'), url: 'https://www.ikea.com/de/en/p/ekenaeset-armchair-oak-gunnared-beige-60506898/' },
+
+  // ------------------------------------------------------------------ coffee & side tables
+  alys: ww('Großer Marmor-Couchtisch Alys', [1.2, 0.75, 0.35], 'marmor-couchtisch-alys-117459', 'Marmor weiß, glänzend; Gestell Metall goldfarben matt; Platte 17 mm'),
+  alysSide: ww('Runder Marmor-Beistelltisch Alys', [0.4, 0.4, 0.5], 'runder-marmor-beistelltisch-alys-95163', 'Marmor weiß, glänzend; Gestell Metall goldfarben matt'),
+  distinct: ww('Travertin-Couchtisch Distinct mit zwei Tischplatten (Ferm Living)', [1.0, 0.55, 0.35], 'travertin-couchtisch-distinct-mit-zwei-tischplatten-165645', 'Travertin Beige, zwei Plattenhöhen'),
+  marisaTravSide: ww('Runder Beistelltisch Marisa aus Travertin', [0.35, 0.35, 0.5], 'runder-beistelltisch-marisa-aus-travertin-147375', 'Travertin Beige'),
+  naida: ww('Couchtisch Naida aus Eichenholz und Marmor', [1.42, 0.6, 0.35], 'naida-fsc-coffee-table-w370-x-h600-x-l1470-mm-black-marble-black-oak-en-25wes18259', 'Marmor Schwarz, Wangen Eiche schwarz'),
+  andrew: ww('Runde Couchtische Andrew aus Mangoholz, 2er-Set', [0.9, 0.9, 0.35], 'couchtisch-2er-set-andrew-aus-schwarzem-mangoholz-111011', 'Mangoholz schwarz lackiert, Gestell Metall schwarz matt; Ø 90 × 35 und Ø 72 × 31 cm'),
+
+  // ------------------------------------------------------------------ media / storage
+  calaryTvBrown: ww('TV-Board Calary mit geriffelter Front', [1.8, 0.4, 0.55], 'xl-lowboard-calary-mit-geriffelter-front-in-braun-171110', 'Dunkles Eichenholz, geriffelte Front, Griffe Schwarz; Beine 27 cm'),
+  calaryTvBlack: ww('TV-Lowboard Calary mit geriffelter Front', [1.8, 0.4, 0.55], 'xl-lowboard-calary-mit-geriffelter-front-in-schwarz-171111', 'Schwarz matt (Eichenfurnier), geriffelte Front; Beine 27 cm'),
+  zumiTv: ww('Holz-TV-Lowboard Zumi mit Travertinplatte', [1.8, 0.45, 0.55], 'zumi-lowboard-oak-marble-top-en-26wes55818', 'Helles Holz, Platte Travertin Beige, Griffe goldfarben; Füße 25 cm'),
+  elonaXL: ww('Großes Lowboard Elona', [2.2, 0.46, 0.55], 'fsc-elona-lowboard-xl-220x46x55cm-black-en-25wes97729', 'Schwarz matt; Füße 20 cm'),
+  calarySideDark: ww('Sideboard Calary mit geriffelter Front', [1.6, 0.45, 0.75], 'holz-sideboard-calary-mit-geriffelter-front-147950', 'Dunkles Eichenholz, geriffelte Schiebetüren, Griffe Schwarz; Beine 17 cm'),
+  calarySideBlack: ww('Sideboard Calary mit geriffelter Front', [1.6, 0.45, 0.75], 'holz-sideboard-calary-mit-geriffelter-front-137254', 'Schwarz matt, geriffelte Schiebetüren; Beine 17 cm'),
+  zumiSide: ww('Holz-Sideboard Zumi mit Travertinplatte', [1.6, 0.45, 0.75], 'holz-sideboard-zumi-mit-abgerundeten-ecken-und-travertinplatte-159345', 'Helles Eichenholz, Platte Travertin Beige, Griffe goldfarben; Füße 20 cm'),
+  chandlerSide: ww('Sideboard Chandler aus Eichenholz', [1.65, 0.43, 0.75], 'handgefertigtes-sideboard-chandler-aus-massivem-eichenholz-159331', 'Massives Eichenholz, dunkel lackiert; Füße 20 cm'),
+  rudsta: ikea('RUDSTA Vitrine', [0.8, 0.37, 1.2], 'rudsta-vitrine-anthrazit-50450137', 'Anthrazit; Stahl, Glasfront, Glasseiten und Glasböden'),
+
+  // ------------------------------------------------------------------ dining
+  noam: ww('Runder Esstisch Noam mit Marmor-Tischplatte, Ø 120 cm', [1.2, 1.2, 0.76], 'runder-esstisch-noam-mit-marmor-tischplatte-o-120-cm-163551', 'Marmor Hellbeige marmoriert; Säulenfuß Metall gebürstet Ø 30'),
+  sculpt: ww('Runder Esstisch Sculpt mit Travertin-Tischplatte, Ø 110 cm', [1.1, 1.1, 0.73], 'runder-esstisch-sculpt-mit-travertin-tischplatte-o-110-cm-162752', 'Travertin Beige 3 cm; skulpturaler Fuß Mangoholz dunkel Ø 56'),
+  nelly: ww('Runder Esstisch Nelly mit Rillenstruktur, Ø 115 cm', [1.15, 1.15, 0.75], 'runder-esstisch-nelly-mit-rillenstruktur-in-verschiedenen-groessen-163520', 'Dunkles Eichenholz; kannelierter Säulenfuß'),
+  yumi: ww('Runder Esstisch Yumi aus Eichenholz, Ø 115 cm', [1.15, 1.15, 0.74], 'runder-esstisch-yumi-20371', 'Helles Holz (Eichenfurnier), Beine Eiche'),
+  celia: ww('Bouclé-Armlehnstuhl Celia', [0.61, 0.59, 0.8], 'boucle-armlehnstuhl-celia-164171', 'Bouclé Hellbeige, Beine Schwarz matt; Sitzhöhe 48 cm'),
+  imaraOffWhite: ww('Polsterstuhl Imara aus Eichenholz', [0.51, 0.48, 0.8], 'imara-chair-dark-brown-wood-color-oak-ote-chacha-140-beige-en-25wes68918', 'Bezug Off White, Gestell Dunkles Holz; Sitzhöhe 48 cm'),
+  imaraOlive: ww('Polsterstuhl Imara aus Eichenholz', [0.51, 0.48, 0.8], 'imara-chair-dark-brown-wood-color-oak-ote-chacha-371-dark-green-en-25wes61212', 'Bezug Olivgrün, Gestell Dunkles Holz; Sitzhöhe 48 cm'),
+  kris: ww('Teddy-Bouclé-Polsterstuhl Kris', [0.56, 0.54, 0.78], 'kris_ote-wales-170-taupe-brown-wood-en-25wes24130', 'Teddy-Bouclé Nougat, Beine Dunkles Holz; Sitzhöhe 46 cm'),
+
+  // ------------------------------------------------------------------ lighting
+  rim: ww('Große LED-Pendelleuchte Rim (Maytoni)', [0.8, 0.8, 0.1], 'large-led-pendant-rim-en-26may57311', 'Messing, Aluminium; Abhängung 10–120 cm'),
+  elettra: ww('Große LED-Pendelleuchte Elettra (Nova Luce)', [1.2, 0.02, 0.02], 'pendelleuchte-elettra-133187', 'Schwarz, Diffusor Weiß; Abhängung bis 150 cm'),
+  level: ww('Pendelleuchte Level', [0.53, 0.53, 0.2], 'dimmbare-pendelleuchte-level-135813', 'Metall Schwarz, dimmbar; Abhängung bis 150 cm'),
+  hamilton: ww('Große Pendelleuchte Hamilton', [0.81, 0.15, 0.13], 'pendelleuchte-hamilton-in-bernsteinfarben-127737', 'Glasschirme bernsteinfarben Ø 15, Baldachin goldfarben'),
+  antic: ww('Kleine Pendelleuchte Antic (Maytoni)', [0.1, 0.1, 0.38], 'kleine-pendelleuchte-antic-160856', 'Glas Greige transparent, Baldachin/Dekor goldfarben'),
+  paris: ww('Kleine Pendelleuchte Paris (House Nordic)', [0.06, 0.06, 0.28], 'kleine-pendelleuchte-paris-in-schwarz-146806', 'Stahl Schwarz'),
+  bun: ww('Stehlampe Bun mit Marmorfuß', [0.4, 0.4, 1.53], 'bun-floor-lamp-brown-en-25wes95914', 'Marmorfuß Braun Ø 20 × 28, Gestell goldfarben, Schirm Weiß Ø 40'),
+  kayaBeige: ww('Stehlampe Kaya mit Betonfuß', [0.45, 0.45, 1.56], 'stehlampe-kaya-mit-betonfuss-159695', 'Betonfuß Beige Ø 19, Schirm Cremeweiß Ø 45 × 36'),
+  kayaAnthracite: ww('Stehlampe Kaya mit Betonfuß', [0.45, 0.45, 1.56], 'stehlampe-kaya-mit-betonfuss-145841', 'Betonfuß Anthrazit Ø 19, Schirm Cremeweiß Ø 45 × 36'),
+  neron: ww('Große Leselampe Neron', [0.3, 1.05, 1.71], 'stehlampe-neron-122121', 'Metall Schwarz matt, Innenseite Schirm Messing; Sockel Ø 30, Ausladung 105 cm'),
+
+  // ------------------------------------------------------------------ rugs
+  amaroGreyXL: ww('Handgewebter Wollteppich Amaro, 300 × 400 cm', [3.0, 4.0, 0.01], 'handgewebter-wollteppich-amaro-161991', 'Hellbeige/Grau, 67 % Wolle, 33 % Baumwolle, Größe XL'),
+  amaroCreamXL: ww('Handgewebter Wollteppich Amaro, 300 × 400 cm', [3.0, 4.0, 0.01], 'handgewebter-wollteppich-amaro-118190', 'Hellbeige/Cremeweiß, 67 % Wolle, 33 % Baumwolle, Größe XL'),
+  amaroBrownL: ww('Handgewebter Wollteppich Amaro, 200 × 300 cm', [2.0, 3.0, 0.01], 'handgewebter-wollteppich-amaro-161988', 'Hellbeige/Hellbraun, 67 % Wolle, 33 % Baumwolle, Größe L'),
+  amaroCreamS: ww('Handgewebter Wollteppich Amaro, 120 × 180 cm', [1.8, 1.2, 0.01], 'handgewebter-wollteppich-amaro-118190', 'Hellbeige/Cremeweiß, Wolle/Baumwolle, Größe S'),
+  amaroGreyS: ww('Handgewebter Wollteppich Amaro, 120 × 180 cm', [1.8, 1.2, 0.01], 'handgewebter-wollteppich-amaro-161991', 'Hellbeige/Grau, Wolle/Baumwolle, Größe S'),
+  janeTaupeXL: ww('Handgewebter Viskoseteppich Jane, 300 × 400 cm', [3.0, 4.0, 0.01], 'handgewebter-viskoseteppich-jane-96965', 'Taupe, 100 % Viskose, Größe XL'),
+  janeLightGreyXL: ww('Handgewebter Viskoseteppich Jane, 300 × 400 cm', [3.0, 4.0, 0.01], 'handgewebter-viskoseteppich-jane-115279', 'Hellgrau, 100 % Viskose, Größe XL'),
+  janeTaupeL: ww('Handgewebter Viskoseteppich Jane, 200 × 300 cm', [2.0, 3.0, 0.01], 'handgewebter-viskoseteppich-jane-96965', 'Taupe, 100 % Viskose, Größe L'),
+  janeGreyL: ww('Handgewebter Viskoseteppich Jane, 200 × 300 cm', [2.0, 3.0, 0.01], 'handgewebter-viskoseteppich-jane-115280', 'Grau, 100 % Viskose, Größe L'),
+  janeSageL: ww('Handgewebter Viskoseteppich Jane, 200 × 300 cm', [2.0, 3.0, 0.01], 'handgewebter-viskoseteppich-jane-96969', 'Salbeigrün, 100 % Viskose, Größe L'),
+  janeTaupeS: ww('Handgewebter Viskoseteppich Jane, 120 × 180 cm', [1.8, 1.2, 0.01], 'handgewebter-viskoseteppich-jane-96965', 'Taupe, 100 % Viskose, Größe S'),
+
+  // ------------------------------------------------------------------ sleeping
+  dreamGrey: ww('Polsterbett Dream, Liegefläche 180 × 200 cm', [1.96, 2.22, 1.1], 'polsterbett-dream-111759', 'Webstoff Hellgrau; Kopfteil H 110 / T 14 cm; Lattenrost/Matratze separat'),
+  dreamAnthracite: ww('Polsterbett Dream, Liegefläche 180 × 200 cm', [1.96, 2.22, 1.1], 'polsterbett-dream-111776', 'Webstoff Anthrazit; Kopfteil H 110 / T 14 cm; Lattenrost/Matratze separat'),
+  archeTaupe: ww('Polsterbett Arche mit Schubladen, Liegefläche 180 × 200 cm', [2.0, 2.18, 1.03], 'polsterbett-arche-mit-stauraum-163543', 'Webstoff Taupe; Kopfteil H 103 / T 10 cm, zwei Schubladen'),
+  sato: ww('Holzbett Sato mit Schubladen und Kopfteil, Liegefläche 180 × 200 cm', [2.27, 2.06, 0.9], 'holzbett-sato-mit-stauraum-und-kopfteil-157969', 'Dunkles Eichenholz (Furnier); Kopfteil H 90 cm, Stauraumhöhe 16 cm'),
+  calaryNight: ww('Nachttisch Calary mit geriffelter Front', [0.45, 0.45, 0.5], 'calary-nightstand-dark-brown-en-26wes83972', 'Dunkles Holz (Eichenfurnier), rund, Knäufe gebürstet'),
+  calaryWallNight: ww('Wandnachttisch Calary mit geriffelter Front', [0.4, 0.26, 0.3], 'holz-nachttisch-calary-mit-geriffelter-front-147957', 'Dunkles Holz (Eichenfurnier), Griff Schwarz; wandhängend'),
+  farsta: ww('Wand-Nachttisch Farsta mit Schublade', [0.4, 0.3, 0.15], 'wand-nachttisch-farsta-mit-schublade-122036', 'Helles Holz (Eichenfurnier); wandhängend'),
+  diana: ww('Nachttisch Diana aus Eichenholz mit Schublade', [0.5, 0.45, 0.55], 'nachttisch-diana-aus-eichenholz-mit-schublade-156012', 'Dunkles Holz, Griffe Schwarz; Füße 24 cm'),
+  pax: ikea('PAX Korpus Kleiderschrank', [0.998, 0.58, 2.364], 'pax-korpus-kleiderschrank-weiss-80458207', 'Weiß; Türen und Inneneinrichtung separat'),
+  paxDark: ikea('PAX Korpus Kleiderschrank', [0.998, 0.58, 2.364], 'pax-korpus-kleiderschrank-dunkelgrau-20458205', 'Dunkelgrau; Türen und Inneneinrichtung separat'),
+  paxFlat: ikea('PAX Korpus Kleiderschrank', [0.998, 0.355, 2.364], 'pax-korpus-kleiderschrank-weiss-70458199', 'Weiß, 35 cm tief; Inneneinrichtung separat'),
+  tonstadDoorOak: ikea('TONSTAD Tür', [0.495, 0.018, 2.294], 'tonstad-tuer-eichenfurnier-90510262', 'Eichenfurnier gebürstet; Scharniere separat'),
+  tonstadDoorBrown: ikea('TONSTAD Tür', [0.495, 0.018, 2.294], 'tonstad-tuer-braun-gebeiztes-eichenfurnier-30510255', 'Braun gebeiztes Eichenfurnier; Scharniere separat'),
+
+  // ------------------------------------------------------------------ office / guests
+  eliotGrey: ww('Schlafsofa Eliot (2-Sitzer)', [1.8, 1.0, 0.7], 'schlafsofa-eliot-2-sitzer-156802', 'Webstoff Hellgrau, Füße Schwarz matt; Liegefläche 140 × 210 cm', { unfolded: 2.1 }),
+  eliotBeige: ww('Schlafsofa Eliot (2-Sitzer)', [1.8, 1.0, 0.7], 'schlafsofa-eliot-2-sitzer-156800', 'Webstoff Beige, Füße Schwarz matt; Liegefläche 140 × 210 cm', { unfolded: 2.1 }),
+  eliotDarkGrey: ww('Schlafsofa Eliot (2-Sitzer)', [1.8, 1.0, 0.7], 'schlafsofa-eliot-2-sitzer-156801', 'Webstoff Dunkelgrau, Füße Schwarz matt; Liegefläche 140 × 210 cm', { unfolded: 2.1 }),
+  eliotGreen: ww('Schlafsofa Eliot (2-Sitzer) aus Teddy-Bouclé', [1.8, 1.0, 0.7], 'boucle-schlafsofa-eliot-2-sitzer-156807', 'Teddy-Bouclé Dunkelgrün, Füße Schwarz matt; Liegefläche 140 × 210 cm', { unfolded: 2.1 }),
+  calaryDesk: ww('Schreibtisch Calary mit geriffelter Front', [1.3, 0.5, 0.75], 'holz-schreibtisch-calary-mit-geriffelter-front-147953', 'Dunkles Holz (Eichenfurnier), Beine massive Eiche, Knäufe gebürstet'),
+  calaryDeskBlack: ww('Schreibtisch Calary mit geriffelter Front', [1.3, 0.5, 0.75], 'holz-schreibtisch-calary-mit-geriffelter-front-140286', 'Schwarz matt (Eichenfurnier), geriffelte Fächer'),
+  libbyDesk: ww('Holz-Schreibtisch Libby mit Schubladen', [1.4, 0.6, 0.76], 'wooden-desk-libby-with-drawers-en-24wes25865', 'Dunkles Holz, Tischplatte Eiche'),
+  reneeDesk: ww('Holz-Schreibtisch Renee', [1.1, 0.6, 0.77], 'holz-schreibtisch-renee-in-beige-163368', 'Tischplatte Helles Holz, Gestell Schwarz matt'),
+  piaCaramel: ww('Leder-Drehstuhl Pia mit Armlehnen, höhenverstellbar', [0.62, 0.58, 0.83], 'pia-office-chair-leather-caramel-3109-4-metal-color-pantone-7603-c-en-25wes85921', 'Leder Hellbraun (Caramel), Gestell Braun; Sitzhöhe 45–59 cm'),
+  piaSage: ww('Polster-Schreibtischstuhl Pia mit Armlehne, höhenverstellbar', [0.62, 0.58, 0.83], 'pia-office-chair-fabric-sic-austin-easy-clean-13-winter-moss-metal-color-pantone-6189-c-en-25wes41276', 'Webstoff Salbeigrün; Sitzhöhe 45–59 cm'),
+  piaTaupe: ww('Polster-Schreibtischstuhl Pia mit Armlehne, höhenverstellbar', [0.62, 0.58, 0.83], 'pia-office-chair-fabric-sic-austin-easy-clean-3-antelope-metal-color-warm-grey-8c-en-25wes18333', 'Webstoff Taupe; Sitzhöhe 45–59 cm'),
+  piaBeige: ww('Leder-Drehstuhl Pia mit Armlehnen, höhenverstellbar', [0.62, 0.58, 0.83], 'pia-office-chair-leather-beige-h3-metal-color-pantone-warm-grey-8c-en-25wes11523', 'Leder Hellbeige, Gestell Greige; Sitzhöhe 45–59 cm'),
+  libbyShelfDark: ww('Hohes Holz-Regal Libby', [1.2, 0.37, 1.9], 'hohes-holz-regal-libby-158876', 'Dunkles Holz (Eichenfurnier), Füße massive Eiche 12 cm'),
+  libbyShelfLight: ww('Hohes Holz-Regal Libby', [1.2, 0.37, 1.9], 'hohes-holz-regal-libby-158870', 'Helles Holz (Eichenfurnier), Füße massive Eiche 12 cm'),
+  libbyShelfBlack: ww('Hohes Holz-Regal Libby', [1.2, 0.37, 1.9], 'hohes-holz-regal-libby-158873', 'Schwarz (Eichenfurnier), Füße 12 cm'),
+  portlyn: ww('Regal Portlyn', [1.5, 0.34, 1.59], 'berlin-4-levels-150-bookcase-walnut-veneer-de-25tem80553', 'Walnussfurnier dunkel, vier Ebenen'),
+
+  // ------------------------------------------------------------------ hall
+  larsenConsole: ww('Holz-Wandkonsole Larsen', [1.12, 0.3, 0.17], 'holz-wandkonsole-larsen-161618', 'Dunkles Holz (Eichenfurnier); wandhängend'),
+  calaryConsole: ww('Konsole Calary mit geriffelter Front', [1.0, 0.35, 0.8], 'holz-konsole-calary-mit-geriffelter-front-147944', 'Helles Holz (Eichenfurnier), Griffe goldfarben; Beine 68 cm'),
+
+  // ------------------------------------------------------------------ shared modules (utility, bath, balconies)
   utility: ikea('ENHET Hochschrank mit Tür', [0.3, 0.321, 1.8], 'enhet-hochschrank-mit-tuer-weiss-10623036', 'Weiß; Wandmontage'),
   ivar: ikea('IVAR Regal', [0.89, 0.3, 1.79], 'ivar-regal-kiefer-s89404578', 'Kiefer'),
-  console: ikea('LACK Wandregal', [1.1, 0.26, 0.05], 'lack-wandregal-weiss-90282180', 'Weiß; Montagehöhe 91 cm'),
-  besta: ikea('BESTÅ Korpus', [1.2, 0.4, 0.38], 'besta-korpus-weiss-60245844', 'Weiß; offene Fächer, Wandmontage 25 cm'),
-  gladom: { ...ikea('GLADOM Beistelltisch', [0.45, 0.45, 0.53], 'gladom-tablettisch-schwarz-50411990', 'Schwarz; Stahl; nur innen'), url: 'https://www.ikea.com/de/en/p/gladom-tray-table-black-50411990/' },
   outdoor: ikea('NÄMMARÖ Sessel draußen', [0.69, 0.78, 0.69], 'naemmaroe-sessel-draussen-hellbraun-lasiert-40510306', 'Akazie hellbraun lasiert; Sitzhöhe 30 cm, Polster separat'),
   bistro: ikea('TÄRNÖ Tisch + 2 Stühle', [0.55, 0.54, 0.7], 'taernoe-tisch-2-stuehle-aussen-schwarz-hellbraun-lasiert-s69898415', 'Akazie/Stahl schwarz; Stühle je 39 × 40 × 79 cm'),
   stool: ikea('VILTO Badezimmerhocker', [0.4, 0.32, 0.25], 'vilto-badezimmerhocker-birke-60344453', 'Birke'),
-  vanity: ikea('ENHET Waschbeckenschrank', [0.6, 0.4, 0.6], 'enhet-waschbeckenschrank-mit-boden-weiss-30440465', 'Weiß; offener Korpus'),
-  laundry: { ...ikea('ENHET Wandschrank mit Tür', [0.6, 0.32, 0.75], 'enhet-wall-cabinet-with-door-white-40623025', 'Weiß; oberhalb des vorhandenen Waschtrockners'), url: 'https://www.ikea.com/de/en/p/enhet-wall-cabinet-with-door-white-40623025/' },
+  vanity: ikea('ENHET Waschbeckenschrank mit Boden', [0.6, 0.4, 0.6], 'enhet-waschbeckenschrank-mit-boden-weiss-30440465', 'Weiß; offener Korpus'),
+  laundry: { ...ikea('ENHET Wandschrank mit Tür', [0.6, 0.32, 0.75], 'x', 'Weiß; oberhalb des vorhandenen Waschtrockners'), url: 'https://www.ikea.com/de/en/p/enhet-wall-cabinet-with-door-white-40623025/' },
 };
 
-const SLOTS = { sofa: ['alba'], lounge: ['mikkel'], 'reading-chair': ['mikkel'], coffee: ['marisa'], 'coffee-2': ['gladom'], sideboard: ['calary'], highboard: ['highboard'], bed: ['bed'], 'nightstand-n': ['night'], 'nightstand-s': ['night'], wardrobe: ['pax', 3], sofabed: ['sofabed'], desk: ['desk'], 'task-chair': ['zara'], shelving: ['billy', 3], 'hall-wardrobe': ['hall', 2], console: ['console'], lowboard: ['besta', 2], 'utility-tall': ['utility', 2], 'utility-shelf': ['ivar'], 'b1-lounge-a': ['outdoor'], 'b1-lounge-b': ['outdoor'], 'b1-table': ['bistro'], 'b2-bistro': ['bistro'], 'stool-bath': ['stool'] };
-
-// Explicit SKU selections: a theme cannot recolour a purchased product into a fictional variant.
+/**
+ * Selection per style world. Value: product key, [key, quantity] or a list of those (several
+ * articles in one planning position, e.g. PAX carcasses + doors).
+ */
+const SHARED = {
+  highboard: 'rudsta', 'hall-wardrobe': [['paxFlat', 2], ['tonstadDoorOak', 4]],
+  'utility-tall': ['utility', 2], 'utility-shelf': 'ivar',
+  'b1-lounge-a': 'outdoor', 'b1-lounge-b': 'outdoor', 'b1-table': 'bistro', 'b2-bistro': 'bistro',
+  'stool-bath': 'stool', 'vanity-bath': 'vanity', 'vanity-guest': 'vanity', laundry: 'laundry',
+};
 export const STYLE_PRODUCTS = {
-  metallic: { sofa: 'alba', coffee: 'marisa', dining: 'sahra', bed: 'idanas', 'nightstand-n': 'nightBrown', 'nightstand-s': 'nightBrown', desk: 'deskOak', shelving: 'billyBlack', sofabed: 'sofabedBeige', lowboard: 'bestaBlack' },
-  soft: { sofa: 'soderhamn', lounge: 'ekenaset', 'reading-chair': 'ekenaset', coffee: 'hilda', sideboard: 'stockholmSide', desk: 'deskOak', shelving: 'billyOak', sofabed: 'sofabedBeige' },
-  brutal: { sofa: 'lennon', lounge: 'ekenasetBlack', 'reading-chair': 'ekenasetBlack', coffee: 'calaryCoffee', dining: 'calaryTable', sideboard: 'calaryBlack', bed: 'idanasGrey', 'nightstand-n': 'gladom', 'nightstand-s': 'gladom', desk: 'micke', shelving: 'billyBlack', sofabed: 'sofabedGrey', lowboard: 'bestaBlack', chair: 'chairBlack' },
-  quiet: { sofa: 'wolke', sideboard: 'calaryBlack', bed: 'bedGreen', 'nightstand-n': 'nightWhite', 'nightstand-s': 'nightWhite', chair: 'chairBlack' },
+  metallic: {
+    sofa: 'albaGrey', lounge: 'mikkelOffWhite', 'reading-chair': 'mikkelOffWhite', coffee: 'alys', 'side-table': 'alysSide',
+    lowboard: 'calaryTvBrown', dining: [['noam', 1], ['celia', 4]], chair: ['celia', 4], 'pendant-dining': 'rim', sideboard: 'calarySideDark',
+    bed: 'dreamGrey', 'nightstand-n': 'calaryNight', 'nightstand-s': 'calaryNight', 'nightstand-n-pendant': 'antic', 'nightstand-s-pendant': 'antic',
+    wardrobe: [['paxDark', 3], ['tonstadDoorBrown', 6]], 'hall-wardrobe': [['paxFlat', 2], ['tonstadDoorBrown', 4]], console: 'larsenConsole',
+    'floorlamp-living': 'bun', 'floorlamp-bed': 'bun', 'floorlamp-office': 'bun',
+    'rug-living': 'amaroGreyXL', 'rug-bed': 'janeTaupeL', 'rug-office': 'amaroGreyS',
+    sofabed: 'eliotGrey', desk: 'calaryDesk', 'task-chair': 'piaCaramel', shelving: 'libbyShelfDark',
+  },
+  soft: {
+    sofa: 'melvaOffWhite', lounge: 'ekenaset', 'reading-chair': 'ekenaset', 'armchair-2': 'ekenaset', coffee: 'distinct', 'side-table': 'marisaTravSide',
+    lowboard: 'zumiTv', dining: [['sculpt', 1], ['imaraOffWhite', 4]], chair: ['imaraOffWhite', 4], 'pendant-dining': 'elettra', sideboard: 'zumiSide',
+    bed: 'archeTaupe', 'nightstand-n': 'farsta', 'nightstand-s': 'farsta', 'nightstand-n-pendant': 'paris', 'nightstand-s-pendant': 'paris',
+    wardrobe: [['pax', 3], ['tonstadDoorOak', 6]], console: 'calaryConsole',
+    'floorlamp-living': 'kayaBeige', 'floorlamp-bed': 'kayaBeige', 'floorlamp-office': 'kayaBeige',
+    'rug-living': 'amaroCreamXL', 'rug-bed': 'amaroBrownL', 'rug-office': 'amaroCreamS',
+    sofabed: 'eliotBeige', desk: 'libbyDesk', 'task-chair': 'piaSage', shelving: 'libbyShelfLight',
+  },
+  brutal: {
+    sofa: 'lennonBoucle', lounge: 'rae', 'reading-chair': 'mikkelOffWhite', coffee: 'naida',
+    lowboard: 'calaryTvBlack', dining: [['nelly', 1], ['kris', 4]], chair: ['kris', 4], 'pendant-dining': 'level', sideboard: 'chandlerSide',
+    bed: 'sato', 'nightstand-n': 'calaryWallNight', 'nightstand-s': 'calaryWallNight', 'nightstand-n-pendant': 'paris', 'nightstand-s-pendant': 'paris',
+    wardrobe: [['paxDark', 3], ['tonstadDoorBrown', 6]], 'hall-wardrobe': [['paxFlat', 2], ['tonstadDoorBrown', 4]], console: 'larsenConsole',
+    'floorlamp-living': 'kayaAnthracite', 'floorlamp-bed': 'kayaAnthracite', 'floorlamp-office': 'kayaAnthracite',
+    'rug-living': 'janeTaupeXL', 'rug-bed': 'janeGreyL', 'rug-office': 'janeTaupeS',
+    sofabed: 'eliotDarkGrey', desk: 'calaryDeskBlack', 'task-chair': 'piaTaupe', shelving: 'libbyShelfBlack',
+  },
+  quiet: {
+    sofa: 'lennonLinen', lounge: 'mikkelGreen', 'reading-chair': 'mikkelGreen', coffee: 'andrew',
+    lowboard: 'elonaXL', dining: [['yumi', 1], ['imaraOlive', 4]], chair: ['imaraOlive', 4], 'pendant-dining': 'hamilton', sideboard: 'calarySideBlack',
+    bed: 'dreamAnthracite', 'nightstand-n': 'diana', 'nightstand-s': 'diana', 'nightstand-n-pendant': 'paris', 'nightstand-s-pendant': 'paris',
+    wardrobe: [['paxDark', 3], ['tonstadDoorBrown', 6]], 'hall-wardrobe': [['paxFlat', 2], ['tonstadDoorBrown', 4]], console: 'larsenConsole',
+    'floorlamp-living': 'neron', 'floorlamp-bed': 'neron', 'floorlamp-office': 'neron',
+    'rug-living': 'janeLightGreyXL', 'rug-bed': 'janeSageL', 'rug-office': 'amaroGreyS',
+    sofabed: 'eliotGreen', desk: 'reneeDesk', 'task-chair': 'piaBeige', shelving: 'portlyn',
+  },
 };
-export const styleProduct = (style, id) => PRODUCTS[id === 'highboard' ? 'rudsta' : STYLE_PRODUCTS[style]?.[id] ?? SLOTS[id]?.[0] ?? (id === 'dining' ? 'table' : id === 'chair' ? 'chair' : 'mikkel')];
-const finishCache = new WeakMap();
-function finishMaterial(base, name, color) {
-  let variants = finishCache.get(base);
-  if (!variants) finishCache.set(base, variants = new Map());
-  const key = `${name}:${color}`;
-  if (!variants.has(key)) {
-    const m = base[name].clone(); m.color.set(color);
-    // The photographed beige boucle albedo must not tint the researched light-blue SKU.
-    if (name === 'boucle') m.map = null;
-    if (m.sheenColor) m.sheenColor.copy(m.color).lerp(m.color.clone().setRGB(1,1,1),.25);
-    variants.set(key,m);
-  }
-  return variants.get(key);
+
+/** Purchase positions of one planning slot: [{ ...product, key, quantity }] (empty = not sourced). */
+export function slotProducts(style, slot) {
+  const sel = STYLE_PRODUCTS[style]?.[slot] ?? SHARED[slot];
+  if (!sel) return [];
+  const list = typeof sel === 'string' ? [[sel, 1]] : typeof sel[0] === 'string' ? [sel] : sel;
+  return list.map(([key, quantity = 1]) => ({ ...PRODUCTS[key], key, quantity }));
+}
+/** Main article of a slot (throws for unknown slots so a missing selection cannot go unnoticed). */
+export function styleProduct(style, slot) {
+  const p = slotProducts(style, slot)[0];
+  if (!p) throw new Error(`Kein Produkt für ${style}/${slot}`);
+  return p;
 }
 
-/** Replace custom furniture with sourced pieces; keep measured wall anchors and circulation. */
-export function catalogueFurniture(ctx, meta, original, placement) {
-  const slot = SLOTS[meta.id] ?? (meta.id === 'side-table' ? ['gladom'] : meta.id === 'armchair-2' ? ['mikkel'] : /^floorlamp-/.test(meta.id) ? ['floorlamp'] : null);
-  if (!slot && meta.id !== 'dining') {
-    const part = meta.id === 'laundry' ? 'laundry' : /^vanity-/.test(meta.id) ? 'vanity' : null;
-    return { meta: part ? { ...meta, name: part === 'laundry' ? 'Waschtrockner (Bestand) + IKEA ENHET Wandschrank' : 'Laufen VAL (Bestand) + IKEA ENHET Unterschrank', spec: `${PRODUCTS[part].finish} · ${PRODUCTS[part].size.map(x => x * 100).join(' × ')} cm; Anschlüsse nach HLS-Plan`, products: [{ ...PRODUCTS[part], quantity: 1 }] } : meta, object: typeof original === 'function' ? original() : original, placement };
+const cm = (m) => Math.round(m * 1000) / 10;
+export const dims = (p) => p.size[0] === p.size[1] && !/Regal|Teppich/.test(p.name) && p.size[2] < 2 && /rund|Rund|Ø|Nachttisch Calary|Pendel|Stehlampe/.test(p.name + p.finish)
+  ? `Ø ${cm(p.size[0])} × H ${cm(p.size[2])} cm` : `${cm(p.size[0])} × ${cm(p.size[1])} × ${cm(p.size[2])} cm`;
+
+/**
+ * Attaches the purchase positions to a planned item: retailer name, finish, manufacturer
+ * dimensions and direct product links. The 3D object itself is built by the style from the
+ * same product data, so geometry, detail card, CSV and JSON can never diverge.
+ */
+export function catalogueFurniture(ctx, meta, object, placement) {
+  const products = slotProducts(ctx.style.id, meta.id);
+  if (!products.length) return { meta, object: typeof object === 'function' ? object() : object, placement };
+  const [p] = products;
+  const extra = products.slice(1).map((x) => `${x.quantity} × ${x.retailer} ${x.name} (${x.finish})`).join(' + ');
+  const qty = p.quantity > 1 ? `${p.quantity} × ` : '';
+  const name = meta.productName ?? `${qty}${p.retailer} ${p.name}`;
+  const spec = [meta.productSpec ?? `${p.finish} · Herstellermaße ${dims(p)}`, extra, meta.note].filter(Boolean).join(' · ');
+  return { meta: { ...meta, name, spec, products }, object: typeof object === 'function' ? object() : object, placement };
+}
+
+// ------------------------------------------------------------------ product finishes
+const finishCache = new WeakMap();
+/** A purchased finish: clone of a base material slot in the product's real colour (cached). */
+export function finish(base, name, color, { dropMap = false } = {}) {
+  let variants = finishCache.get(base);
+  if (!variants) finishCache.set(base, variants = new Map());
+  const key = `${name}:${color}:${dropMap}`;
+  if (!variants.has(key)) {
+    const m = base[name].clone(); m.color.set(color);
+    if (dropMap) m.map = null;
+    if (m.sheenColor) m.sheenColor.copy(m.color).lerp(m.color.clone().setRGB(1, 1, 1), 0.25);
+    variants.set(key, m);
   }
-  const { C, THREE, box, boxOn } = ctx;
-  // Purchased finishes must not inherit a theme's fictitious wood/fabric substitutions.
-  const M = Object.create(ctx.productM);
-  if (meta.id === 'dining' && ctx.style.id === 'metallic') M.plasticBeige = finishMaterial(ctx.productM,'plasticWhite','#d8cdbb');
-  const [defaultKey, quantity = 1] = slot ?? ['table'];
-  const selected = meta.id === 'highboard' ? 'rudsta' : STYLE_PRODUCTS[ctx.style.id]?.[meta.id] ?? defaultKey;
-  const p = PRODUCTS[selected], [w, d, h] = p.size;
-  const aliases = { soderhamn:'alba', lennon:'alba', wolke:'alba', ekenaset:'mikkel', ekenasetBlack:'mikkel', hilda:'hilda', calaryCoffee:'calaryCoffee', sahra:'table', calaryTable:'table', stockholmSide:'calary', calaryBlack:'calary', bedGreen:'bed', idanas:'bed', idanasGrey:'bed', nightBrown:'night', nightWhite:'night', deskOak:'desk', micke:'micke', billyOak:'billy', billyBlack:'billy', sofabedBeige:'sofabed', sofabedGrey:'sofabed', bestaBlack:'besta' };
-  const key = aliases[selected] ?? selected;
-  const fabric = selected === 'wolke' ? 'productBlue' : selected === 'lennon' || selected === 'idanasGrey' ? 'productGrey' : selected === 'bedGreen' ? 'linenSage' : 'linenBeige';
-  if (selected === 'lennon' || selected === 'idanasGrey') M.productGrey = finishMaterial(ctx.productM,'linenGrey',selected === 'idanasGrey' ? '#4b4c50' : '#aaa8a6');
-  if (selected === 'wolke') M.productBlue = finishMaterial(ctx.productM,'boucle','#b8c5cf');
-  if (selected === 'billyBlack' || selected === 'bestaBlack') M.oakDark = finishMaterial(ctx.productM,'oakDark','#302822');
-  // IKEA's English German-market pages expose these exact researched SKUs.
-  const wood = selected === 'billyBlack' || selected === 'bestaBlack' ? 'oakDark' : /Black/.test(selected) ? 'blackMatte' : selected === 'nightBrown' ? 'oakDark' : 'oakNatural';
-  const g = new THREE.Group();
-  const cabinet = (width, depth, height, mat = 'plasticWhite') => C.cabinet(M, { w: width, d: depth, h: height, legH: 0, mat, doors: 2 });
-  switch (key) {
-    case 'alba': g.add(C.sofa(M, { w, d, h, seatH: selected === 'soderhamn' ? .4 : selected === 'wolke' ? .41 : .43, kind: selected === 'soderhamn' ? 'slim' : selected === 'lennon' ? 'block' : 'cloud', seats: selected === 'alba' || selected === 'soderhamn' ? 2 : 3, arm: selected === 'soderhamn' ? .06 : selected === 'lennon' ? .32 : .2, legs: selected === 'soderhamn' ? 'steel' : null, fabric, pillows: ['linenIvory', ctx.style.id === 'brutal' ? 'velvetMoss' : 'velvetSage'] })); break;
-    case 'mikkel': g.add(C.armchair(M, { w, d, h, seatH: selected === 'mikkel' ? .46 : .45, armH: selected === 'mikkel' ? .58 : .63, arms: selected === 'mikkel' ? 'upholstered' : 'wood', wood: selected === 'ekenasetBlack' ? 'oakDark' : 'oakNatural', fabric: selected === 'mikkel' ? 'boucle' : selected === 'ekenasetBlack' ? 'blackMatte' : 'linenBeige' })); break;
-    case 'hilda': g.add(C.hildaTable(M, { dia:w, h, mat:'oakNatural' })); break;
-    case 'calaryCoffee': g.add(C.drumTable(M, { dia:w, h, top:'oakNatural', base:'oakNatural', baseDia:w-.04, fluted:true })); break;
-    case 'marisa': g.add(C.drumTable(M, { dia: w, h, top: 'marble' })); break;
-    case 'gladom':
-      ctx.cyl(g, M.blackMatte, w / 2, w / 2, 0.018, [0, h - 0.018, 0]);
-      for (const x of [-0.15, 0.15]) for (const z of [-0.15, 0.15]) boxOn(g, M.blackMatte, [0.012, h - 0.018, 0.012], [x, 0, z]); break;
-    case 'calary': g.add(C.cabinet(M, { w, d, h, legH: selected === 'stockholmSide' ? .22 : .17, fronts: selected === 'stockholmSide' ? 'plain' : 'ribbed', mat: selected === 'stockholmSide' ? 'oakNatural' : selected === 'calaryBlack' ? 'blackMatte' : 'oakDark' })); break;
-    case 'rudsta': {
-      const frame = M.blackMatte;
-      for (const x of [-w/2+.015,w/2-.015]) for (const z of [-d/2+.015,d/2-.015]) boxOn(g,frame,[.03,h,.03],[x,0,z]);
-      for (const y of [.15,h-.025]) boxOn(g,frame,[w,.025,d],[0,y,0]);
-      boxOn(g,frame,[w-.03,h-.175,.015],[0,.175,-d/2+.0075]);
-      for (const y of [.45,.78]) boxOn(g,M.glass,[w-.04,.008,d-.04],[0,y,0]);
-      for (const x of [-w/2+.012,w/2-.012]) boxOn(g,M.glass,[.006,h-.19,d-.04],[x,.175,0]);
-      for (const x of [-w/4,w/4]) { boxOn(g,M.glass,[w/2-.025,h-.19,.006],[x,.175,d/2-.012]); boxOn(g,frame,[.012,h-.175,.018],[x+w/4-.012,.175,d/2-.012]); }
-      break;
-    }
-    case 'highboard': case 'billy': case 'ivar':
-      for (let i = 0; i < quantity; i++) { const b = C.bookcase(M, { w, d, h, shelves: 5, mat: key === 'ivar' || selected !== 'billy' && key === 'billy' ? wood : 'plasticWhite', back: key !== 'ivar' }); b.position.x = (i - (quantity - 1) / 2) * w; g.add(b); }
-      break;
-    case 'pax': case 'hall':
-      for (let i = 0; i < quantity; i++) { const b = C.bookcase(M, { w, d, h, shelves: 3, mat: 'plasticWhite' }); b.position.x = (i - (quantity - 1) / 2) * w; g.add(b); }
-      for (let i = 0; i < quantity * 2; i++) boxOn(g, M.plasticWhite, [0.495, 2.294, 0.018], [(i - (quantity * 2 - 1) / 2) * 0.499, 0.07, d / 2 + 0.009]);
-      break;
-    case 'utility': for (let i = 0; i < quantity; i++) { const b = cabinet(w, d, h); b.position.x = (i - (quantity - 1) / 2) * w; g.add(b); } break;
-    case 'besta': for (let i = 0; i < quantity; i++) { const b = C.bookcase(M, { w, d, h, shelves: 1, mat: selected === 'bestaBlack' ? 'oakDark' : 'plasticWhite' }); b.position.set((i - (quantity - 1) / 2) * w, 0.25, 0); g.add(b); } break;
-    case 'console': boxOn(g, M.plasticWhite, [w, h, d], [0, 0.91, 0]); g.add(ctx.grp([ctx.D.roundMirror(M, 0.8), 0, 1.58, -0.12])); break;
-    case 'bed': g.add(C.bedModel(M, { outerW: w, outerL: d, headH: h, headT: 0.1, frame: fabric, throwMat: ctx.style.id === 'brutal' ? 'throwMoss' : 'throwSage' })); break;
-    case 'night': g.add(C.sideBox(M, { w, d, h, mat: selected === 'nightWhite' ? 'plasticWhite' : wood, knob: selected === 'nightWhite' ? 'plasticWhite' : wood })); break;
-    case 'desk': g.add(C.deskT(M, { w, d, h, mat: selected === 'deskOak' ? 'oakNatural' : 'plasticWhite' })); g.add(ctx.grp([ctx.helpers.laptop(M), 0.05, h, 0.02])); break;
-    case 'micke': {
-      boxOn(g,M.oakDark,[w,.035,d],[0,h-.035,0]); boxOn(g,M.oakDark,[.32,h-.035,d-.025],[-w/2+.16,0,0]);
-      for (const z of [-d/2+.025,d/2-.025]) boxOn(g,M.blackMatte,[.025,h-.035,.025],[w/2-.025,0,z]);
-      boxOn(g,M.oakDark,[w-.32,.1,.02],[.16,h-.135,d/2-.015]); g.add(ctx.grp([ctx.helpers.laptop(M),0,h,0])); break;
-    }
-    case 'sofabed': {
-      if (selected === 'sofabed') M.linenBlue = finishMaterial(ctx.productM,'linenGrey','#b8c5cf');
-      g.add(C.sofaBed(M, { w, d, h, fabric: selected === 'sofabedBeige' ? 'linenBeige' : selected === 'sofabedGrey' ? 'linenGrey' : 'linenBlue' })); break;
-    }
-    case 'zara': {
-      M.productLeather = finishMaterial(ctx.productM,'leatherCognac','#d5c5b3');
-      const c = ctx.F.taskChair(M, { fabric: 'productLeather' });
-      c.traverse(o => { if (o.isMesh && o.material === M.bronzeDark) o.material = M.steel; });
-      const bounds = new THREE.Box3().setFromObject(c).getSize(new THREE.Vector3());
-      c.scale.set(w / bounds.x, h / bounds.y, d / bounds.z);
-      g.add(c);
-      for (const x of [-0.265, 0.265]) { boxOn(g, M.steel, [0.018, 0.17, 0.018], [x, 0.48, 0]); box(g, M.steel, [0.035, 0.02, 0.3], [x, 0.66, 0]); }
-      break;
-    }
-    case 'floorlamp': {
-      const l = ctx.D.floorLamp(M, { h });
-      l.scale.x = l.scale.z = 0.36 / 0.455;
-      l.traverse(o => { if (o.isMesh && o.material === M.bronze) o.material = M.steel; if (o.isMesh && o.material === M.marble) o.material = M.steel; });
-      g.add(l); break;
-    }
-    case 'table': {
-      g.add(C.roundTable(M, { dia: w, h, top: selected === 'sahra' ? 'plasticBeige' : selected === 'calaryTable' ? 'oakDark' : 'oakNatural', base: selected === 'sahra' ? 'drum' : selected === 'calaryTable' ? 'ribbed' : 'legs', baseMat: selected === 'sahra' ? 'plasticBeige' : selected === 'calaryTable' ? 'oakDark' : 'oakNatural', baseDia: selected === 'sahra' ? .55 : .61 }));
-      g.add(ctx.helpers.chairsAround(4, 0.72, () => {
-        const c = new THREE.Group(), [cw, cd, ch] = styleProduct(ctx.style.id,'chair').size;
-        const M = { oakNatural: ctx.productM[STYLE_PRODUCTS[ctx.style.id]?.chair === 'chairBlack' ? 'blackMatte' : 'oakNatural'] };
-        for (const x of [-cw / 2 + 0.025, cw / 2 - 0.025]) for (const z of [-cd / 2 + 0.025, cd / 2 - 0.025]) boxOn(c, M.oakNatural, [0.035, z < 0 ? ch - 0.1 : 0.435, 0.035], [x, 0, z]);
-        boxOn(c, M.oakNatural, [0.44, 0.015, 0.39], [0, 0.435, 0.035]);
-        boxOn(c, M.oakNatural, [cw, 0.16, 0.025], [0, ch - 0.16, -cd / 2 + 0.025]);
-        return c;
-      }));
-      break;
-    }
-    case 'outdoor': {
-      // Square slatted frame, manufacturer seat/arm heights; no fictitious teak finish.
-      for (const x of [-w / 2 + 0.025, w / 2 - 0.025]) for (const z of [-d / 2 + 0.025, d / 2 - 0.025]) boxOn(g, M.teak, [0.05, 0.6, 0.05], [x, 0, z]);
-      for (let i = 0; i < 7; i++) boxOn(g, M.teak, [w, 0.025, 0.09], [0, 0.275, -0.33 + i * 0.11]);
-      for (let i = 0; i < 4; i++) box(g, M.teak, [w, 0.075, 0.025], [0, 0.35 + i * 0.1, -d / 2 + 0.025]);
-      for (const x of [-w / 2 + 0.025, w / 2 - 0.025]) boxOn(g, M.teak, [0.05, 0.025, d], [x, 0.6, 0]); break;
-    }
-    case 'bistro': {
-      boxOn(g, M.teak, [w, 0.025, d], [0, h - 0.025, 0]);
-      for (const x of [-0.22, 0.22]) for (const z of [-0.2, 0.2]) boxOn(g, M.blackMatte, [0.018, h - 0.025, 0.018], [x, 0, z]);
-      if (meta.id === 'b2-bistro') for (const sign of [-1, 1]) { const c = C.chair(M, { w: 0.39, d: 0.4, h: 0.79, seatH: 0.45, fabric: 'teak', frame: 'blackMatte' }); c.position.x = sign * 0.52; c.rotation.y = -sign * Math.PI / 2; g.add(c); }
-      break;
-    }
-    case 'stool': boxOn(g, M.oakNatural, [w, 0.025, d], [0, h - 0.025, 0]); for (const x of [-0.16, 0.16]) for (const z of [-0.12, 0.12]) boxOn(g, M.oakNatural, [0.03, h - 0.025, 0.03], [x, 0, z]); break;
-  }
-  const size = key === 'table' ? [2.15, 2.15] : meta.id === 'b2-bistro' ? [1.44, 0.54] : [w * quantity, d + (['pax', 'hall'].includes(key) ? 0.018 : 0)];
-  // Parametric sloping backs/arms can extend beyond nominal dimensions. Keep the purchased
-  // furniture (before styling props are transferred) inside its actual planning footprint.
-  const bounds = new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3());
-  if (bounds.x > size[0] + .002) g.scale.x *= size[0] / bounds.x;
-  if (bounds.z > size[1] + .002) g.scale.z *= size[1] / bounds.z;
-  const place = { ...placement, pos: [...placement.pos] };
-  // Preserve a cabinet's wall clearance, the sofa's back line and bed headboard position.
-  const wallSlots = new Set(['sideboard', 'highboard', 'bed', 'nightstand-n', 'nightstand-s', 'wardrobe', 'hall-wardrobe', 'console', 'lowboard', 'utility-tall', 'utility-shelf', 'shelving', 'sofabed', 'desk']);
-  if (wallSlots.has(meta.id) || meta.id === 'sofa') {
-    const delta = (size[1] - meta.size[1]) / 2;
-    place.pos[0] += Math.sin(place.yaw) * delta; place.pos[1] += Math.cos(place.yaw) * delta;
-  }
-  if (meta.id === 'b1-table') place.pos = [12.25, 10.22];
-  if (meta.id === 'b1-lounge-a') { place.pos = [11.6, 9.98]; place.yaw = 0; }
-  if (meta.id === 'b1-lounge-b') { place.pos = [12.9, 9.98]; place.yaw = 0; }
-  const products = [{ ...p, quantity: meta.id === 'b1-table' ? 1 : quantity }];
-  if (key === 'table') products.push({ ...styleProduct(ctx.style.id,'chair'), quantity: 4 });
-  if (['pax', 'hall'].includes(key)) products.push({ ...PRODUCTS.forsand, quantity: quantity * 2 });
-  if (['pax', 'hall'].includes(key)) for (const child of g.children) child.position.z -= 0.009;
-  if (['sideboard', 'coffee', 'nightstand-n', 'nightstand-s', 'dining'].includes(meta.id)) {
-    const oldTop = new THREE.Box3().setFromObject(original.children[0]).max.y;
-    for (const child of [...original.children].slice(meta.id === 'dining' ? 2 : 1)) {
-      child.position.y += h - oldTop;
-      g.add(child);
-    }
-  }
-  const round = ['marisa', 'gladom', 'table', 'hilda', 'calaryCoffee'].includes(key);
-  return { meta: { ...meta, name: `${p.retailer} ${p.name}${quantity > 1 ? ` (${quantity} ×)` : ''}${key === 'table' ? ' + 4 IKEA LISABO' : ''}`, spec: `${p.finish} · Herstellermaße ${p.size.map(x => Math.round(x * 1000) / 10).join(' × ')} cm${meta.id === 'b1-table' ? '; nur Tisch aus dem Set' : ''}`, size, round, products }, object: g, placement: place };
+  return variants.get(key);
 }
