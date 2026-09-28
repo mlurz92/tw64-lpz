@@ -1,6 +1,6 @@
 # WE 13 · Raumatelier
 
-Maßstäbliche, fotorealistische Einrichtungsplanung der Wohnung **WE 13, Täubchenweg 62–64, Leipzig (3. OG, 97,56 m², Blick in den Park)** in **vier umschaltbaren Stilwelten** – alle aus den Moodboards abgeleitet, alle auf dieselbe gemessene Raumgeometrie geplant und ausschließlich mit recherchierten neuen Möbeln von **Westwing** und **IKEA** (Herstellermaße, Recherche 09/2026) möbliert.
+Maßstäbliche, fotorealistische Einrichtungsplanung der Wohnung **WE 13, Täubchenweg 62–64, Leipzig (3. OG, 97,56 m², Blick in den Park)** in **vier umschaltbaren Stilwelten** – alle aus den Moodboards abgeleitet, alle auf dieselbe gemessene Raumgeometrie geplant und mit kuratierten, auf Moodboard und aktuelle Luxus-Einrichtungsregeln geprüften Möbeln, Leuchten und Teppichen von **Westwing** und **IKEA** möbliert (89 Artikel mit Händlerlink, Ausführung und Herstellermaßen, Recherche 28.09.2026).
 
 Die Anwendung verbindet die aus dem Ausführungsplan rekonstruierte Raumgeometrie mit einer vollständig durchgeplanten Möblierung und rendert sie in drei Stufen:
 
@@ -25,27 +25,28 @@ Danach <http://localhost:8000> öffnen. Auf Smartphone und Tablet lässt sich di
 
 Umschalten **direkt im 3D-Viewer** über die Stilwelt-Leiste oben (oder die Tasten **1–4**) bzw. über die Reiter unter *Konzept & Möbel*. Beim Wechsel werden Möblierung, Wandgestaltung, Material-Thema, Einbaufronten und Leuchten neu aufgebaut; Kamera, Lichtstimmung, Darstellung (Standard/Realistisch) und Ansicht bleiben erhalten. Grundriss, Möbelliste, Planungsprüfung und Exporte folgen automatisch.
 
-Die vier Stilwelten wechseln echte Möbelartikel und belegte Ausführungen: vier unterschiedliche Sofas und Bettvarianten, drei Couchtische und drei Schreibtischausführungen. Architektur, Kunst, Textilien und Licht ergänzen die Auswahl; gekaufte Möbel behalten ihre reale Farbe. Die gewünschte Glasvitrine rechts neben der Küche bleibt in allen Varianten erhalten: **IKEA RUDSTA Anthrazit, 80 × 37 × 120 cm**, mit Glasfront, Glasseiten und Glasböden.
+Jede Stilwelt ist ein geschlossenes, am Moodboard ausgerichtetes Set aus belegten Händlerartikeln (Westwing Collection, GUBI, Ferm Living, Maytoni, Nova Luce über Westwing sowie IKEA). Budget-Serienmöbel der Vorversion (offene BESTÅ-Korpusse, BILLY, LISABO, GLADOM, ÅRSTID, MICKE, HYLTARP) und der moodboardfremde hellblaue Wolke-Bezug wurden ersetzt. **Highlight jeder Stilwelt ist ein monumentaler Rundtisch Ø 150–152 cm mit sechs Stühlen.** Die gewünschte Glasvitrine rechts neben der Küche bleibt in allen Varianten: **IKEA RUDSTA Anthrazit, 80 × 37 × 120 cm**, Glasfront, Glasseiten, Glasböden.
 
-| Stilwelt | Sofa | Couchtisch / Essen | Schlafen | Arbeiten |
+| Position | Metallic Japandi | Soft Brutalism | Refined Brutalism | Quiet Luxury |
 |---|---|---|---|---|
-| Metallic Japandi | Westwing Alba Beige | Marisa Marmor, Sahra Hellbeige | IDANÄS Naggen Beige, TONSTAD Braun | TONSTAD Eiche, HYLTARP Hellbeige, BILLY Schwarz |
-| Soft Brutalism | IKEA SÖDERHAMN Gunnared Beige | Hilda Eiche, STOCKHOLM 2025 | TÄLLÅSEN Hellbeige, TONSTAD Eiche | TONSTAD Eiche, HYLTARP Hellbeige, BILLY Eichenachbildung |
-| Refined Brutalism | Westwing Lennon Grau | Calary Eiche, Calary Dunkleiche Ø 100 | IDANÄS Dunkelgrau, GLADOM Schwarz | MICKE Schwarzbraun, HYLTARP Grau, BILLY Schwarz |
-| Quiet Luxury | Westwing Wolke Bouclé Hellblau | Marisa Marmor, STOCKHOLM 2025 | TÄLLÅSEN Graugrün, TONSTAD Elfenbeinweiß | TONSTAD Elfenbeinweiß, HYLTARP Blassblau, BILLY Weiß |
+| Sofa | Westwing Alba 3-Sitzer, Nierenform, Bouclé Grau (235 × 114) | Westwing Melva 3-Sitzer Off White (238 × 101) | Westwing Lennon 3-Sitzer Bouclé Greige (238 × 119) | Westwing Lennon 3-Sitzer Leinen-Mix Grau (238 × 119) |
+| Sessel | Westwing Mikkel Bouclé Off White | IKEA EKENÄSET Eiche/Beige (2 ×) | Westwing Rae Eiche dunkel/Taupe | Westwing Mikkel Dunkelgrün |
+| Couch-/Beistelltisch | Westwing Alys Marmor/Gold 120 × 75 + Alys Ø 40 | Ferm Living Distinct Travertin + Marisa Travertin Ø 35 | Westwing Naida Marmor schwarz/Eiche schwarz 142 × 60 | Westwing Andrew 2er-Set Mango schwarz Ø 90/72 |
+| **Esstisch** | **GUBI Tavolo a Dischi Ø 150, Walnuss** | **Pedra Ø 152, Beton Hellbeige** | **Pedra Ø 152, Beton Hellgrau** | **GUBI Tavolo a Dischi Ø 150, Walnuss** |
+| Stühle (6 ×) | Westwing Celia Bouclé Hellbeige | Westwing Imara Off White/Eiche dunkel | Westwing Kris Teddy-Bouclé Nougat | Westwing Imara Olivgrün/Eiche dunkel |
+| Pendel Essplatz | Maytoni Rim Ø 80 Messing | Nova Luce Elettra 120 cm schwarz | Level Ø 53 schwarz | Westwing Hamilton Amberglas |
+| Lowboard / Sideboard | Calary TV-Board + Sideboard Eiche dunkel, geriffelt | Zumi TV-Lowboard + Sideboard Eiche/Travertin | Calary TV schwarz + Chandler Massiveiche | Elona XL schwarz 220 cm + Calary schwarz |
+| Bett | Westwing Dream 180 × 200 Hellgrau (196 × 222) | Westwing Arche 180 × 200 Taupe (200 × 218) | Westwing Sato Holzbett Eiche dunkel (227 × 206) | Westwing Dream 180 × 200 Anthrazit |
+| Nachttisch / Pendel | Calary rund, geriffelt + Maytoni Antic | Farsta wandhängend + Paris schwarz | Calary wandhängend + Paris | Diana Eiche dunkel + Paris |
+| Schrank | IKEA PAX dunkelgrau + TONSTAD braun gebeizt | IKEA PAX weiß + TONSTAD Eiche | IKEA PAX dunkelgrau + TONSTAD braun | IKEA PAX dunkelgrau + TONSTAD braun |
+| Stehleuchte | Westwing Bun, Marmorfuß/Gold | Westwing Kaya Betonfuß beige | Westwing Kaya anthrazit | Westwing Neron Leselampe schwarz |
+| Teppiche | Amaro Wolle Hellbeige/Grau 300 × 400; Jane Viskose Taupe 200 × 300 | Amaro Hellbeige/Creme 300 × 400; Amaro Hellbraun 200 × 300 | Jane Taupe 300 × 400; Jane Grau 200 × 300 | Jane Hellgrau 300 × 400; Jane Salbeigrün 200 × 300 |
+| Arbeiten / Gäste | Eliot Schlafsofa Hellgrau, Calary Schreibtisch, Pia Leder Caramel, Libby Regal dunkel | Eliot Beige, Libby Schreibtisch, Pia Salbeigrün, Libby hell | Eliot Dunkelgrau, Calary schwarz, Pia Taupe, Libby schwarz | Eliot Teddy Dunkelgrün, Renee, Pia Leder Hellbeige, Portlyn Walnuss 150 |
+| Diele | PAX 35 cm + TONSTAD braun, Wandkonsole Larsen | PAX + TONSTAD Eiche, Konsole Calary | PAX + TONSTAD braun, Larsen | PAX + TONSTAD braun, Larsen |
 
-| Bereich | Recherchierte Auswahl |
-|---|---|
-| Wohnen | Stilabhängige Sitzgruppe und Couchtische laut Tabelle; zwei BESTÅ-Korpusse (240 cm), Weiß oder Schwarzbraun |
-| Essen | Sahra, STOCKHOLM 2025 oder Calary mit vier LISABO in Esche oder Schwarz; Calary/ STOCKHOLM Sideboard; RUDSTA Glasvitrine |
-| Schlafen | Stilabhängiges Polsterbett und Nachttische; drei PAX-Korpusse mit sechs FORSAND-Türen; Mikkel oder EKENÄSET |
-| Arbeiten / Gäste | HYLTARP mit belegtem Bezug, TONSTAD oder MICKE, drei BILLY; Westwing Zara Hellbeige/Edelstahl |
-| Diele / HWR | IKEA PAX/FORSAND, LACK, ENHET und IVAR |
-| Bäder / Balkone | IKEA ENHET, VILTO, NÄMMARÖ und TÄRNÖ |
+Gemeinsam in allen Stilwelten: IKEA ENHET (Bad, HWR), IVAR, VILTO, NÄMMARÖ und TÄRNÖ (Balkone).
 
-Alle neuen Möbel stammen von **IKEA oder Westwing**. Die vollständigen direkten Produktlinks, Ausführungen, Herstellermaße und Zusammenstellungen stehen in [docs/PRODUCT_RESEARCH.md](docs/PRODUCT_RESEARCH.md), Recherche **28.09.2026**. Der verbindliche Katalog ist in src/data/products.js hinterlegt. Möbel-Detailkarten zeigen Händlerlinks, Mengen und Recherchedatum; CSV und JSON enthalten die Produktbelege.
-
-Bestandsküche, Sanitärobjekte, Geräte und bauliche Gestaltung bleiben separat als Bestand bzw. Gestaltung gekennzeichnet. Die 3D-Modelle bilden die recherchierten Produkte vereinfacht nach. Wandgestaltung und Dekoration folgen weiterhin den vier Moodboards. PAX verwendet reale FORSAND-Türen statt fiktiver Maßfronten; BESTÅ bleibt als offener Korpus dargestellt. Höffner wäre als Händler zulässig, ist für diese Auswahl nicht nötig.
+Alle direkten Produktlinks, Ausführungen und Herstellermaße stehen in [docs/PRODUCT_RESEARCH.md](docs/PRODUCT_RESEARCH.md) (erzeugt mit `node tools/research-docs.mjs`). Der verbindliche Katalog ist `src/data/products.js`; `src/data/productModels.js` baut daraus je Artikel ein parametrisches 3D-Modell mit Herstellermaßen und realer Oberfläche (kannelierte Fronten, Messingrahmen, Scheibenfuß, Säulenfuß, Kopfteile, Schirme). Platzierung, Detailkarten, CSV/JSON und Raumtexte folgen denselben Daten – Modell, Liste und Beleg können nicht auseinanderlaufen. Höffner ist als Händler zulässig; für die gewählten Ausführungen boten Westwing und IKEA die passenderen, belegten Varianten. Bestandsküche, Sanitärobjekte, Maßspiegel, Vorhänge, Wandfelder und Kunst sind Bestand bzw. Gestaltung.
 
 ### Bäder (nach Ausführungsplan HLS)
 
@@ -69,9 +70,9 @@ Die Spiegel nutzen auf WebGPU die lokale Raum-Lightprobe für stabile Reflexione
 
 | Prinzip | Umsetzung in WE 13 |
 |---|---|
-| Maßhaltige Serienmodule | BESTÅ 240 cm, BILLY 120 cm und PAX/FORSAND in realen Herstellermaßen |
-| Ruhige Flächen | weiße PAX/FORSAND-Fronten, offene BESTÅ-/BILLY-Fächer, Calary mit geriffelter Holzfront |
-| Materialehrlichkeit | Echtholz/-furnier, Naturstein, Kalk-/Lehmputz, Leinen, Wolle, Bouclé; Metalle wiederholen; recherchierte Produktoberflächen bleiben erhalten |
+| Wenige, hochwertige Hauptstücke | Massivholz/Echtholzfurnier, Naturstein, Bouclé, Leinen-Mix; keine offenen Budget-Korpusse, keine Tablett- oder Klapptische |
+| Ein Statement je Raum | monumentaler Rundtisch Ø 150–152 im Essbereich, Lamellen- bzw. Paneelwand hinter Bett und TV, Glasvitrine RUDSTA |
+| Ein Stein, ein Metall, ein Holzton | Metallic: heller Marmor + Messing + dunkle Eiche · Soft: Travertin + Messing + helle Eiche · Brutal: schwarzer Marmor/Beton + Schwarz + dunkle Eiche · Quiet: Mattschwarz + Walnuss/dunkles Holz + Oliv |
 | Mehrschichtiges Licht 2700 K, CRI > 95 | Grundlicht entblendet, indirekte LED-Vouten/-Unterleuchtung, Zonen- und Stimmungslicht; Bad 3000 K |
 | Großzügige Proportionen | Teppich 300 × 400 (Sofa, Couch- und Beistelltisch stehen vollständig darauf, vom Lowboard bis 35 cm hinter den Sofarücken), deckenhohe, bodenlange Vorhänge, Kunst mit Bildmitte ≈ 1,45 m |
 | Spiegel als Architektur | Maßspiegel oberhalb der Ablagen bis zur Decke: im Gäste-WC wandfüllend, im Bad über die Breite des Waschtisch-Vorsprungs (nicht über der Wanne) |
@@ -84,10 +85,10 @@ Die Spiegel nutzen auf WebGPU die lokale Raum-Lightprobe für stabile Reflexione
 
 | Raum | Stauraum |
 |---|---|
-| Diele | 2 × PAX 99,8 × 35,5 × 236,4 + FORSAND-Türen |
-| Wohnen | BESTÅ 240 × 40 × 38, Calary, TONSTAD-Regal an W08 |
-| Schlafen | 3 × PAX 99,8 × 58 × 236,4 + FORSAND, TONSTAD-Ablagetische |
-| Arbeiten | 3 × BILLY 40 × 28 × 202 |
+| Diele | 2 × IKEA PAX 100 × 35 × 236 + 4 TONSTAD-Türen, Deckenblende |
+| Wohnen / Essen | TV-Lowboard 180–220 cm, Sideboard 160–165 cm, Glasvitrine RUDSTA |
+| Schlafen | 3 × IKEA PAX 100 × 58 × 236 + 6 TONSTAD-Türen, deckenhoch; Nachttische mit Schublade |
+| Arbeiten | Regal Libby 120 × 37 × 190 bzw. Portlyn 150 × 34 × 159 |
 | Bad / WC | offene ENHET-Korpusse, Ablagen 1,18 m, ENHET-Wandschrank über dem Waschtrockner |
 | HWR | 2 × ENHET 30 × 32,1 × 180, IVAR 89 × 30 × 179 |
 
@@ -98,9 +99,9 @@ Alle Stilwelten nutzen dieselbe, aus den Maßketten abgeleitete Zonierung (lokal
 | Raum | Zonierung |
 |---|---|
 | **Wohnen** | Medienwand W11 (284 cm) – Lounge (Sofarücken 0,5 m vor dem Wandversatz W09, Sehabstand ≈ 3,2–3,4 m, 40–45 cm Knieraum, Teppich 300 × 400 mit 15 cm Wandabstand zu W10) – Hauptweg Diele → Essplatz/Küche/Schlafen ≥ 1,0 m – Lesenische W05/W06 |
-| **Essen** | Tischmitte vor W06, 1,1 m Durchgang zur Küche, 90-cm-Türzone Schlafen frei; Sideboard an W07, Regal/Highboard an W08 |
+| **Essen** | Rundtisch Ø 150–152 mit sechs Stühlen (12 cm untergeschoben), Tischmitte vor W06, 1,1 m Durchgang zur Küche, 90-cm-Türzone Schlafen frei; Pendel mittig, Unterkante 1,61 m; Sideboard an W07, Glasvitrine an W08 |
 | **Schlafen** | Bett mittig an W20, Schrank 300 cm an W22 mit ≈ 0,9 m Gang (Türen frei schwenkbar), Leseplatz in der Südostecke |
-| **Arbeiten / Gäste** | Bettsofa an W23 außerhalb der Türzone, Schreibtisch mit seitlichem Tageslicht an W24/W26, BILLY-Regalgruppe an W28 |
+| **Arbeiten / Gäste** | Schlafsofa Eliot an W23 (ausgeklappt 210 cm, geprüft), Schreibtisch mit seitlichem Tageslicht an W24/W26, Regal an W28 |
 
 ## Ansichten
 
@@ -291,6 +292,25 @@ Das Betriebssystem und der Browser verteilen CPU-Arbeit auf P-/E-Kerne; JavaScri
 
 Reproduzierbarer Vergleich: lokaler Server, Chrome headless/SwiftShader, 800 × 600, identische möblierte Szene, Station Bad, ein Sample, externe Netzaufrufe blockiert. Referenz-Renderer aus Commit 0ed7b95: **33,737 s**, geändert: **20,052 s** bis zum ersten Sample (ein historisches Messpaar; daraus lässt sich keine allgemeine Beschleunigung ableiten). Das ist ein Software-GPU-Vergleich, kein NUC-Benchmark; die Dollhouse-Kaltstartmessung zeigte keine belastbare Verbesserung. Wiederholen mit node tools/perf-photo.mjs --baseline und node tools/perf-photo.mjs, nacheinander.
 
+
+### Update 28.09.2026: Pathtracer im Leerlauf vorbereiten
+
+Der Hauptteil der Wartezeit bis zum ersten fotorealistischen Sample lag nicht im Tracing, sondern in der Vorbereitung. Messung vorher (SwiftShader, 800 × 600, *Mittel*, Station Wohnen): 22,7 s bis zum ersten Sample, davon 13,8 s Szenen-Upload/BVH, 4,3 s Engine-Start, 4,5 s Shader.
+
+| Maßnahme | Lastverteilung auf dem NUC13ANKi5 |
+|---|---|
+| **Vorbereitung im Leerlauf** (`PhotoRenderer.prepare`) | Auf Desktop-Geräten ab 8 Hardware-Threads (NUC13: 16) bereitet die App den Pathtracer vor, sobald die Kamera 2,5 s ruht – auch wenn *Fotorealistisch* noch gar nicht gewählt ist: Engine-Modul und WebGL-Kontext, Proxy-Szene, **BVH im Web Worker** (E-/P-Kerne neben dem Hauptthread), Textur-Array und Materialtabelle auf der ruhenden Iris Xe, eine Probe-Kachel in Endauflösung (**Shader-Kompilierung parallel**, `KHR_parallel_shader_compile`) und die OIDN-Gewichte. Ein **GPU-Fence** (`fenceSync`, per Timer abgefragt, nicht blockierend) wartet, bis die Grafikeinheit alle Uploads wirklich ausgeführt hat – sonst würde der erste echte Sample-Aufruf die aufgestaute GPU-Arbeit abarbeiten (gemessen ≈ 10 s Blockade). Jede Kamerabewegung hat Vorrang; nach Stil-, Modus- oder Qualitätswechsel wird im nächsten Ruhemoment neu vorbereitet. `?prewarm=0` bzw. `?prewarm=1` erzwingt das Verhalten; Smartphones/Tablets (Touch) bereiten nicht vor. |
+| **Fotomodus beim Bewegen gewählt** | Die Szene wird sofort aufgebaut, das Tracing startet, sobald die Kamera ruht. |
+| **Schlankere Pathtracing-Szene** | Baumkronen im Pathtracer mit Detailstufe 0 (≈ 190 k → ≈ 50 k Dreiecke), Vorhänge mit 2 statt 24 Zeilen (die Falten sind in der Höhe linear, das Ergebnis ist identisch): 573 k → 432 k Dreiecke, schnellerer BVH-Aufbau und weniger Speicher auf der geteilten Grafik. |
+
+| Messung (SwiftShader, 800 × 600, *Mittel*) | bis zum ersten Sample |
+|---|---|
+| vorher (Kaltstart, 573 k Dreiecke) | 22,7 s |
+| Kaltstart jetzt (`node tools/perf-photo.mjs`) | 26,4 s (Engine 7,6 s, BVH/Upload 13,3 s, Tracing 5,4 s – die Software-GPU streut stark) |
+| **nach Leerlauf-Vorbereitung** (`node tools/perf-photo.mjs --prewarm`) | **5,4 s** – nur noch das eigentliche Tracing der 16 Kacheln; Engine, BVH, Texturen, Shader: 0 s |
+
+Auf der Iris Xe entfällt damit der gesamte Kaltstart (in der früheren Hardwaremessung 160 s bis zum ersten Sample, überwiegend Shaderkompilierung und Upload), sofern die Ansicht vorher einige Sekunden geruht hat; der erste Durchgang dauert dann nur noch Bruchteile einer Sekunde. Die Vorbereitung belegt zusätzlich einen WebGL-Kontext und ≈ 100 MB Texturspeicher (Stufe *Mittel*).
+
 ## Automatische Planungsprüfung
 
 `src/core/validate.js` prüft bei jedem Start und nach jedem Stilwechsel sämtliche Positionen der aktiven Stilwelt gegen die gemessene Geometrie:
@@ -303,7 +323,7 @@ Reproduzierbarer Vergleich: lokaler Server, Chrome headless/SwiftShader, 800 × 
 | Fenster / Balkontüren | 45 cm Zugang; Balkontüren vollständig frei, Fenster höchstens zur Hälfte verstellt |
 | Ausrichtung | Sofa zur Medienwand, Bettfuß in den Raum, Schlafsofa vom Wandrücken weg |
 
-Alle vier Stilwelten bestehen die aktuelle Geometrie- und Möbelbelegprüfung: 26/27/25/26 Möbelpositionen, keine fehlenden Produktbelege und keine Geometriefehler. node tools/catalog-check.mjs prüft zusätzlich Artikelunterschiede und die Glasflächen der Vitrine. HYLTARP wird geschlossen und mit 240 cm Ausklapptiefe geprüft; im Gästebetrieb wird der rollbare Bürostuhl zur Seite gestellt.
+Alle vier Stilwelten bestehen die Geometrie- und Belegprüfung (Stand 28.09.2026): 35–37 Möbel-, Leuchten- und Teppichpositionen je Stilwelt, alle mit Händlerbeleg, keine Kollisionen, Türbereiche und Fensterzugänge frei. node tools/catalog-check.mjs prüft zusätzlich, dass jedes Modell innerhalb seiner Stellfläche bleibt, die Artikelunterschiede zwischen den Stilwelten und die Glasflächen der Vitrine. Das Schlafsofa Eliot wird geschlossen und ausgeklappt (Liegefläche 210 cm) geprüft; im Gästebetrieb wird der rollbare Bürostuhl zur Seite gestellt.
 
 `node tools/flow.mjs` spielt den UI-Ablauf im Desktop-Layout (1280 × 720) durch: alle Stilwelten, Fotorealistisch starten, Lichtstimmung, Dollhouse, zurück zu Standard. `node tools/touch.mjs` prüft die Touch-Bedienung im Smartphone-Hochformat mit echten Mehrfinger-Ereignissen (17 Prüfungen: Antippen → Detailkarte, Wegwischen, Doppeltippen im Dollhouse und in der Begehung, Pinch-Gehen, Umsehen, Sheets, Werkzeugleiste vollständig sichtbar, kein seitliches Verrutschen, Grundriss-Verschieben/-Pinch/-Doppeltippen/-Raumauswahl).
 
@@ -336,7 +356,8 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   ├── core/geometry.js          # Planmaße → Meter, Wandrahmen, Wandstärken, Polygon-Utilities
 │   ├── core/validate.js          # Planungsprüfung (Kontur, Kollision, Türen, Fenster, Ausrichtung)
 │   ├── data/plan.js              # rekonstruierte Planvektoren (Quelle der Maßketten)
-│   ├── data/products.js          # recherchierte Artikel, Maße, Ausführungen, Mengen, Platzierung
+│   ├── data/products.js          # verifizierter Händlerkatalog + Auswahl je Stilwelt (STYLE_PRODUCTS)
+│   ├── data/productModels.js     # 3D-Modell je Katalogartikel aus Herstellermaßen und Oberfläche
 │   ├── data/styles.js            # vier Stilwelten, Luxus-Prinzipien, gemeinsame Raumtexte
 │   ├── data/design.js            # gemeinsamer Bestand (Küche, Bäder nach HLS-Plan, HWR, Diele) + Stil-Möblierung
 │   ├── engine/
@@ -350,7 +371,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   │   ├── textures.js · uv.js · models.js
 │   │   └── builders/             # parametrische Modelle
 │   │       ├── architecture.js   # Wände, Laibungen, Böden, Decken, Fenster, Türen, Balkone
-│   │       ├── catalog.js        # Westwing-/IKEA-Modelle (inkl. Zumi, Hilda, PAX, BESTÅ …)
+│   │       ├── catalog.js        # parametrische Grundkörper (Sofa, Stuhl, Tische, Korpusse, Bett, PAX, Leuchten)
 │   │       ├── furniture.js      # Maßmöbel (Lamellenwand, Lowboard, Bibliothekswand …)
 │   │       ├── surroundings.js   # Park (9,28 m tiefer), Bäume, Straße, Stadtkante, Gebäude unter/über WE 13
 │   │       ├── bath.js           # Vorwände 1,18 m, Maßspiegel, Waschtrockner-Nische, Laufen VAL/Meda, V&B Collaro, Duravit Tulum
@@ -386,7 +407,7 @@ Nach Änderungen an einem Textur-Generator (`PROCEDURAL` in `src/engine/material
 
 ### Neue Stilwelt anlegen
 
-Neue Varianten benötigen einen Eintrag in `STYLES` (`src/data/styles.js`) und eine belegte Auswahl in `STYLE_PRODUCTS` (`src/data/products.js`): `theme`, `wallOverride`, `decor`, Texte (`palette`, `materials`, `walls`, `lightPlan`, `notes`) und `furnish(ctx)` mit den Raum-Helfern `living`, `dining`, `bedroom`, `office` (inkl. `library`). Die Stilwelt-Leiste und Taste 5 ff. entstehen automatisch; die Planungsprüfung zeigt sofort, ob alles passt.
+Neue Varianten benötigen einen Eintrag in `STYLES` (`src/data/styles.js`) und eine belegte Auswahl in `STYLE_PRODUCTS` (`src/data/products.js`): `theme`, `wallOverride`, `decor`, Texte (`palette`, `materials`, `walls`, `lightPlan`, `notes`) und `furnish(ctx)` mit den Raum-Helfern `living`, `dining`, `bedroom`, `office`; Maße und Modelle kommen aus dem Katalog, die Stilwelt liefert Wandgestaltung, Styling und Kunst. Die Stilwelt-Leiste und Taste 5 ff. entstehen automatisch; die Planungsprüfung zeigt sofort, ob alles passt.
 
 ## Quellen der Produkt- und Gestaltungsrecherche (09/2026)
 

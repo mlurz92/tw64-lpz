@@ -125,12 +125,17 @@ export class PhotoRenderer {
       }
       if (this.active) return;
       this.prepareDenoiser();
-      // One tiny sample off-screen: triggers the (parallel) shader compile with the final defines.
-      this.renderer.setSize(64, 36, false);
+      // One tile at the final resolution, off-screen (the layer stays hidden): compiles the path
+      // tracing program with the final defines and lets the driver specialise it for exactly the
+      // render targets the real start uses (a smaller warm-up target left a ≈ 10 s first draw).
+      this.resize();
       this.syncLighting();
       this.syncCamera();
       this.pt.renderSample();
       this.pt.reset(); this.samples = 0;
+      // Uploads and the warm-up tile are only queued so far. Wait (non-blocking) until the GPU has
+      // executed them – otherwise the first real sample would stall until the queue drains.
+      await gpuSettled(this.renderer.getContext());
       this.warmKey = key;
     };
     this.preparing = this.startPromise = run()
@@ -593,6 +598,15 @@ export class PhotoRenderer {
   dataURL() {
     return (this.denoisedAt ? this.denoiseCanvas : this.renderer.domElement).toDataURL('image/png');
   }
+}
+
+/** Resolves once the GPU finished all commands issued so far (fence polled from a timer). */
+async function gpuSettled(gl) {
+  const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+  if (!sync) return;
+  gl.flush();
+  try { while (gl.clientWaitSync(sync, 0, 0) === gl.TIMEOUT_EXPIRED) await new Promise((r) => setTimeout(r, 50)); }
+  finally { gl.deleteSync(sync); }
 }
 
 function flipY(px, w, h) {
