@@ -105,10 +105,10 @@ export function valBasin(M, { w = 0.6, d = 0.42, y = 0.85 } = {}) {
 }
 
 /** Floating vanity unit with two drawers below the basin (push-to-open). Back at z = 0. */
-export function vanityUnit(M, { w = 0.58, d = 0.4, h = 0.4, top = 0.72, front = 'smokedOak' } = {}) {
+export function vanityUnit(M, { w = 0.6, d = 0.4, h = 0.6, top = 0.72, front = 'plasticWhite' } = {}) {
   const g = new THREE.Group();
-  boxOn(g, M[front], [w, h, d], [0, top - h, d / 2]);
-  box(g, M.matteBlack, [w - 0.004, 0.004, 0.004], [0, top - h / 2, d + 0.001]);
+  for (const x of [-w / 2 + 0.009, w / 2 - 0.009]) boxOn(g, M[front], [0.018, h, d], [x, top - h, d / 2]);
+  for (const y of [top - h, top - h / 2]) boxOn(g, M[front], [w, 0.018, d], [0, y, d / 2]);
   const led = boxOn(g, M.ledStrip, [w - 0.06, 0.006, 0.01], [0, top - h - 0.008, d / 2]); led.castShadow = false;
   return g;
 }
@@ -200,8 +200,7 @@ export function laundryNiche(M, { w = 0.76, d = 0.64, top = 'marble', front = 's
   // stone worktop over the machine, full niche width
   boxOn(g, M[top], [w, 0.03, d - 0.02], [0, 0.88, zb + (d - 0.02) / 2]);
   // wall cabinet (35 cm deep) with LED under-light
-  boxOn(g, M[front], [w - 0.004, 0.72, 0.35], [0, 1.42, zb + 0.175]);
-  box(g, M.matteBlack, [0.003, 0.7, 0.003], [0, 1.78, zb + 0.351]);
+  boxOn(g, M.plasticWhite, [0.6, 0.75, 0.32], [0, 1.42, zb + 0.16]);
   const led = boxOn(g, M.ledStrip, [w - 0.08, 0.006, 0.01], [0, 1.412, zb + 0.3]); led.castShadow = false;
   // styling on the worktop: basket + folded towels
   rboxOn(g, M.linenTaupe, [0.3, 0.2, 0.26], [-0.17, 0.91, zb + 0.28], 0.02, 2);

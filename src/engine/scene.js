@@ -35,7 +35,7 @@ export class ApartmentScene {
 
     this.furniture = new THREE.Group(); this.furniture.name = 'furniture';
     this.root.add(this.furniture);
-    furnish({ M: this.M, lib: this.lib, style: this.style, add: (meta, obj, place) => this.add(meta, obj, place) });
+    furnish({ M: this.M, productM: this.baseM, lib: this.lib, style: this.style, add: (meta, obj, place) => this.add(meta, obj, place) });
     // Only the silhouettes that materially shape a room cast sun shadows. Small props and
     // detailed joinery otherwise add hundreds of shadow draws and self-shadow artefacts.
     const sunCasters = new Set(['sofa', 'lounge', 'dining', 'sideboard', 'coffee', 'bed',

@@ -9,6 +9,13 @@ const cache = new Map();
 
 export let maxAnisotropy = 8;
 export const setMaxAnisotropy = (v) => { maxAnisotropy = v; };
+/**
+ * Longest texture edge (px). Phones ("Schnell") get 1024: the 2K veneer and floor maps would
+ * otherwise cost ≈ 22 MB of GPU memory each (with mip chain) and slow uploads for no visible gain
+ * at phone resolutions. Set before the materials are created.
+ */
+let textureCap = 4096;
+export const setTextureCap = (px) => { textureCap = px; };
 
 function finish(tex, { srgb = false, size = 1 } = {}) {
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -21,9 +28,20 @@ function finish(tex, { srgb = false, size = 1 } = {}) {
 
 function loadBitmap(name) {
   if (!cache.has(name)) {
-    cache.set(name, new Promise((res, rej) => loader.load(LIB + name, res, undefined, rej)));
+    cache.set(name, new Promise((res, rej) => loader.load(LIB + name, res, undefined, rej)).then(fitBitmap));
   }
   return cache.get(name);
+}
+
+/** Downscales a decoded bitmap to the texture cap (off the main thread where supported). */
+async function fitBitmap(bmp) {
+  const k = textureCap / Math.max(bmp.width, bmp.height);
+  if (!(k < 1)) return bmp;
+  try {
+    const out = await createImageBitmap(bmp, { resizeWidth: Math.round(bmp.width * k), resizeHeight: Math.round(bmp.height * k), resizeQuality: 'high', premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+    bmp.close?.();
+    return out;
+  } catch { return bmp; }
 }
 
 // ------------------------------------------------------------------ baked procedural textures

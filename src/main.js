@@ -5,11 +5,13 @@ import { ModelLibrary } from './engine/models.js';
 import { ApartmentScene } from './engine/scene.js';
 import { buildSurroundings } from './engine/builders/surroundings.js';
 import { PlanView } from './ui/plan2d.js';
+import { Layout } from './ui/layout.js';
 import { ROOMS, WALLS, BALCONIES } from './core/geometry.js';
 import { STYLES, DEFAULT_STYLE } from './data/design.js';
 import { roomNotes, LUXURY_PRINCIPLES } from './data/styles.js';
 import PLAN from './data/plan.js';
 import { validateLayout } from './core/validate.js';
+import { setTextureCap } from './engine/textures.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -34,6 +36,9 @@ function toast(msg) {
 }
 
 async function boot() {
+  // repeat visits load textures, skies and models from the device (see sw.js); registered first
+  // thing so that already this visit's downloads end up in its cache
+  if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('sw.js').catch(() => {});
   let viewer;
   try {
     viewer = await new Viewer($('#stage')).init();
@@ -43,6 +48,9 @@ async function boot() {
     return;
   }
   const T = { t0: performance.now() }; const mark = (k) => { T[k] = Math.round(performance.now() - T.t0); };
+  // phones: 1K textures (GPU memory, upload time); the sky downloads while materials build
+  setTextureCap(viewer.quality === 'low' ? 1024 : 4096);
+  viewer.loadHDRI(MOODS[viewer.mood].hdri).catch(() => {});
   progress(0.05, 'Materialien, Hölzer und Stein werden erzeugt …');
   const [M, lib] = await Promise.all([
     createMaterials().then((m) => { mark('materials'); return m; }),
@@ -60,43 +68,62 @@ async function boot() {
   await viewer.setApartment(apartment);
   mark('scene');
   viewer.goto('overview', false);
-  viewer.renderNow();
+  viewer.renderNow({ prime: true });
   mark('firstFrame');
   progress(1, 'Fertig');
   setTimeout(() => $('#loader').classList.add('done'), 250);
   setTimeout(() => { $('#loader').style.display = 'none'; }, 1300);
 
   const ui = new UI(viewer, apartment, { M, lib });
-  window.__app = { viewer, get apartment() { return ui.a; }, M, lib, timing: T, setVariant: (id) => ui.setStyle(id), validate: () => validateLayout(ui.a.items) };
+  window.__app = { viewer, ui, get layout() { return ui.layout; }, get apartment() { return ui.a; }, M, lib, timing: T, setVariant: (id) => ui.setStyle(id), validate: () => validateLayout(ui.a.items) };
   ui.init();
+  // the other moods' skies download in idle time → later mood changes are instant
+  setTimeout(() => viewer.prefetchMoods(), 2500);
 }
 
 class UI {
-  constructor(viewer, apartment, { M, lib }) { this.v = viewer; this.a = apartment; this.M = M; this.lib = lib; }
+  constructor(viewer, apartment, { M, lib }) {
+    this.v = viewer; this.a = apartment; this.M = M; this.lib = lib;
+    // built styles stay cached (detached from the scene): switching back is instant
+    this.cache = new Map([[apartment.style.id, apartment]]);
+  }
 
   get style() { return this.a.style; }
   get notes() { return roomNotes(this.a.style); }
 
   init() {
     this.tabs(); this.toolbar(); this.stylePicker(); this.stations(); this.details(); this.planView(); this.wallsView(); this.conceptView(); this.dialogs();
+    this.layout = new Layout(this.v).init();
+    this.layout.planView = this.plan;
     this.v.on((type, data) => {
       if (type === 'pick') { this.showItem(data); this.plan?.select(data); }
-      if (type === 'station') $$('#stationList button').forEach((b) => b.classList.toggle('active', b.dataset.id === data));
-      if (type === 'mode') $$('#modeSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mode === data));
-      if (type === 'mood') $$('#moodSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mood === data));
-      if (type === 'render') {
-        $$('#renderSeg button').forEach((b) => b.classList.toggle('active', b.dataset.render === data));
-        document.body.classList.toggle('is-realistic', data === 'realistic');
+      if (type === 'station') {
+        $$('#stationList button').forEach((b) => { b.classList.toggle('active', b.dataset.id === data); b.setAttribute('aria-pressed', String(b.dataset.id === data)); });
+        const st = STATIONS.find((s) => s.id === data);
+        $('#chipStationLabel').textContent = st ? st.short : data === 'item' ? 'Objektansicht' : 'Freie Ansicht';
       }
-      if (type === 'converge') $('#converge i').style.width = `${Math.round(data * 100)}%`;
+      if (type === 'mode') $$('#modeSeg button').forEach((b) => { b.classList.toggle('active', b.dataset.mode === data); b.setAttribute('aria-pressed', String(b.dataset.mode === data)); });
+      if (type === 'mood-loading') $$(`#moodSeg button[data-mood="${data}"]`).forEach((b) => b.classList.add('loading'));
+      if (type === 'mood-error') { $$('#moodSeg button').forEach((b) => b.classList.remove('loading')); toast('Himmel konnte nicht geladen werden – Verbindung prüfen'); }
+      if (type === 'mood') $$('#moodSeg button').forEach((b) => { b.classList.remove('loading'); b.classList.toggle('active', b.dataset.mood === data); b.setAttribute('aria-pressed', String(b.dataset.mood === data)); });
+      if (type === 'busy') { const el = $('#busy'); el.textContent = data ?? ''; el.classList.toggle('show', !!data); }
+      if (type === 'render') {
+        $$('#renderSeg button').forEach((b) => { b.classList.toggle('active', b.dataset.render === data); b.setAttribute('aria-pressed', String(b.dataset.render === data)); });
+        document.body.classList.toggle('is-realistic', data !== 'standard');
+        document.body.classList.toggle('is-photo', data === 'photo');
+      }
+      if (type === 'photo') this.photoStatus(data);
+      if (type === 'converge') this.setConverge(data);
     });
-    this.showRoom('living');
-    if (window.matchMedia('(max-width: 700px)').matches) { $('#details').classList.add('hidden'); $('#stations').classList.add('collapsed'); $('[data-collapse="stations"]').textContent = '+'; }
+    this.showRoom('living', { reveal: this.layout.state.layout === 'desktop' });
   }
+
+  setConverge(k) { $$('.converge i').forEach((i) => { i.style.width = `${Math.round(k * 100)}%`; }); }
 
   tabs() {
     $$('.tabs button').forEach((b) => b.addEventListener('click', () => {
-      $$('.tabs button').forEach((x) => x.classList.toggle('active', x === b));
+      $$('.tabs button').forEach((x) => { x.classList.toggle('active', x === b); x.setAttribute('aria-selected', String(x === b)); });
+      this.layout?.closeSheet(); this.layout?.setImmersive(false);
       $$('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + b.dataset.view));
       if (b.dataset.view === 'plan') this.plan.render();
       this.v.renderer.setAnimationLoop(b.dataset.view === '3d' ? () => this.v.loop() : null);
@@ -110,15 +137,19 @@ class UI {
       if (b.dataset.mode === 'walk') v.goto(STATIONS.find((s) => s.id === v.station)?.mode === 'walk' ? v.station : 'living');
       else v.goto('overview');
     }));
-    $('#moodSeg').innerHTML = Object.entries(MOODS).map(([k, m]) => `<button data-mood="${k}" class="${k === v.mood ? 'active' : ''}">${m.label}</button>`).join('');
+    $('#moodSeg').innerHTML = Object.entries(MOODS).map(([k, m]) => `<button data-mood="${k}" class="${k === v.mood ? 'active' : ''}" aria-pressed="${k === v.mood}">${m.label}</button>`).join('');
     $$('#moodSeg button').forEach((b) => b.addEventListener('click', () => v.applyMood(b.dataset.mood)));
-    $('#renderSeg').innerHTML = Object.entries(RENDER_MODES).map(([k, m]) => `<button data-render="${k}" title="${esc(m.title)}" class="${k === v.renderMode ? 'active' : ''}">${esc(m.label)}</button>`).join('');
+    $('#renderSeg').innerHTML = Object.entries(RENDER_MODES).map(([k, m]) => `<button data-render="${k}" title="${esc(m.title)}" class="${k === v.renderMode ? 'active' : ''}" aria-pressed="${k === v.renderMode}">${esc(m.label)}</button>`).join('');
     $$('#renderSeg button').forEach((b) => b.addEventListener('click', () => {
       v.setRenderMode(b.dataset.render);
       if (b.dataset.render === 'realistic') toast('Realistisch: globale Beleuchtung und Spiegelungen in Echtzeit – das Bild beruhigt sich nach ≈ 1 s Stillstand.');
+      if (b.dataset.render === 'photo') toast('Fotorealistisch: Pathtracing startet, sobald die Kamera ruht – nach wenigen Sekunden entrauscht die KI das Bild.');
     }));
     $('#engineBadge').textContent = `${v.backend} · three.js r186`;
-    $('#exposure').addEventListener('input', (e) => v.setExposure(+e.target.value));
+    const exp = $('#exposure');
+    exp.addEventListener('input', (e) => v.setExposure(+e.target.value));
+    // double click / double tap on the slider: back to neutral exposure
+    exp.addEventListener('dblclick', () => { exp.value = '1'; v.setExposure(1); });
     const q = $('#quality');
     q.value = v.quality;
     if (v.qualityAuto) q.title += ` · automatisch gewählt für ${v.gpu || 'diese GPU'}`;
@@ -127,26 +158,36 @@ class UI {
     $('[data-collapse="stations"]').addEventListener('click', (e) => { const p = $('#stations'); p.classList.toggle('collapsed'); e.target.textContent = p.classList.contains('collapsed') ? '+' : '–'; });
   }
 
+  /** Progress pill of the path tracer (samples, denoising). */
+  photoStatus(s) {
+    const el = $('#photoStatus');
+    const label = { building: s.message ?? 'Szene wird aufbereitet …', tracing: `Pathtracing · ${s.samples}/${s.target} Samples${s.denoised ? ' · KI-entrauscht' : ''}`,
+      denoising: 'KI-Entrauschung (Open Image Denoise) …', done: `Fertig · ${s.target} Samples · KI-entrauscht`, error: s.message ?? 'Pathtracing nicht verfügbar', idle: '' }[s.state] ?? '';
+    el.textContent = label;
+    el.classList.toggle('show', !!label);
+    this.setConverge(Math.min(1, s.samples / s.target));
+  }
+
   stations() {
-    $('#stationList').innerHTML = STATIONS.map((s) => `<button data-id="${s.id}">${esc(s.label)}</button>`).join('');
+    $('#stationList').innerHTML = STATIONS.map((s) => `<button data-id="${s.id}" aria-pressed="false">${esc(s.label)}</button>`).join('');
     $$('#stationList button').forEach((b) => b.addEventListener('click', () => {
       this.v.goto(b.dataset.id);
       const st = STATIONS.find((s) => s.id === b.dataset.id);
       const room = { living: 'living', sofa: 'living', dining: 'living', hall: 'living', kitchen: 'kitchen', bedroom: 'bedroom', wardrobe: 'bedroom', office: 'office', library: 'office', bath: 'bath', guestbath: 'guestbath', balcony: 'balcony1' }[st.id];
-      if (room) this.showRoom(room);
+      if (room) this.showRoom(room, { reveal: !this.layout?.state.compact });
     }));
   }
 
   details() {
     this.detailEl = $('#detailBody');
     $('#detailClose').onclick = () => $('#details').classList.add('hidden');
-    setTimeout(() => $('#hint').classList.add('off'), 9000);
   }
 
-  showRoom(id) {
+  /** Room concept in the details panel; on phones it only updates (reveal = false keeps the view free). */
+  showRoom(id, { reveal = true } = {}) {
     const n = this.notes[id]; if (!n) return;
     this.lastRoom = id;
-    $('#details').classList.remove('hidden');
+    if (reveal) $('#details').classList.remove('hidden');
     const r = ROOMS.find((x) => x.id === id), items = this.a.byRoom.get(id) ?? [];
     this.detailEl.innerHTML = `<span class="chip">Raum</span><h3>${esc(n.title)}</h3>
       ${r ? `<div class="sub">${f2(r.wfl)} m² Wohnfläche · Plan ${f2(r.planArea)} m²</div>` : ''}
@@ -161,9 +202,11 @@ class UI {
     const dims = it.size ? `${Math.round(it.size[0] * 100)} × ${Math.round(it.size[1] * 100)} cm` : '–';
     this.detailEl.innerHTML = `<span class="chip">${esc(it.cat)}</span><h3>${esc(it.name)}</h3><p class="spec">${esc(it.spec)}</p>
       <dl><dt>Raum</dt><dd>${esc(roomName(it.room))}</dd><dt>Grundfläche</dt><dd>${dims}</dd>${it.elevation ? `<dt>Höhe</dt><dd>${f2(it.elevation)} m</dd>` : ''}</dl>
+      ${(it.products ?? []).map(p => `<p><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${p.quantity} × ${esc(p.retailer)} ${esc(p.name)}</a><br><small>Recherche ${esc(p.checked)}</small></p>`).join('')}
       <p style="margin-top:14px"><button class="ghost" id="btnFocus">Heranzoomen</button> <button class="ghost" id="btnRoom">Raumkonzept</button></p>`;
     $('#btnFocus').onclick = () => this.v.focusItem(id);
     $('#btnRoom').onclick = () => this.showRoom(it.room);
+    if (this.layout?.state.compact) $('#btnFocus').addEventListener('click', () => $('#details').classList.remove('expanded'));
   }
 
   planView() {
@@ -171,6 +214,7 @@ class UI {
       onSelect: ({ item, room }) => {
         if (item) { this.planInfoItem(item); this.v.select(item); }
         if (room) this.planInfoRoom(room);
+        this.layout?.revealPlanInfo();
       },
     });
     for (const [id, key] of [['#layerFurniture', 'furniture'], ['#layerDims', 'dims'], ['#layerLabels', 'labels'], ['#layerSoft', 'soft']]) {
@@ -182,6 +226,8 @@ class UI {
       $$('#roomList button').forEach((x) => x.classList.toggle('active', x === b));
       this.plan.focusRoom(b.dataset.room || null);
       if (b.dataset.room) this.planInfoRoom(b.dataset.room);
+      // phones: the chosen room becomes visible above the sheet
+      if (this.layout?.state.compact) this.layout.setPlanSheet('peek');
     }));
     this.planInfoRoom('living');
   }
@@ -190,7 +236,7 @@ class UI {
     const n = this.notes[id]; const items = (this.a.byRoom.get(id) ?? []).filter((i) => i.footprint && i.plan !== false && i.plan !== 'soft');
     $('#planInfo').innerHTML = `<div class="eyebrow">Raum</div><h4>${esc(n?.title ?? roomName(id))}</h4><p class="sub">${esc(n?.zoning ?? '')}</p>
       <table class="inv">${items.map((i) => `<tr data-item="${i.id}"><td>${this.plan.number(i.id)}</td><td>${esc(i.name)}</td></tr>`).join('')}</table>`;
-    $$('#planInfo tr').forEach((tr) => tr.addEventListener('click', () => { this.plan.select(tr.dataset.item); this.planInfoItem(tr.dataset.item); }));
+    $$('#planInfo tr').forEach((tr) => tr.addEventListener('click', () => { this.plan.select(tr.dataset.item); this.planInfoItem(tr.dataset.item); $('#planSide').scrollTop = 0; }));
   }
 
   planInfoItem(id) {
@@ -256,8 +302,15 @@ class UI {
     const bar = $('#styleBar'), ids = Object.keys(STYLES);
     const render = () => {
       bar.innerHTML = Object.values(STYLES).map((x, i) => `<button role="tab" data-style="${x.id}" aria-selected="${x.id === this.style.id}" class="${x.id === this.style.id ? 'active' : ''}" title="${esc(x.label)} – ${esc(x.claim)}">
-        <span class="dots">${x.palette.slice(1, 6).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span>${esc(x.short)}<kbd>${i + 1}</kbd></button>`).join('');
+        <span class="dots">${x.palette.slice(1, 6).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span><span class="lbl">${esc(x.short)}</span><kbd>${i + 1}</kbd></button>`).join('');
       $$('#styleBar button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
+      // compact layouts: chip with the current style + bottom sheet with all four
+      const cur = this.style;
+      $('#chipStyleDots').innerHTML = cur.palette.slice(1, 5).map(([, c]) => `<i style="background:${c}"></i>`).join('');
+      $('#chipStyleLabel').textContent = cur.short;
+      $('#styleSheet').innerHTML = Object.values(STYLES).map((x, i) => `<button class="style-card ${x.id === cur.id ? 'active' : ''}" data-style="${x.id}" aria-pressed="${x.id === cur.id}">
+        <span class="dots">${x.palette.slice(1, 8).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span><strong>${esc(x.label)}</strong><small>${esc(x.claim)}</small><kbd>${i + 1}</kbd></button>`).join('');
+      $$('#styleSheet button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
     };
     this.renderStylePicker = render;
     render();
@@ -276,9 +329,13 @@ class UI {
     $('#switching').textContent = `${STYLES[id].label} wird eingerichtet …`;
     try {
       await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 20)));
-      const a = new ApartmentScene(this.M, this.lib, id).build();
+      const a = this.cache.get(id) ?? new ApartmentScene(this.M, this.lib, id).build();
+      this.cache.delete(id); this.cache.set(id, a); // most recently used last
       const cam = { pos: this.v.camera.position.clone(), target: this.v.controls.target.clone() };
-      await this.v.setApartment(a);
+      await this.v.setApartment(a, { keepPrevious: true });
+      // keep the most recent styles (phones: current + one); older ones free their GPU memory
+      const keep = { low: 2, medium: 3, high: 4 }[this.v.quality] ?? 2;
+      for (const [k, old] of this.cache) { if (this.cache.size <= keep) break; if (old !== a) { old.dispose(); this.cache.delete(k); } }
       this.v.camera.position.copy(cam.pos); this.v.controls.target.copy(cam.target); this.v.controls.update();
       this.a = a;
       try { localStorage.setItem(STORE_KEY, id); } catch { /* storage unavailable */ }
@@ -287,7 +344,7 @@ class UI {
       this.planInfoRoom('living');
       this.conceptView();
       this.renderStylePicker();
-      this.showRoom(ROOMS.some((r) => r.id === this.lastRoom) ? this.lastRoom : 'living');
+      this.showRoom(ROOMS.some((r) => r.id === this.lastRoom) ? this.lastRoom : 'living', { reveal: !$('#details').classList.contains('hidden') });
       document.title = `WE 13 · ${STYLES[id].short} · Raumatelier`;
       toast(`Stilwelt: ${STYLES[id].label}`);
     } catch (e) {
@@ -311,6 +368,12 @@ class UI {
     $('#btnExport').onclick = () => $('#dlgExport').showModal();
     $('#btnSources').onclick = () => { this.sources(); $('#dlgSources').showModal(); };
     $$('dialog [data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+    // tap on the dimmed backdrop closes (the click target is the <dialog> itself only there)
+    $$('dialog').forEach((d) => d.addEventListener('click', (e) => {
+      if (e.target !== d) return;
+      const r = d.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
+    }));
     $$('[data-export]').forEach((b) => b.addEventListener('click', () => { this.export(b.dataset.export); $('#dlgExport').close(); }));
   }
 
@@ -335,8 +398,9 @@ class UI {
     const v = this.v;
     if (kind === 'png') this.download(await v.screenshot(), this.shotName());
     if (kind === 'png4k') {
-      const pr = v.renderer.getPixelRatio(); v.renderer.setPixelRatio(pr * 2); v.resize();
-      try { this.download(await v.screenshot(), this.shotName('_2x')); } finally { v.renderer.setPixelRatio(pr); v.resize(); }
+      // resize() recomputes the pixel ratio from the preset – the export factor must go through it
+      v.exportScale = 2; v.resize();
+      try { this.download(await v.screenshot(), this.shotName('_2x')); } finally { v.exportScale = 1; v.resize(); }
     }
     if (kind === 'svg') this.download(this.blob(this.plan.svg({ forExport: true }), 'image/svg+xml'), `WE13_grundriss_${this.style.id}.svg`);
     if (kind === 'csvWalls') {
@@ -348,8 +412,8 @@ class UI {
       this.download(this.blob(csv(rows), 'text/csv'), 'WE13_wandmasse.csv');
     }
     if (kind === 'csvItems') {
-      const rows = [['ID', 'Position', 'Raum', 'Kategorie', 'Breite_cm', 'Tiefe_cm', 'Spezifikation', 'X_m', 'Y_m', 'Drehung_grad']];
-      for (const i of this.a.items) rows.push([i.id, i.name, roomName(i.room), i.cat, i.size ? Math.round(i.size[0] * 100) : '', i.size ? Math.round(i.size[1] * 100) : '', i.spec, i.pos[0].toFixed(3), i.pos[1].toFixed(3), ((i.yaw * 180) / Math.PI).toFixed(1)]);
+      const rows = [['ID', 'Position', 'Raum', 'Kategorie', 'Breite_cm', 'Tiefe_cm', 'Spezifikation', 'X_m', 'Y_m', 'Drehung_grad', 'Produktquellen', 'Recherchiert']];
+      for (const i of this.a.items) rows.push([i.id, i.name, roomName(i.room), i.cat, i.size ? Math.round(i.size[0] * 100) : '', i.size ? Math.round(i.size[1] * 100) : '', i.spec, i.pos[0].toFixed(3), i.pos[1].toFixed(3), ((i.yaw * 180) / Math.PI).toFixed(1), (i.products ?? []).map(p => `${p.quantity}x ${p.url}`).join(' | '), (i.products ?? []).map(p => p.checked).join(' | ')]);
       this.download(this.blob(csv(rows), 'text/csv'), `WE13_moebelliste_${this.style.id}.csv`);
     }
     if (kind === 'json') {
