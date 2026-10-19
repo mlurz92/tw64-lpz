@@ -47,8 +47,8 @@ try {
   });
   console.log('shell:', shell);
   if (!shell.returnClosed || !shell.windowBaseClosed || shell.gaps.length) errors.push(`Open wall shell: ${JSON.stringify(shell)}`);
-  if (!shellOnly) for (const id of ['metallic', 'soft', 'brutal', 'quiet']) {
-    if (id !== 'metallic') await page.evaluate((style) => window.__app.setVariant(style), id);
+  if (!shellOnly) for (const id of ['travertin', 'espresso', 'stone', 'ivory', 'metallic', 'soft', 'brutal', 'quiet']) {
+    await page.evaluate((style) => window.__app.setVariant(style), id);
     await page.waitForFunction((style) => window.__app.apartment.style.id === style, id, { timeout: 60_000 });
     const audit = await page.evaluate(() => window.__app.validate());
     const facing = audit.issues.filter((issue) => issue.type === 'Ausrichtung');

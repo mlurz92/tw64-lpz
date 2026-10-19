@@ -12,6 +12,7 @@ import { roomNotes, LUXURY_PRINCIPLES } from './data/styles.js';
 import PLAN from './data/plan.js';
 import { validateLayout } from './core/validate.js';
 import { setTextureCap } from './engine/textures.js';
+import { renderConcept, PdfViewer } from './ui/concept.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -92,6 +93,7 @@ class UI {
   get notes() { return roomNotes(this.a.style); }
 
   init() {
+    this.pdf = new PdfViewer($('#dlgPdf'));
     this.tabs(); this.toolbar(); this.stylePicker(); this.stations(); this.details(); this.planView(); this.wallsView(); this.conceptView(); this.dialogs();
     this.layout = new Layout(this.v).init();
     this.layout.planView = this.plan;
@@ -202,9 +204,11 @@ class UI {
     const dims = it.size ? `${Math.round(it.size[0] * 100)} × ${Math.round(it.size[1] * 100)} cm` : '–';
     this.detailEl.innerHTML = `<span class="chip">${esc(it.cat)}</span><h3>${esc(it.name)}</h3><p class="spec">${esc(it.spec)}</p>
       <dl><dt>Raum</dt><dd>${esc(roomName(it.room))}</dd><dt>Grundfläche</dt><dd>${dims}</dd>${it.elevation ? `<dt>Höhe</dt><dd>${f2(it.elevation)} m</dd>` : ''}</dl>
-      ${(it.products ?? []).map(p => `<p><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${p.quantity} × ${esc(p.retailer)} ${esc(p.name)}</a><br><small>Recherche ${esc(p.checked)}</small></p>`).join('')}
+      ${(it.products ?? []).map(p => `<p>${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${p.quantity} × ${esc(p.retailer)} ${esc(p.name)}</a>` : `${p.quantity} × ${esc(p.retailer)} ${esc(p.name)}`}<br><small>${p.pos ? `Pos. ${esc(p.checked)}` : `Recherche ${esc(p.checked)}`}</small></p>`).join('')}
+      ${this.style.concept ? `<p class="sub">Aus ${esc(this.style.data.title.replace(/^WE 13 – /, ''))} · <button class="linkish" id="btnPdfPlan">Möblierungsplan im Original ↗</button></p>` : ''}
       <p style="margin-top:14px"><button class="ghost" id="btnFocus">Heranzoomen</button> <button class="ghost" id="btnRoom">Raumkonzept</button></p>`;
     $('#btnFocus').onclick = () => this.v.focusItem(id);
+    if ($('#btnPdfPlan')) $('#btnPdfPlan').onclick = () => this.pdf.open(this.style.data.file, this.style.data.title, 1);
     $('#btnRoom').onclick = () => this.showRoom(it.room);
     if (this.layout?.state.compact) $('#btnFocus').addEventListener('click', () => $('#details').classList.remove('expanded'));
   }
@@ -265,15 +269,32 @@ class UI {
     sel.addEventListener('change', draw); $('#wallMin').addEventListener('input', draw); draw();
   }
 
+  /** Style tabs of the concept page: the four PDF concepts first, then the earlier style worlds. */
+  styleTabsHtml() {
+    const tab = (x) => `<button role="tab" data-style="${x.id}" class="${x.id === this.style.id ? 'active' : ''}"><span class="dots">${x.palette.slice(1, 7).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span>${esc(x.label)}</button>`;
+    const all = Object.values(STYLES);
+    return `<div class="style-tabs" role="tablist" aria-label="Stilwelt"><span class="tab-group">Möblierungskonzepte (PDF)</span>${all.filter((x) => x.concept).map(tab).join('')}<span class="tab-group">Stilwelten</span>${all.filter((x) => !x.concept).map(tab).join('')}</div>`;
+  }
+
   conceptView() {
     const st = this.style;
+    if (st.concept) {
+      renderConcept($('#concept'), st, {
+        styleTabs: this.styleTabsHtml(), viewer: this.pdf,
+        itemOf: (pos) => this.a.items.find((i) => i.code === pos || i.products?.some((p) => p.pos === pos)),
+        onItem: (pos) => { const it = this.a.items.find((i) => i.code === pos) ?? this.a.items.find((i) => i.products?.some((p) => p.pos === pos)); if (!it) return; $('.tabs button[data-view="3d"]').click(); this.v.focusItem(it.id); this.showItem(it.id); },
+      });
+      $$('#concept .style-tabs button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
+      return;
+    }
     const items = this.a.items.filter((i) => i.plan !== false || ['Leuchte', 'Kunst', 'Textil'].includes(i.cat)).filter((i) => !i.id.startsWith('spot-'));
     const byRoom = new Map();
     for (const it of items) { if (!byRoom.has(it.room)) byRoom.set(it.room, []); byRoom.get(it.room).push(it); }
     const brands = { Westwing: items.filter((i) => /Westwing/.test(i.name + i.spec)).length, IKEA: items.filter((i) => /IKEA/.test(i.name + i.spec)).length };
-    const moods = [st.moodboard, ...Object.values(STYLES).map((x) => x.moodboard).filter((m) => m !== st.moodboard), 'Farben neu.png', 'kitchen-reference.png'];
+    const moods = [st.moodboard, ...Object.values(STYLES).map((x) => x.moodboard).filter((m) => m && m !== st.moodboard), 'Farben neu.png', 'kitchen-reference.png'];
+    const concepts = Object.values(STYLES).filter((x) => x.concept);
     $('#concept').innerHTML = `
-      <div class="style-tabs" role="tablist" aria-label="Stilwelt">${Object.values(STYLES).map((x) => `<button role="tab" data-style="${x.id}" class="${x.id === st.id ? 'active' : ''}"><span class="dots">${x.palette.slice(1, 7).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span>${esc(x.label)}</button>`).join('')}</div>
+      ${this.styleTabsHtml()}
       <div class="concept-hero"><div><div class="eyebrow">Einrichtungskonzept WE 13 · Stilwelt</div><h2>${esc(st.label)}</h2><p class="lead"><strong>${esc(st.claim)}</strong> ${esc(st.lead)} Jede Position ist maßstäblich aus dem Ausführungsplan abgeleitet; Wege, Türschwenkbereiche und Fensterzugänge bleiben frei.</p>
         <p class="sub">${brands.Westwing} Positionen Westwing · ${brands.IKEA} Positionen IKEA · übrige: Bestand, Einbauten nach Maß, Deko</p></div>
       <div class="swatches">${st.palette.map(([n, c]) => `<div class="swatch" style="background:${c}"><span>${esc(n)}<br>${c}</span></div>`).join('')}</div></div>
@@ -291,24 +312,29 @@ class UI {
       ${[...byRoom].map(([room, list]) => list.map((i, k) => `<tr data-item="${i.id}"><td>${k + 1}</td><td>${esc(i.name)}</td><td>${esc(roomName(room))}</td><td>${esc(i.cat)}</td><td class="num">${i.size ? `${Math.round(i.size[0] * 100)} × ${Math.round(i.size[1] * 100)}` : '–'}</td><td>${esc(i.spec)}</td></tr>`).join('')).join('')}
       </tbody></table></div>
       <p class="sub" style="margin-top:10px">Westwing- und IKEA-Artikel mit Herstellermaßen (Recherche 09/2026); Maßanfertigungen und Stilreferenzen sind gekennzeichnet. Verfügbarkeit, Bezüge/Farben, Liefermaße und Montageabstände vor Bestellung prüfen.</p>
+      <div class="eyebrow" style="margin-top:36px">Möblierungskonzepte · Original-PDF</div>
+      <div class="concept-cards">${concepts.map((x) => `<div class="card"><span class="dots">${x.palette.slice(0, 9).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span><h4>${esc(x.data.title.replace(/^WE 13 – /, ''))}</h4><p class="sub">${x.data.items.length} Positionen · ${x.data.total.toLocaleString('de-DE', { minimumFractionDigits: 2 })} € · ${x.data.pages.length} Seiten</p><p><button class="ghost small" data-concept-style="${x.id}">Als Stilwelt öffnen</button> <button class="ghost small" data-concept-pdf="${x.id}">Original ansehen ↗</button></p></div>`).join('')}</div>
       <div class="eyebrow" style="margin-top:36px">Stilreferenzen</div>
       <div class="moodboards">${moods.map((m) => `<a href="assets/${encodeURIComponent(m)}" target="_blank" rel="noopener"><img loading="lazy" src="assets/${encodeURIComponent(m)}" alt="${esc(m.replace('.png', ''))}"></a>`).join('')}</div>`;
     $$('#concept tr[data-item]').forEach((tr) => tr.addEventListener('click', () => { $('.tabs button[data-view="3d"]').click(); this.v.focusItem(tr.dataset.item); this.showItem(tr.dataset.item); }));
     $$('#concept .style-tabs button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
+    $$('#concept [data-concept-style]').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.conceptStyle)));
+    $$('#concept [data-concept-pdf]').forEach((b) => b.addEventListener('click', () => { const d = STYLES[b.dataset.conceptPdf].data; this.pdf.open(d.file, d.title, 1); }));
   }
 
-  /** Stilwelt-Leiste direkt im 3D-Viewer (plus Tasten 1–4). */
+  /** Stilwelt-Leiste direkt im 3D-Viewer (plus Tasten 1–8). */
   stylePicker() {
     const bar = $('#styleBar'), ids = Object.keys(STYLES);
     const render = () => {
-      bar.innerHTML = Object.values(STYLES).map((x, i) => `<button role="tab" data-style="${x.id}" aria-selected="${x.id === this.style.id}" class="${x.id === this.style.id ? 'active' : ''}" title="${esc(x.label)} – ${esc(x.claim)}">
+      bar.innerHTML = Object.values(STYLES).map((x, i, all) => `${i > 0 && all[i - 1].concept && !x.concept ? '<span class="bar-sep" aria-hidden="true"></span>' : ''}<button role="tab" data-style="${x.id}" aria-selected="${x.id === this.style.id}" class="${x.id === this.style.id ? 'active' : ''}${x.concept ? ' is-concept' : ''}" title="${esc(x.label)} – ${esc(x.claim)}">
         <span class="dots">${x.palette.slice(1, 6).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span><span class="lbl">${esc(x.short)}</span><kbd>${i + 1}</kbd></button>`).join('');
+      bar.querySelector('button.active')?.scrollIntoView({ block: 'nearest', inline: 'center' });
       $$('#styleBar button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
       // compact layouts: chip with the current style + bottom sheet with all four
       const cur = this.style;
       $('#chipStyleDots').innerHTML = cur.palette.slice(1, 5).map(([, c]) => `<i style="background:${c}"></i>`).join('');
       $('#chipStyleLabel').textContent = cur.short;
-      $('#styleSheet').innerHTML = Object.values(STYLES).map((x, i) => `<button class="style-card ${x.id === cur.id ? 'active' : ''}" data-style="${x.id}" aria-pressed="${x.id === cur.id}">
+      $('#styleSheet').innerHTML = Object.values(STYLES).map((x, i, all) => `${i === 0 ? '<div class="sheet-group">Möblierungskonzepte (PDF)</div>' : all[i - 1].concept && !x.concept ? '<div class="sheet-group">Stilwelten</div>' : ''}<button class="style-card ${x.id === cur.id ? 'active' : ''}" data-style="${x.id}" aria-pressed="${x.id === cur.id}">
         <span class="dots">${x.palette.slice(1, 8).map(([, c]) => `<i style="background:${c}"></i>`).join('')}</span><strong>${esc(x.label)}</strong><small>${esc(x.claim)}</small><kbd>${i + 1}</kbd></button>`).join('');
       $$('#styleSheet button').forEach((b) => b.addEventListener('click', () => this.setStyle(b.dataset.style)));
     };
@@ -382,7 +408,10 @@ class UI {
       <table><thead><tr><th>Referenz</th><th>Vektor</th><th>Planmaß</th></tr></thead><tbody>${PLAN.calibration.map((c) => `<tr><td>${esc(c.label)}</td><td class="num">${f2(c.vector)} pt</td><td class="num">${f2(c.reference)} m</td></tr>`).join('')}</tbody></table>
       <p style="margin-top:14px">Raumhöhe 2,56 m (RH laut Raumstempel), Türen 2,135 m lichte Höhe, bodentiefe Fenster (BRH 0,00). Wandstärken werden aus den Abständen benachbarter Raumkonturen abgeleitet (Außenwände 36 cm).</p>
       <p><strong>Wichtig:</strong> Planungs- und Visualisierungswerkzeug, kein Bestandsaufmaß. Vor Möbelkauf, Einbau oder Montage lichte Maße, Türanschläge, Heizkörper, Elektro- und Sanitäranschlüsse vor Ort prüfen.</p>
-      <p><a href="assets/TWL62-64_WE%2013_AP%20ELT%20HLS_M100_A4_20260601.pdf" target="_blank" rel="noopener">Architektenplan (PDF) öffnen ↗</a></p>`;
+      <p><a href="assets/TWL62-64_WE%2013_AP%20ELT%20HLS_M100_A4_20260601.pdf" target="_blank" rel="noopener">Architektenplan (PDF) öffnen ↗</a></p>
+      <p style="margin-top:14px"><strong>Möblierungskonzepte (Original-PDF):</strong> Positionen, Ausrichtung und Maße der vier Konzept-Stilwelten stammen aus den Vektordaten der Möblierungspläne (Blatt 1, M 1:50); deren Rohbaukontur deckt sich mit diesem Plan auf ≤ 12 mm.</p>
+      <ul>${Object.values(STYLES).filter((x) => x.concept).map((x) => `<li><button class="linkish" data-src-pdf="${x.id}">${esc(x.data.title)}</button></li>`).join('')}</ul>`;
+    $$('#sourcesBody [data-src-pdf]').forEach((b) => b.addEventListener('click', () => { const d = STYLES[b.dataset.srcPdf].data; $('#dlgSources').close(); this.pdf.open(d.file, d.title, 1); }));
   }
 
   shotName(suffix = '') { return `WE13_${this.style.id}_${this.v.station ?? 'ansicht'}_${this.v.renderMode}${suffix}.png`; }

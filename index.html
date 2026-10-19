@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>WE 13 · Raumatelier</title>
-  <meta name="description" content="WE 13 Täubchenweg 62–64, Leipzig – maßstäbliche, fotorealistische Einrichtungsplanung (WebGPU) in vier Stilwelten (Refined Metallic Japandi, Japandi × Soft Brutalism, Refined Brutalism, Cool Quiet Luxury) mit Westwing- und IKEA-Möbeln.">
+  <meta name="description" content="WE 13 Täubchenweg 62–64, Leipzig – maßstäbliche, fotorealistische Einrichtungsplanung (WebGPU) mit den vier Möblierungskonzepten (Travertin · Kupfer · Salbei, Espresso · Petrol · Chrom, Stone · Petrol · Salbei, Ivory · Petrol · Messing) als begehbare Stilwelten samt Original-PDF, Produktliste und Budget sowie vier weiteren Stilwelten.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%232f2e2b%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-size=%2214%22 text-anchor=%22middle%22 fill=%22%23efe7da%22 font-family=%22serif%22%3E13%3C/text%3E%3C/svg%3E">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
@@ -68,7 +68,7 @@
         <button class="icon close" id="detailClose" aria-label="Details schließen">✕</button>
         <div id="detailBody"></div>
       </aside>
-      <nav class="style-bar" id="styleBar" role="tablist" aria-label="Stilwelt direkt im 3D-Modell umschalten (Tasten 1–4)"></nav>
+      <nav class="style-bar" id="styleBar" role="tablist" aria-label="Stilwelt direkt im 3D-Modell umschalten (Tasten 1–8)"></nav>
       <!-- compact layouts (phones): chips open bottom sheets instead of permanent panels -->
       <div class="chip-row" id="chipRow">
         <button class="chip-btn" id="chipStation" data-sheet-open="sheetStations" aria-haspopup="dialog"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg><span id="chipStationLabel">Übersicht</span></button>
@@ -99,7 +99,7 @@
       <div class="sheet" id="sheetStations" role="dialog" aria-label="Kamerastationen" aria-hidden="true"><div class="sheet-grip"></div><div class="sheet-head"><span class="eyebrow">Kamerastationen</span><button class="icon" data-sheet-close aria-label="Schließen">✕</button></div><div class="sheet-body" data-slot="stations"></div></div>
       <div class="sheet" id="sheetStyle" role="dialog" aria-label="Stilwelt" aria-hidden="true"><div class="sheet-grip"></div><div class="sheet-head"><span class="eyebrow">Stilwelt</span><button class="icon" data-sheet-close aria-label="Schließen">✕</button></div><div class="sheet-body style-sheet" id="styleSheet"></div></div>
       <div class="sheet" id="sheetView" role="dialog" aria-label="Ansicht und Licht" aria-hidden="true"><div class="sheet-grip"></div><div class="sheet-head"><span class="eyebrow">Licht · Darstellung · Qualität</span><button class="icon" data-sheet-close aria-label="Schließen">✕</button></div><div class="sheet-body view-sheet" data-slot="tools"></div></div>
-      <div class="hint" id="hint">Ziehen: drehen · Rechtsklick/Umschalt: verschieben · Rad: zoomen · Klick auf Möbel: Details · 1–4: Stilwelt · F: Vollbild</div>
+      <div class="hint" id="hint">Ziehen: drehen · Rechtsklick/Umschalt: verschieben · Rad: zoomen · Klick auf Möbel: Details · 1–8: Stilwelt · F: Vollbild</div>
       <div class="photo-status" id="photoStatus" role="status" aria-live="polite"></div>
       <div class="engine-badge" id="engineBadge" title="Grafik-Backend"></div>
     </section>
@@ -155,6 +155,8 @@
     <div class="dlg-head"><div><div class="eyebrow">Nachvollziehbar planen</div><h3>Maßgrundlage</h3></div><button class="icon" data-close>✕</button></div>
     <div id="sourcesBody"></div>
   </dialog>
+
+  <dialog id="dlgPdf" class="pdf-dialog" aria-label="Original-PDF"></dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="src/main.js"></script>

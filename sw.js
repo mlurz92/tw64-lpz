@@ -8,7 +8,7 @@
 //
 // Replaced or regenerated asset files keep their names, so bump VERSION when files under
 // assets/ change: the new worker then starts with an empty asset cache.
-const VERSION = 'we13-v1';
+const VERSION = 'we13-v2';
 const ASSETS = `${VERSION}-assets`, CODE = `${VERSION}-code`;
 
 self.addEventListener('install', () => self.skipWaiting());

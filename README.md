@@ -1,6 +1,6 @@
 # WE 13 · Raumatelier
 
-Maßstäbliche, fotorealistische Einrichtungsplanung der Wohnung **WE 13, Täubchenweg 62–64, Leipzig (3. OG, 97,56 m², Blick in den Park)** in **vier umschaltbaren Stilwelten** – alle aus den Moodboards abgeleitet, alle auf dieselbe gemessene Raumgeometrie geplant und mit kuratierten, auf Moodboard und aktuelle Luxus-Einrichtungsregeln geprüften Möbeln, Leuchten und Teppichen von **Westwing** und **IKEA** möbliert (89 Artikel mit Händlerlink, Ausführung und Herstellermaßen, Recherche 28.09.2026).
+Maßstäbliche, fotorealistische Einrichtungsplanung der Wohnung **WE 13, Täubchenweg 62–64, Leipzig (3. OG, 97,56 m², Blick in den Park)**: die **vier Möblierungskonzepte (Original-PDF)** als begehbare 3D-Stilwelten mit vollständiger Konzeptdokumentation, Produktliste und Budget (siehe *Möblierungskonzepte*) und zusätzlich **vier weitere umschaltbare Stilwelten** – alle aus den Moodboards abgeleitet, alle auf dieselbe gemessene Raumgeometrie geplant und mit kuratierten, auf Moodboard und aktuelle Luxus-Einrichtungsregeln geprüften Möbeln, Leuchten und Teppichen von **Westwing** und **IKEA** möbliert (89 Artikel mit Händlerlink, Ausführung und Herstellermaßen, Recherche 28.09.2026).
 
 Die Anwendung verbindet die aus dem Ausführungsplan rekonstruierte Raumgeometrie mit einer vollständig durchgeplanten Möblierung und rendert sie in drei Stufen:
 
@@ -21,9 +21,42 @@ python3 -m http.server 8000
 
 Danach <http://localhost:8000> öffnen. Auf Smartphone und Tablet lässt sich die App über *Zum Home-Bildschirm* wie eine native App installieren (Web-App-Manifest, Vollbild ohne Browserleiste); ein Service Worker hält Texturen, Himmel, Modelle und Engine auf dem Gerät vor – ab dem zweiten Besuch lädt die App ohne erneuten Download der ≈ 60 MB und funktioniert offline (Details unter *Tempo & Touch*). Die Pathtracing-Engine (≈ 1 MB) und die Denoiser-Gewichte (1,8 MB) werden erst beim ersten Wechsel auf *Fotorealistisch* geladen. Empfohlen: aktueller Chrome/Edge (WebGPU), Safari 26+ oder Firefox 141+ mit aktivierter Hardwarebeschleunigung. Ohne WebGPU schaltet die Engine automatisch auf ihr **WebGL-2-Backend** (gleiches Bild, etwas langsamer); das aktive Backend steht unten links im 3D-Viewer (Desktop). Direktlink auf eine Stilwelt: `#stil=metallic`, `#stil=soft`, `#stil=brutal`, `#stil=quiet` (die zuletzt gewählte Stilwelt wird gemerkt).
 
+## Möblierungskonzepte (Original-PDF, neu 10/2026)
+
+Die vier Möblierungskonzepte liegen unverändert als Original unter `assets/konzepte/` und sind vollständig in die App integriert – als **begehbare 3D-Stilwelt**, als **lesbare Konzeptseite** und als **Original-PDF** im eingebauten Viewer.
+
+| Taste | Stilwelt | Original | Seiten | Positionen | Budget lt. PDF |
+|---|---|---|---|---|---|
+| 1 | **Konzept 1 · Travertin · Kupfer · Salbei** (Fassung 4) | `WE13_Konzept-1_Travertin-Kupfer-Salbei.pdf` | 28 | 86 | 31.237,29 € |
+| 2 | **Konzept 2 · Espresso · Petrol · Chrom** | `WE13_Konzept-2_Espresso-Petrol-Chrom.pdf` | 24 | 83 | 30.324,47 € |
+| 3 | **Konzept 2 · Stone · Petrol · Salbei** | `WE13_Konzept-2_Stone-Petrol-Salbei.pdf` | 22 | 80 | 31.911,27 € |
+| 4 | **Konzept 2 · Ivory · Petrol · Messing** | `WE13_Konzept-2_Ivory-Petrol-Messing.pdf` | 30 | 96 | 35.153,65 € |
+
+Konzept 1 ist die Startansicht (`#stil=travertin`, `#stil=espresso`, `#stil=stone`, `#stil=ivory`); die bisherigen Stilwelten folgen auf den Tasten 5–8.
+
+**3D – Position, Ausrichtung und Maß wie im Möblierungsplan.** Die Konzeptpläne (Blatt 1, M 1:50 auf A2) sind aus demselben Rohbau-Grundriss gezeichnet wie `src/data/plan.js`: Ein Ähnlichkeitsfit auf die Raumkontur bildet sie mit ≤ 12 mm Abweichung auf die App-Geometrie ab (`tools/concepts/plan_objects.py`). Aus den Vektordaten jedes Plans werden Mittelpunkt, Größe und Drehung aller gezeichneten Positionen (W1 … B3) übernommen; wandstehende Möbel werden parallel an die gemessene Wand gesetzt. Die Modelle entstehen parametrisch aus den Herstellermaßen der Produktliste und der dort genannten Ausführung (`src/data/concepts/models.js`), Höhen aus den Wandansichten (TV-Mitte, Bild-Unterkante 0,95 m, Spiegelmitte, Wandleuchte H 1,80, Pendel-Unterkante 65–70 cm über der Tischplatte). Umgesetzt sind je Konzept:
+
+- Wandgestaltung: Lamellenfeld 2,40 m eckbündig ab Westwand (Eiche geölt bzw. Walnuss), Farbflächen und Color-Drenching (Salbei-Kopfteilwand; Limewash Sand und Espresso-Schlafsuite inkl. Decke; Greige No. 35; Galerie-Weiß No. 36 an Wand und Decke mit Petrol-Kopfteilwand), Profilrahmen (Konzept 1), Kunst und Spiegel an den angegebenen Wänden.
+- Möbel, Leuchten, Textilien: Sofa, Sessel, Couch- und Beistelltische, Lowboard, Vitrine/Tylko, Esstisch mit vier Stühlen in 45°-Stellung und Nischenstuhl, Sideboard, Garderobe PAX 150 × 35 mit Deckenblende, Schuhschrank, Konsole, Bett mit Nachttischen, PAX 300 × 58, Schlafsofa, Schreibtisch, Drehstuhl, Regal, BOAXEL, Balkonmöbel, alle Decken-, Pendel-, Steh-, Tisch- und Wandleuchten (mit Lichtquelle), Teppiche, Vorhänge an Deckenschienen (Schlafzimmer zweilagig) und das Styling der Konzepte.
+- Jede Position trägt ihre Produktliste: Name, Ausführung, Maße, Händler, Menge, Einzel- und Gesamtpreis, Lieferzeit und den Händlerlink aus dem PDF (Detailkarte im 3D, Grundriss mit den PDF-Positionsnummern, CSV-/JSON-Export).
+- Küche (Bestand), Bad und Dusche/WC bleiben wie geplant; die Konzepte ersetzen Diele, HWR, Balkone, Vorhänge und Grundlicht.
+
+**Konzeptseite (*Konzept & Möbel*).** Alle Kapitel der PDFs als lesbare Seite: Leitidee, Kennzahlen, Farbpaletten, sämtliche Tabellen (Materialsystem, Hebel, Licht, Textilien, Teppichnachweis, Planungsanker, Wandgestaltung, Stauraum, Prüfprotokoll, Bestellreihenfolge, Optionen) und die vollständige Produktliste mit Preisen, Lieferzeiten und Händlerlinks – jede Position springt per „3D“ zum Objekt. Möblierungsplan, Raumkonzepte mit Planausschnitten, Wandansichten und Moodboards werden als Originalseiten vektorscharf gerendert. Texte und Zahlen sind wörtlich aus den PDFs übernommen; die Produktsummen ergeben exakt die Raum- und Gesamtsummen der Originale.
+
+**Original-Viewer.** Jede Seite jedes Konzepts lässt sich im eingebauten Viewer (pdf.js, Legacy-Build für ältere Safari-/Chromium-Versionen) mit Seitenleiste, Seitensprung, Zoom bis 600 % (Pinch, Strg + Mausrad, ±) und Download öffnen – auch offline, der Service Worker hält die PDFs vor.
+
+**Datenpipeline (reproduzierbar).**
+
+```bash
+node -e "import('./src/data/plan.js').then(m=>require('fs').writeFileSync('/tmp/plan.json', JSON.stringify(m.default)))"
+python3 -I tools/concepts/build.py assets/konzepte /tmp/plan.json   # → src/data/concepts/{travertin,espresso,stone,ivory}.js
+```
+
+`extract_products.py` (Produkttabellen inkl. Links, Abgleich gegen die Raumsummen), `extract_document.py` (Kapitel, Absätze, Aufzählungen, Tabellen, Paletten, Kennzahlen, Text der Planseiten), `plan_objects.py` (Planobjekte in App-Metern). Abhängigkeiten: `pdfplumber`, `pypdf`, `numpy`.
+
 ## Stilwelten (Möblierungsvarianten)
 
-Umschalten **direkt im 3D-Viewer** über die Stilwelt-Leiste oben (oder die Tasten **1–4**) bzw. über die Reiter unter *Konzept & Möbel*. Beim Wechsel werden Möblierung, Wandgestaltung, Material-Thema, Einbaufronten und Leuchten neu aufgebaut; Kamera, Lichtstimmung, Darstellung (Standard/Realistisch) und Ansicht bleiben erhalten. Grundriss, Möbelliste, Planungsprüfung und Exporte folgen automatisch.
+Umschalten **direkt im 3D-Viewer** über die Stilwelt-Leiste oben (Tasten **1–4** für die Möblierungskonzepte, **5–8** für die folgenden Stilwelten) bzw. über die Reiter unter *Konzept & Möbel*. Beim Wechsel werden Möblierung, Wandgestaltung, Material-Thema, Einbaufronten und Leuchten neu aufgebaut; Kamera, Lichtstimmung, Darstellung (Standard/Realistisch) und Ansicht bleiben erhalten. Grundriss, Möbelliste, Planungsprüfung und Exporte folgen automatisch.
 
 Jede Stilwelt ist ein geschlossenes, am Moodboard ausgerichtetes Set aus belegten Händlerartikeln (Westwing Collection, GUBI, Ferm Living, Maytoni, Nova Luce über Westwing sowie IKEA). Budget-Serienmöbel der Vorversion (offene BESTÅ-Korpusse, BILLY, LISABO, GLADOM, ÅRSTID, MICKE, HYLTARP) und der moodboardfremde hellblaue Wolke-Bezug wurden ersetzt. **Highlight jeder Stilwelt ist ein monumentaler Rundtisch Ø 150–152 cm mit sechs Stühlen.** Die gewünschte Glasvitrine rechts neben der Küche bleibt in allen Varianten: **IKEA RUDSTA Anthrazit, 80 × 37 × 120 cm**, Glasfront, Glasseiten, Glasböden.
 
@@ -352,7 +385,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 ├── sw.js                         # Service Worker: Assets cache-first, vendor/ stale-while-revalidate, Code network-first
 ├── styles/app.css                # UI (Japandi-Designsprache, Geräteklassen, Sheets, Druckansicht, Stilwelt-Leiste)
 ├── src/
-│   ├── main.js                   # Bootstrap, UI-Logik, Stilwechsel (Leiste + Tasten 1–4), Export
+│   ├── main.js                   # Bootstrap, UI-Logik, Stilwechsel (Leiste + Tasten 1–8), Export
 │   ├── core/geometry.js          # Planmaße → Meter, Wandrahmen, Wandstärken, Polygon-Utilities
 │   ├── core/validate.js          # Planungsprüfung (Kontur, Kollision, Türen, Fenster, Ausrichtung)
 │   ├── data/plan.js              # rekonstruierte Planvektoren (Quelle der Maßketten)
@@ -360,6 +393,7 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   ├── data/productModels.js     # 3D-Modell je Katalogartikel aus Herstellermaßen und Oberfläche
 │   ├── data/styles.js            # vier Stilwelten, Luxus-Prinzipien, gemeinsame Raumtexte
 │   ├── data/design.js            # gemeinsamer Bestand (Küche, Bäder nach HLS-Plan, HWR, Diele) + Stil-Möblierung
+│   ├── data/concepts/            # Möblierungskonzepte: <id>.js (aus den PDFs erzeugt), index.js (Stilwelten, Platzierung), models.js
 │   ├── engine/
 │   │   ├── viewer.js             # WebGPU-Renderer, Render-Modi, Shader-Vorkompilierung, Lightprobe, Belichtung, Spiegel,
 │   │   │                         # Kameras, Stimmungen, Gesten (Tippen, Doppeltippen, Pinch-/Mausrad-Gehen)
@@ -377,12 +411,15 @@ Die Raumkonturen stammen aus den Vektordaten des Ausführungsplans und sind auf 
 │   │       ├── bath.js           # Vorwände 1,18 m, Maßspiegel, Waschtrockner-Nische, Laufen VAL/Meda, V&B Collaro, Duravit Tulum
 │   │       └── kitchen.js · decor.js · textiles.js · common.js
 │   ├── ui/layout.js              # Geräteklasse/Eingabeart, Bottom-Sheets (Wischgesten), Joystick, Vollbild, Umhängen der Bedienelemente
+│   ├── ui/concept.js             # Konzeptseite (Kapitel, Tabellen, Produktliste) + Original-PDF-Viewer (pdf.js)
 │   └── ui/plan2d.js              # SVG-Grundriss (Maus, Touch, Pinch-Zoom, Doppeltippen, Maßstabsbalken – ohne Neuaufbau beim Zoomen)
-├── vendor/                       # three.js r186 (WebGPU + TSL, gemeinsamer Kern), Add-ons, Pathtracer-Bundle,
+├── vendor/                       # three.js r186 (WebGPU + TSL, gemeinsamer Kern), Add-ons, Pathtracer-Bundle, pdfjs/ (pdf.js 6.4 legacy),
 │                                 # BVH-Worker (lokal, offline, versionsfest)
-├── assets/                       # CC0-Assets (lib/), OIDN-Gewichte (lib/oidn/), App-Symbole (icons/), Ausführungsplan (PDF), Moodboards
+├── assets/                       # CC0-Assets (lib/), OIDN-Gewichte (lib/oidn/), App-Symbole (icons/), Ausführungsplan (PDF), Moodboards,
+│                                 # konzepte/ (die vier Möblierungskonzepte im Original)
 └── tools/
     ├── build-vendor.mjs          # erzeugt vendor/ aus npm-Paketen (esbuild; auch unter Windows)
+    ├── concepts/                 # PDF-Extraktion der Möblierungskonzepte (build.py, extract_*.py, plan_objects.py)
     ├── smoke.mjs                 # Browserprüfung aller Stile, Wandhülle und aller drei Render-Modi
     ├── catalog-check.mjs         # Möbelbelege und Geometrie aller vier Stilwelten
     ├── perf-photo.mjs            # vergleichbarer Startzeit-Benchmark
@@ -424,6 +461,7 @@ Neue Varianten benötigen einen Eintrag in `STYLES` (`src/data/styles.js`) und e
 
 - three.js: MIT (siehe `vendor/LICENSE.three.txt`)
 - three-gpu-pathtracer, three-mesh-bvh, oidn-web: MIT (siehe `vendor/LICENSE.*.txt`); Open-Image-Denoise-Gewichte: Apache 2.0 (Intel RenderKit)
+- pdf.js (Mozilla): Apache 2.0 (siehe `vendor/LICENSE.pdfjs.txt`)
 - Texturen, HDRIs und Modelle: [Poly Haven](https://polyhaven.com), CC0
 - Schriften: Cormorant Garamond, Jost (Google Fonts, OFL)
 - Westwing, IKEA, Laufen, Villeroy & Boch, Duravit und genannte Produktnamen sind Marken der jeweiligen Inhaber; die Modelle sind vereinfachte Nachbildungen zu Planungszwecken.

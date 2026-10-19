@@ -178,7 +178,7 @@ export function buildArchitecture(M, { cut = ROOM_HEIGHT, finish = FINISH, wallO
   }
   for (const r of ROOMS) {
     // 3 cm overlap into the walls: no hairline crack (sky showing through) at wall/ceiling joints
-    const c = ceilingMesh(offsetPolygon(r.points, 0.03), M.ceiling, H);
+    const c = ceilingMesh(offsetPolygon(r.points, 0.03), M[FINISH[r.id].ceiling ?? 'ceiling'], H);
     c.userData.room = r.id; ceilings.add(c);
   }
   // Roof slab above the apartment (casts the sun shadow, closes the facade between the window
