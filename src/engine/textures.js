@@ -495,6 +495,37 @@ export function artwork(kind = 'landscape', { seed = 1, w = 1200, h = 900 } = {}
     ctx.fillStyle = '#ddd5c7'; ctx.fillRect(w * 0.2, h * 0.14, w * 0.6, h * 0.72);
     ctx.fillStyle = '#7b8570'; ctx.fillRect(w * 0.2, h * 0.5, w * 0.3, h * 0.36);
     for (let i = 0; i < 120; i++) stroke(w * 0.2 + rnd() * w * 0.6, h * 0.14 + rnd() * h * 0.72, 80 + rnd() * 200, 5 + rnd() * 14, `rgba(255,255,255,${0.03 + rnd() * 0.05})`, (rnd() - 0.5) * 0.6);
+  } else if (kind.startsWith('abstract:')) {
+    // Concept artworks (hand-painted canvases of the Möblierungskonzepte): ground colour + the
+    // palette of the product description, painted as layered fields, gestural strokes or bands.
+    const [, list, style = 'abstract'] = kind.split(':');
+    const pal = list.split(',');
+    ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, w, h);
+    const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+    if (style === 'strokes') {
+      for (let i = 0; i < 40; i++) stroke(rnd() * w, rnd() * h, w * (0.3 + rnd() * 0.5), 20 + rnd() * 60, rgba(pal[0], 0.25), (rnd() - 0.5) * 0.4);
+      for (let k = 1; k < pal.length; k++) for (let i = 0; i < 14; i++) {
+        const y = h * (0.25 + rnd() * 0.5), x = w * (0.2 + rnd() * 0.6);
+        stroke(x, y, w * (0.25 + rnd() * 0.35), 18 + rnd() * 50, rgba(pal[k], 0.35 + rnd() * 0.4), (rnd() - 0.5) * 1.2);
+      }
+    } else if (style === 'bands') {
+      let y = 0;
+      while (y < h) { const bh = h * (0.08 + rnd() * 0.22), col = pal[1 + Math.floor(rnd() * (pal.length - 1))]; ctx.fillStyle = rgba(col, 0.55 + rnd() * 0.35); ctx.fillRect(0, y, w, bh); for (let i = 0; i < 30; i++) stroke(rnd() * w, y + rnd() * bh, w * 0.6, 6 + rnd() * 16, rgba(pal[0], 0.08), (rnd() - 0.5) * 0.05); y += bh * (0.85 + rnd() * 0.3); }
+    } else if (style === 'leaf') {
+      ctx.strokeStyle = rgba(pal[1], 0.9); ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.92); ctx.bezierCurveTo(w * 0.46, h * 0.6, w * 0.56, h * 0.35, w * 0.5, h * 0.1); ctx.stroke();
+      for (let i = 0; i < 9; i++) { const t = 0.15 + i * 0.085, s = i % 2 ? 1 : -1; ctx.fillStyle = rgba(pal[1 + (i % (pal.length - 1))], 0.75); ctx.beginPath(); ctx.ellipse(w * (0.5 + s * 0.07), h * (0.92 - t * 0.85), w * 0.08, h * 0.03, s * 0.6, 0, Math.PI * 2); ctx.fill(); }
+    } else {
+      for (let k = 1; k < pal.length; k++) {
+        const bx = w * (0.08 + rnd() * 0.5), by = h * (0.08 + rnd() * 0.5), bw = w * (0.25 + rnd() * 0.45), bh = h * (0.2 + rnd() * 0.45);
+        ctx.fillStyle = rgba(pal[k], 0.7); ctx.beginPath();
+        ctx.moveTo(bx, by + bh * 0.1); ctx.bezierCurveTo(bx + bw * 0.3, by - bh * 0.1, bx + bw * 0.8, by + bh * 0.05, bx + bw, by + bh * 0.2);
+        ctx.bezierCurveTo(bx + bw * 1.05, by + bh * 0.6, bx + bw * 0.7, by + bh, bx + bw * 0.4, by + bh * 0.95);
+        ctx.bezierCurveTo(bx, by + bh * 0.9, bx - bw * 0.05, by + bh * 0.4, bx, by + bh * 0.1); ctx.fill();
+        for (let i = 0; i < 60; i++) stroke(bx + rnd() * bw, by + rnd() * bh, bw * (0.3 + rnd() * 0.5), 6 + rnd() * 20, rgba(pal[(k + 1) % pal.length], 0.05 + rnd() * 0.08), (rnd() - 0.5) * 0.8);
+      }
+      for (let i = 0; i < 90; i++) stroke(rnd() * w, rnd() * h, w * (0.1 + rnd() * 0.3), 3 + rnd() * 9, rgba(pal[Math.floor(rnd() * pal.length)], 0.1 + rnd() * 0.2), rnd() * Math.PI);
+    }
   } else if (kind === 'relief') {
     // plaster relief (off-white), relies mostly on normal map
     ctx.fillStyle = '#e4ddd1'; ctx.fillRect(0, 0, w, h);

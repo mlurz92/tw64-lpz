@@ -35,6 +35,8 @@ export const frameOf = (id) => {
  */
 export function furnish({ M, productM = M, lib, add: register, style = STYLES[DEFAULT_STYLE] }) {
   const add = (meta, object, placement) => {
+    // concept positions carry their own product data (PDF product list)
+    if (style.concept && meta.code) { register(meta, typeof object === 'function' ? object() : object, placement); return; }
     const sourced = catalogueFurniture(ctx, meta, object, placement);
     register(sourced.meta, sourced.object, sourced.placement);
   };
@@ -44,26 +46,30 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
   const fr = Object.fromEntries(['W02', 'W07', 'W08', 'W10', 'W11', 'W13', 'W14', 'W16', 'W18', 'W19', 'W20', 'W21', 'W22', 'W23', 'W28', 'W47', 'W48', 'W49', 'W50'].map((id) => [id, frameOf(id)]));
   const ctx = { M, productM, lib, add, style, at, abs, grp, fr, F, K, B, D, T, C, THREE, box, boxOn, cyl, rboxOn, helpers: { lemons, laptop, shelfStyled, styleShelf, chairsAround } };
   ctx.product = (key, opts) => productModel(ctx, key, opts);
+  ctx.frameOf = frameOf;
   const S = style.decor ?? {};
+  const own = style.replaces ?? new Set();
 
   // ======================================================================== STIL: Wohnen, Essen, Schlafen, Arbeiten
   style.furnish(ctx);
 
-  // ======================================================================== DIELE (Einbau, alle Stile)
-  // Garderobe: 2 IKEA PAX-Korpusse 35 cm tief mit 4 TONSTAD-Türen (Holzton der Stilwelt), deckenhoch.
-  const hw = slotProducts(style.id, 'hall-wardrobe');
-  add({ id: 'hall-wardrobe', room: 'living', cat: 'Möbel', productName: 'IKEA PAX Garderobenschrank 200 cm mit TONSTAD-Türen', note: 'Deckenblende bauseits, Innenausstattung (Stange, Schuhböden) nach Bedarf', size: [2.0, 0.4] },
-    () => ctx.product(hw[0].key, { count: 2, door: hw[1].key, ceiling: true }), at(fr.W14, 1.0095, 0.2));
-  // Konsole mit Rundspiegel: wandhängende Larsen (Oberkante 0,95 m) bzw. Calary auf Beinen.
-  const con = styleProduct(style.id, 'console'), [cw2, cd2, chh] = con.size, hanging = con.key === 'larsenConsole', conTop = hanging ? 0.95 : chh;
-  const conObj = hanging ? (() => { const g = new THREE.Group(); boxOn(g, productM.oakDark, [cw2, chh, cd2], [0, conTop - chh, 0]); box(g, M.matteBlack, [cw2 - 0.04, 0.003, 0.003], [0, conTop - chh / 2, cd2 / 2 + 0.001]); return g; })() : ctx.product(con.key);
-  add({ id: 'console', room: 'living', cat: 'Möbel', note: 'Rundspiegel Ø 80 darüber', size: [cw2, cd2] },
-    grp([conObj], [D.roundMirror(M, 0.8), 0, conTop + 0.62, -cd2 / 2 + 0.02], [D.tray(M, 'bronzeDark', 0.34, 0.2), -0.28, conTop, 0.0], [D.vase(M, 'bottle', S.vase ?? 'stonewareCharcoal', 1.2), 0.3, conTop, -0.02], [D.branches(M, { h: 0.5, seed: 14 }), 0.3, conTop + 0.39, -0.02]),
-    at(fr.W13, 0.75, cd2 / 2 + 0.01));
-  add({ id: 'art-hall', room: 'living', name: (S.hallArt?.name ?? 'Tuschezeichnung').replace(/\d+ × \d+/, '90 × 120'), cat: 'Kunst', spec: 'Rahmen Eiche, Schattenfuge', size: [0.9, 0.03], plan: false },
-    D.artwork(M, S.hallArt?.kind ?? 'ink', 0.9, 1.2, { seed: 7 }), at(fr.W02, 0.55, 0.025, 0, 1.45));
-  add({ id: 'picture-light-hall', room: 'living', name: 'Bilderleuchte LED 40 cm', cat: 'Leuchte', spec: `${S.lightMetalName ?? 'Bronze gebürstet'}, 2700 K (Galerielicht im Eingang)`, size: [0.4, 0.18], plan: false },
-    D.pictureLight(M, 0.4, { mat: S.lightMetal ?? 'bronze', drop: 0.69, lumens: 160 }), at(fr.W02, 0.55, 0, 0, 1.45 + 0.69));
+  if (!own.has('hall')) {
+    // ======================================================================== DIELE (Einbau, alle Stile)
+    // Garderobe: 2 IKEA PAX-Korpusse 35 cm tief mit 4 TONSTAD-Türen (Holzton der Stilwelt), deckenhoch.
+    const hw = slotProducts(style.id, 'hall-wardrobe');
+    add({ id: 'hall-wardrobe', room: 'living', cat: 'Möbel', productName: 'IKEA PAX Garderobenschrank 200 cm mit TONSTAD-Türen', note: 'Deckenblende bauseits, Innenausstattung (Stange, Schuhböden) nach Bedarf', size: [2.0, 0.4] },
+      () => ctx.product(hw[0].key, { count: 2, door: hw[1].key, ceiling: true }), at(fr.W14, 1.0095, 0.2));
+    // Konsole mit Rundspiegel: wandhängende Larsen (Oberkante 0,95 m) bzw. Calary auf Beinen.
+    const con = styleProduct(style.id, 'console'), [cw2, cd2, chh] = con.size, hanging = con.key === 'larsenConsole', conTop = hanging ? 0.95 : chh;
+    const conObj = hanging ? (() => { const g = new THREE.Group(); boxOn(g, productM.oakDark, [cw2, chh, cd2], [0, conTop - chh, 0]); box(g, M.matteBlack, [cw2 - 0.04, 0.003, 0.003], [0, conTop - chh / 2, cd2 / 2 + 0.001]); return g; })() : ctx.product(con.key);
+    add({ id: 'console', room: 'living', cat: 'Möbel', note: 'Rundspiegel Ø 80 darüber', size: [cw2, cd2] },
+      grp([conObj], [D.roundMirror(M, 0.8), 0, conTop + 0.62, -cd2 / 2 + 0.02], [D.tray(M, 'bronzeDark', 0.34, 0.2), -0.28, conTop, 0.0], [D.vase(M, 'bottle', S.vase ?? 'stonewareCharcoal', 1.2), 0.3, conTop, -0.02], [D.branches(M, { h: 0.5, seed: 14 }), 0.3, conTop + 0.39, -0.02]),
+      at(fr.W13, 0.75, cd2 / 2 + 0.01));
+    add({ id: 'art-hall', room: 'living', name: (S.hallArt?.name ?? 'Tuschezeichnung').replace(/\d+ × \d+/, '90 × 120'), cat: 'Kunst', spec: 'Rahmen Eiche, Schattenfuge', size: [0.9, 0.03], plan: false },
+      D.artwork(M, S.hallArt?.kind ?? 'ink', 0.9, 1.2, { seed: 7 }), at(fr.W02, 0.55, 0.025, 0, 1.45));
+    add({ id: 'picture-light-hall', room: 'living', name: 'Bilderleuchte LED 40 cm', cat: 'Leuchte', spec: `${S.lightMetalName ?? 'Bronze gebürstet'}, 2700 K (Galerielicht im Eingang)`, size: [0.4, 0.18], plan: false },
+      D.pictureLight(M, 0.4, { mat: S.lightMetal ?? 'bronze', drop: 0.69, lumens: 160 }), at(fr.W02, 0.55, 0, 0, 1.45 + 0.69));
+  }
 
   // ======================================================================== KÜCHE (Bestand)
   add({ id: 'kitchen-row', room: 'kitchen', name: 'Küchenzeile (Bestand) 360 cm', cat: 'Küche', spec: 'Nussbaum, Granit gesprenkelt, Backofen/Kühlschrank in Hochschränken', size: [3.6, 0.6] },
@@ -121,36 +127,40 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
   add({ id: 'towel-guest', room: 'guestbath', name: 'Handtuchheizkörper 60 × 180', cat: 'Sanitär', spec: `${BLACK}, W44`, size: [0.6, 0.1], anchor: 'back' },
     B.towelRadiator(M), abs(11.716, 7.04, -Math.PI / 2));
 
-  // ======================================================================== HWR
-  add({ id: 'utility-tall', room: 'utility', cat: 'Möbel', note: 'Wandmontage 25 cm über Boden, in der Nische W50', size: [0.6, 0.321] },
-    () => ctx.product('utility', { count: 2 }), at(fr.W50, 0.42, 0.1605));
-  add({ id: 'utility-tech', room: 'utility', name: 'Unterverteilung + Router', cat: 'Technik', spec: 'Bestand, frei zugänglich', size: [0.6, 0.1], plan: false },
-    techPanel(M), at(fr.W47, 1.72, 0.0, 0, 1.0));
-  add({ id: 'utility-manifold', room: 'utility', name: 'Heizkreisverteiler (Bestand)', cat: 'Technik', spec: 'Revisionsschrank', size: [0.8, 0.12] },
-    grp([boxOn(new THREE.Group(), M.plasticWhite, [0.8, 0.7, 0.12], [0, 0.3, 0]).parent]), at(fr.W48, 0.55, 0.06));
-  add({ id: 'utility-shelf', room: 'utility', cat: 'Möbel', note: 'mit zwei Körben', size: [0.89, 0.3] },
-    () => ctx.product('ivar'), at(fr.W49, 0.62, 0.15));
+  if (!own.has('utility')) {
+    // ======================================================================== HWR
+    add({ id: 'utility-tall', room: 'utility', cat: 'Möbel', note: 'Wandmontage 25 cm über Boden, in der Nische W50', size: [0.6, 0.321] },
+      () => ctx.product('utility', { count: 2 }), at(fr.W50, 0.42, 0.1605));
+    add({ id: 'utility-tech', room: 'utility', name: 'Unterverteilung + Router', cat: 'Technik', spec: 'Bestand, frei zugänglich', size: [0.6, 0.1], plan: false },
+      techPanel(M), at(fr.W47, 1.72, 0.0, 0, 1.0));
+    add({ id: 'utility-manifold', room: 'utility', name: 'Heizkreisverteiler (Bestand)', cat: 'Technik', spec: 'Revisionsschrank', size: [0.8, 0.12] },
+      grp([boxOn(new THREE.Group(), M.plasticWhite, [0.8, 0.7, 0.12], [0, 0.3, 0]).parent]), at(fr.W48, 0.55, 0.06));
+    add({ id: 'utility-shelf', room: 'utility', cat: 'Möbel', note: 'mit zwei Körben', size: [0.89, 0.3] },
+      () => ctx.product('ivar'), at(fr.W49, 0.62, 0.15));
+  }
 
-  // ======================================================================== BALKONE
-  const bl = S.balcony ?? {};
-  add({ id: 'b1-lounge-a', room: 'balcony1', cat: 'Outdoor', note: `Auflage Outdoor-Leinen ${bl.cushionName ?? 'Greige'}`, size: [0.69, 0.78] },
-    () => ctx.product('outdoor', { cushion: bl.cushion ?? 'linenGrey' }), abs(11.6, 9.98, 0));
-  add({ id: 'b1-lounge-b', room: 'balcony1', cat: 'Outdoor', note: `Auflage Outdoor-Leinen ${bl.cushionName ?? 'Greige'}`, size: [0.69, 0.78] },
-    () => ctx.product('outdoor', { cushion: bl.cushion ?? 'linenGrey' }), abs(12.9, 9.98, 0));
-  add({ id: 'b1-table', room: 'balcony1', cat: 'Outdoor', note: 'nur Tisch aus dem Set, Stühle auf Balkon 2', size: [0.55, 0.54] },
-    grp([ctx.product('bistro')], [D.candle(M, 0.14, 0.05), 0, 0.7, 0]), abs(12.25, 10.22, 0));
-  add({ id: 'b1-tree', room: 'balcony1', name: 'Kübelpflanze groß', cat: 'Pflanze', spec: 'Pflanzkübel Ø 50', size: [0.5, 0.5], round: true },
-    D.pottedPlant(M, lib, 'pachira', { height: 1.9, potR: 0.25, potH: 0.55, seed: 3, maxR: 0.34, potMat: bl.pot ?? 'stonewareCharcoal' }), abs(10.74, 9.66, 0));
-  add({ id: 'b1-fern', room: 'balcony1', name: 'Farn im Kübel', cat: 'Pflanze', spec: '', size: [0.4, 0.4], round: true },
-    D.pottedPlant(M, lib, 'fern', { height: 0.8, potR: 0.2, potH: 0.42, potMat: 'stonewareSand', shape: 'cylinder', maxR: 0.3 }), abs(10.55, 11.7, 0));
-  add({ id: 'b2-bistro', room: 'balcony2', cat: 'Outdoor', size: [1.44, 0.54] },
-    grp([ctx.product('bistro', { chairs: true })], [D.vase(M, 'bud', 'stonewareSage', 1), 0.05, 0.7, 0]), abs(3.95, 20.15, -0.14));
-  add({ id: 'b2-plant', room: 'balcony2', name: 'Kübelpflanze', cat: 'Pflanze', spec: '', size: [0.44, 0.44], round: true },
-    D.pottedPlant(M, lib, 'pachiraMid', { height: 1.6, potR: 0.22, potH: 0.5, seed: 5, maxR: 0.3, potMat: bl.pot ?? 'stonewareCharcoal' }), abs(4.9, 19.66, 0));
+  if (!own.has('balconies')) {
+    // ======================================================================== BALKONE
+    const bl = S.balcony ?? {};
+    add({ id: 'b1-lounge-a', room: 'balcony1', cat: 'Outdoor', note: `Auflage Outdoor-Leinen ${bl.cushionName ?? 'Greige'}`, size: [0.69, 0.78] },
+      () => ctx.product('outdoor', { cushion: bl.cushion ?? 'linenGrey' }), abs(11.6, 9.98, 0));
+    add({ id: 'b1-lounge-b', room: 'balcony1', cat: 'Outdoor', note: `Auflage Outdoor-Leinen ${bl.cushionName ?? 'Greige'}`, size: [0.69, 0.78] },
+      () => ctx.product('outdoor', { cushion: bl.cushion ?? 'linenGrey' }), abs(12.9, 9.98, 0));
+    add({ id: 'b1-table', room: 'balcony1', cat: 'Outdoor', note: 'nur Tisch aus dem Set, Stühle auf Balkon 2', size: [0.55, 0.54] },
+      grp([ctx.product('bistro')], [D.candle(M, 0.14, 0.05), 0, 0.7, 0]), abs(12.25, 10.22, 0));
+    add({ id: 'b1-tree', room: 'balcony1', name: 'Kübelpflanze groß', cat: 'Pflanze', spec: 'Pflanzkübel Ø 50', size: [0.5, 0.5], round: true },
+      D.pottedPlant(M, lib, 'pachira', { height: 1.9, potR: 0.25, potH: 0.55, seed: 3, maxR: 0.34, potMat: bl.pot ?? 'stonewareCharcoal' }), abs(10.74, 9.66, 0));
+    add({ id: 'b1-fern', room: 'balcony1', name: 'Farn im Kübel', cat: 'Pflanze', spec: '', size: [0.4, 0.4], round: true },
+      D.pottedPlant(M, lib, 'fern', { height: 0.8, potR: 0.2, potH: 0.42, potMat: 'stonewareSand', shape: 'cylinder', maxR: 0.3 }), abs(10.55, 11.7, 0));
+    add({ id: 'b2-bistro', room: 'balcony2', cat: 'Outdoor', size: [1.44, 0.54] },
+      grp([ctx.product('bistro', { chairs: true })], [D.vase(M, 'bud', 'stonewareSage', 1), 0.05, 0.7, 0]), abs(3.95, 20.15, -0.14));
+    add({ id: 'b2-plant', room: 'balcony2', name: 'Kübelpflanze', cat: 'Pflanze', spec: '', size: [0.44, 0.44], round: true },
+      D.pottedPlant(M, lib, 'pachiraMid', { height: 1.6, potR: 0.22, potH: 0.5, seed: 5, maxR: 0.3, potMat: bl.pot ?? 'stonewareCharcoal' }), abs(4.9, 19.66, 0));
+  }
 
   // ======================================================================== VORHÄNGE & GRUNDLICHT
   const cur = S.curtains ?? {};
-  const curtains = [['W06', 0, 'curtain'], ['W06', 1, 'curtain'], ['W04', 0, 'curtain'], ['W03', 0, 'curtain'], ['W21', 0, 'curtainDim'], ['W21', 1, 'curtainDim'], ['W27', 0, 'curtain'], ['W27', 1, 'curtain']];
+  const curtains = own.has('curtains') ? [] : [['W06', 0, 'curtain'], ['W06', 1, 'curtain'], ['W04', 0, 'curtain'], ['W03', 0, 'curtain'], ['W21', 0, 'curtainDim'], ['W21', 1, 'curtainDim'], ['W27', 0, 'curtain'], ['W27', 1, 'curtain']];
   curtains.forEach(([wid, i, mat], k) => {
     const w = WALLS.find((x) => x.id === wid), o = w.openings[i], f = frameOf(wid);
     // Stack 28 cm beyond each reveal, but never into the neighbouring wall (W06 right window
@@ -163,7 +173,7 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
   // Vorhangvouten (Luxus-Regel „Vorhang von Decke bis Boden“): Deckenblende wand-zu-wand vor der
   // Vorhangschiene, darin eine LED-Linie, die den Stoff von oben streift. Konkave Ecken schließen
   // an die Nachbarwand an, freie Enden erhalten eine Stirnblende.
-  for (const [wid, u0, u1, ret] of [['W06', 0, 5.076, [false, false]], ['W03', 0, 3.725, [false, true]], ['W04', 0, 3.373, [false, true]],
+  for (const [wid, u0, u1, ret] of own.has('pelmets') ? [] : [['W06', 0, 5.076, [false, false]], ['W03', 0, 3.725, [false, true]], ['W04', 0, 3.373, [false, true]],
     ['W21', 0, 3.78, [false, false]], ['W27', 0, 3.51, [false, false]]]) {
     const w = WALLS.find((x) => x.id === wid);
     add({ id: `pelmet-${wid}`, room: w.room, name: 'Vorhangvoute mit LED', cat: 'Leuchte', spec: 'Trockenbau-Deckenblende 20 × 10 cm, wand-zu-wand, LED-Linie 2700 K auf die Vorhänge gerichtet', size: [u1 - u0, 0.2], plan: false, ceiling: true },
@@ -175,10 +185,10 @@ export function furnish({ M, productM = M, lib, add: register, style = STYLES[DE
     ['kitchen', 4.55, 16.15], ['kitchen', 4.35, 17.6], ['bath', 14.95, 6.85], ['bath', 16.0, 6.7], ['guestbath', 10.9, 6.95],
     ['utility', 5.1, 14.55], ['living', 7.3, 9.95], ['living', 6.0, 10.2 + 3.2],
   ];
-  spots.forEach(([room, x, y], i) => add({ id: 'spot-' + i, room, name: 'Einbaustrahler', cat: 'Leuchte', spec: /bath/.test(room) ? 'LED 3000 K, CRI > 95, IP44, entblendet' : 'LED 2700 K, CRI > 95, entblendet', size: [0.09, 0.09], round: true, plan: false, ceiling: true },
+  spots.filter(([room]) => !own.has('spots') || /bath/.test(room)).forEach(([room, x, y], i) => add({ id: 'spot-' + i, room, name: 'Einbaustrahler', cat: 'Leuchte', spec: /bath/.test(room) ? 'LED 3000 K, CRI > 95, IP44, entblendet' : 'LED 2700 K, CRI > 95, entblendet', size: [0.09, 0.09], round: true, plan: false, ceiling: true },
     D.downlight(M, { light: true, lumens: room === 'living' ? 260 : 320, angle: 1.2, color: /bath/.test(room) ? D.NEUTRAL_WARM : undefined }), abs(x, y, 0, 2.56)));
 
-  add({ id: 'sconce-hall', room: 'living', name: 'Wandleuchte linear', cat: 'Leuchte', spec: `${S.metal ?? 'Bronze'}/Opal`, size: [0.05, 0.05], plan: false },
+  if (!own.has('sconce')) add({ id: 'sconce-hall', room: 'living', name: 'Wandleuchte linear', cat: 'Leuchte', spec: `${S.metal ?? 'Bronze'}/Opal`, size: [0.05, 0.05], plan: false },
     D.linearSconce(M), at(fr.W13, 1.3, 0.05, 0, 1.6));
 }
 

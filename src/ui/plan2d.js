@@ -128,8 +128,8 @@ export class PlanView {
       for (const it of visible.filter((i) => i.plan !== 'soft')) s += drawItem(it);
       if (L.labels) {
         visible.filter((i) => i.plan !== 'soft').forEach((it) => {
-          const c = centroid(it.footprint), n = this.number(it.id);
-          s += `<g pointer-events="none"><circle cx="${c[0]}" cy="${c[1]}" r="0.11" fill="#f7f4ee" stroke="#5d554b" stroke-width="0.01"/><text x="${c[0]}" y="${c[1] + 0.045}" font-size="0.12" text-anchor="middle" fill="#2f2e2b">${n}</text></g>`;
+          const c = centroid(it.footprint), n = String(this.number(it.id)), wide = n.length > 2;
+          s += `<g pointer-events="none">${wide ? `<rect x="${c[0] - 0.15}" y="${c[1] - 0.09}" width="0.3" height="0.18" rx="0.09" fill="#2f3a31"/>` : `<circle cx="${c[0]}" cy="${c[1]}" r="0.11" fill="${it.code ? '#2f3a31' : '#f7f4ee'}" stroke="#5d554b" stroke-width="0.01"/>`}<text x="${c[0]}" y="${c[1] + 0.04}" font-size="${wide ? 0.105 : 0.12}" text-anchor="middle" fill="${it.code ? '#f7f4ee' : '#2f2e2b'}">${esc(n)}</text></g>`;
         });
       }
     }
@@ -159,7 +159,12 @@ export class PlanView {
     return s + '</svg>';
   }
 
-  number(id) { return this.apartment.items.filter((i) => i.footprint && i.plan !== false && i.plan !== 'soft').findIndex((i) => i.id === id) + 1; }
+  /** Position label: the PDF position code for concept furnishings (W1, E2 …), else a running number. */
+  number(id) {
+    const it = this.apartment.items.find((i) => i.id === id);
+    if (it?.code) return it.code;
+    return this.apartment.items.filter((i) => i.footprint && i.plan !== false && i.plan !== 'soft').findIndex((i) => i.id === id) + 1;
+  }
 
   render() {
     cancelAnimationFrame(this._fly);

@@ -97,7 +97,7 @@ export class Layout {
     if (!hint) return;
     hint.textContent = input === 'touch'
       ? 'Ziehen: drehen · zwei Finger: zoomen · Doppeltippen: hinfliegen / hingehen · Antippen: Details' + (compact ? '' : ' · ⛶: Vollbild')
-      : 'Ziehen: drehen · Rechtsklick/Umschalt: verschieben · Rad: zoomen · Doppelklick: hinfliegen / hingehen · Klick auf Möbel: Details · 1–4: Stilwelt · F: Vollbild';
+      : 'Ziehen: drehen · Rechtsklick/Umschalt: verschieben · Rad: zoomen · Doppelklick: hinfliegen / hingehen · Klick auf Möbel: Details · 1–8: Stilwelt · F: Vollbild';
   }
 
   /** The gesture hint leaves after the first interaction with the model (or after 9 s). */

@@ -13,7 +13,8 @@ page.on('console', (m) => { if (m.type() === 'error' && !/ERR_CERT|ERR_FAILED|We
 await page.route('https://**/*', route => route.abort());
 await page.goto('http://127.0.0.1:8000/', { waitUntil: 'domcontentloaded' });
 await page.waitForFunction(() => !!window.__app?.viewer?.apartment, null, { timeout: 300_000 });
-for (const id of ['metallic', 'soft', 'brutal', 'quiet']) {
+// concepts last: the photo checks below run on a concept style (most lamps, Color-Drenching)
+for (const id of ['metallic', 'soft', 'brutal', 'quiet', 'travertin', 'espresso', 'stone', 'ivory']) {
   await page.evaluate((s) => window.__app.setVariant(s), id);
   await page.waitForFunction((s) => window.__app.apartment.style.id === s && !window.__app.viewer.suspended, id, { timeout: 120_000 });
   const audit = await page.evaluate(() => window.__app.validate());

@@ -9,6 +9,7 @@
 // dem Artikel, die Platzierung leitet sich aus den Herstellermaßen ab.
 import { styleProduct, slotProducts, dims } from './products.js';
 import { FINISH } from '../engine/builders/architecture.js';
+import { CONCEPT_STYLES } from './concepts/index.js';
 
 const withWalls = (walls) => Object.fromEntries(Object.entries(FINISH).map(([k, v]) => [k, { ...v, ...(walls[k] ? { wall: walls[k] } : {}) }]));
 
@@ -437,7 +438,8 @@ export const STYLES = {
   },
 };
 
-export const DEFAULT_STYLE = 'metallic';
+// Die vier Möblierungskonzepte (PDF) stehen vorn (Tasten 1–4), die bisherigen Stilwelten folgen (5–8).
+export const DEFAULT_STYLE = 'travertin';
 
 // Purchase list, room notes and material rows follow exactly the SKU selection of the scene.
 for (const style of Object.values(STYLES)) {
@@ -472,6 +474,12 @@ for (const style of Object.values(STYLES)) {
   };
 }
 
+{
+  const base = { ...STYLES };
+  for (const k of Object.keys(STYLES)) delete STYLES[k];
+  Object.assign(STYLES, CONCEPT_STYLES, base);
+}
+
 /**
  * Luxus-Einrichtungsregeln (Recherche 09/2026: Quiet-Luxury-/Designer-Leitlinien) und wie sie in
  * WE 13 umgesetzt sind – gilt für alle Stilwelten.
@@ -500,5 +508,5 @@ export const SHARED_NOTES = {
 
 export const roomNotes = (style) => {
   const n = style.notes;
-  return { living: n.living, kitchen: SHARED_NOTES.kitchen, bedroom: n.bedroom, office: n.office, bath: SHARED_NOTES.bath, guestbath: SHARED_NOTES.guestbath, utility: SHARED_NOTES.utility, balcony1: SHARED_NOTES.balcony1, balcony2: SHARED_NOTES.balcony2 };
+  return { living: n.living, kitchen: n.kitchen ?? SHARED_NOTES.kitchen, bedroom: n.bedroom, office: n.office, bath: SHARED_NOTES.bath, guestbath: SHARED_NOTES.guestbath, utility: n.utility ?? SHARED_NOTES.utility, balcony1: n.balcony1 ?? SHARED_NOTES.balcony1, balcony2: n.balcony2 ?? SHARED_NOTES.balcony2 };
 };

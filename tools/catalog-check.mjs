@@ -5,14 +5,23 @@ try {
   await page.route('https://**/*', route => route.abort());
   await page.goto('http://127.0.0.1:8000/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__app?.apartment && !window.__app.viewer.suspended, null, { timeout: 300000 });
-  const result = await page.evaluate(async () => {
+  let result = await page.evaluate(async () => {
     const { ApartmentScene, footprintOf } = await import('/src/engine/scene.js');
     const { validateLayout } = await import('/src/core/validate.js');
     const { STYLES } = await import('/src/data/styles.js');
     const THREE = await import('three');
     const { OFFSET } = await import('/src/core/geometry.js');
     const a = window.__app.apartment;
-    return Object.keys(STYLES).map(style => {
+    // concept styles carry the product list of their PDF (checked by tools/concepts/build.py); here: all
+    // drawn positions are in the scene and every linked article points to an https retailer page
+    const concepts = Object.values(STYLES).filter(s => s.concept).map(s => {
+      const scene = new ApartmentScene(a.baseM, a.lib, s.id).build();
+      const codes = new Set(scene.items.flatMap(i => [i.code, ...(i.products ?? []).map(p => p.pos)]).filter(Boolean));
+      const drawn = Object.keys(s.data.plan).map(c => c.replace(/[a-d]$/, '')).filter(c => c !== 'TV' && !/^W2b|E7[ab]$/.test(c));
+      const badLinks = s.data.items.filter(r => r.url && !/^https:\/\//.test(r.url)).map(r => r.pos);
+      return { style: s.id, missingPositions: [...new Set(drawn.filter(c => !codes.has(c)))], badLinks, issues: validateLayout(scene.items).issues.map(i => i.msg) };
+    });
+    const catalogue = Object.keys(STYLES).filter(style => !STYLES[style].concept).map(style => {
       const scene = new ApartmentScene(a.baseM, a.lib, style).build();
       const furniture = scene.items.filter(i => ['Möbel', 'Polster', 'Bett', 'Tisch', 'Outdoor', 'Textil', 'Leuchte'].includes(i.cat) && !/^(curtain|pelmet|spot|picture-light|sconce|pendant-bath|pendant-guest)/.test(i.id));
       const missing = furniture.filter(i => !i.products?.length).map(i => i.id);
@@ -41,7 +50,12 @@ try {
       if (!glassMeshes || !selections.highboard?.includes('rudsta')) invalid.push('Glasvitrine fehlt');
       return { style, furniture: furniture.length, missing, invalid, issues, guestIssues, selections, glassMeshes };
     });
+    return { catalogue, concepts };
   });
+  const { concepts } = result;
+  console.log(JSON.stringify(concepts, null, 2));
+  if (concepts.some(c => c.missingPositions.length || c.badLinks.length || c.issues.length)) process.exitCode = 1;
+  result = result.catalogue;
   console.log(JSON.stringify(result, null, 2));
   if (result.some(r => r.missing.length || r.invalid.length || r.issues.length || r.guestIssues.length)) process.exitCode = 1;
   for (const [id, minimum] of [['sofa',4],['bed',4],['coffee',3],['desk',3]]) {
