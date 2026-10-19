@@ -16,7 +16,7 @@ try {
     // drawn positions are in the scene and every linked article points to an https retailer page
     const concepts = Object.values(STYLES).filter(s => s.concept).map(s => {
       const scene = new ApartmentScene(a.baseM, a.lib, s.id).build();
-      const codes = new Set(scene.items.map(i => i.code).filter(Boolean));
+      const codes = new Set(scene.items.flatMap(i => [i.code, ...(i.products ?? []).map(p => p.pos)]).filter(Boolean));
       const drawn = Object.keys(s.data.plan).map(c => c.replace(/[a-d]$/, '')).filter(c => c !== 'TV' && !/^W2b|E7[ab]$/.test(c));
       const badLinks = s.data.items.filter(r => r.url && !/^https:\/\//.test(r.url)).map(r => r.pos);
       return { style: s.id, missingPositions: [...new Set(drawn.filter(c => !codes.has(c)))], badLinks, issues: validateLayout(scene.items).issues.map(i => i.msg) };

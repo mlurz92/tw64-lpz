@@ -199,7 +199,7 @@ body.is-switching .switch-overlay { display: grid; }
 @media (max-width: 900px) { .concept-cols { grid-template-columns: 1fr; } }
 
 /* Stilwelt-Leiste direkt im 3D-Viewer */
-.style-bar { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); display: flex; gap: 4px; padding: 5px; background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.6); border-radius: 999px; box-shadow: var(--shadow); max-width: calc(100% - 600px); overflow-x: auto; scrollbar-width: none; z-index: 4; }
+.style-bar { position: absolute; left: calc(50% - 36px); top: 16px; transform: translateX(-50%); display: flex; gap: 4px; padding: 5px; background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.6); border-radius: 999px; box-shadow: var(--shadow); max-width: calc(100% - 640px); overflow-x: auto; scrollbar-width: none; z-index: 4; }
 .style-bar::-webkit-scrollbar { display: none; }
 .style-bar button { display: flex; align-items: center; gap: 8px; background: transparent; border: 0; color: var(--muted); padding: 7px 14px 7px 10px; font-size: 13px; white-space: nowrap; border-radius: 999px; }
 .style-bar button.active { background: var(--ink); color: #f4efe7; }
@@ -207,7 +207,7 @@ body.is-switching .switch-overlay { display: grid; }
 .style-bar kbd { font: 500 10px/1 'Jost', sans-serif; opacity: .55; border: 1px solid currentColor; border-radius: 4px; padding: 2px 4px; }
 .engine-badge { position: absolute; right: 16px; bottom: 16px; font-size: 11px; letter-spacing: .06em; color: var(--muted); background: rgba(247,244,238,.8); padding: 5px 10px; border-radius: 999px; pointer-events: none; }
 @media (max-width: 1480px) { .style-bar kbd { display: none; } .style-bar button { padding: 7px 11px 7px 9px; } }
-@media (max-width: 1180px) { .style-bar { max-width: calc(100% - 32px); top: auto; bottom: 78px; } .hint { top: 16px; } }
+@media (max-width: 1180px) { .style-bar { left: 50%; max-width: calc(100% - 32px); top: auto; bottom: 78px; } .hint { top: 16px; } }
 @media (max-width: 1100px) { .engine-badge { display: none; } }
 
 /* Photoreal mode: path-traced canvas and denoised result above the real-time view */

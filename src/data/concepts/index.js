@@ -147,15 +147,16 @@ function notesOf(data) {
   for (const p of data.pages) for (const b of p.notes ?? []) if (b.type === 'ul') bullets.push(...b.items);
   const strip = (s) => s.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   const pick = (re) => bullets.filter((t) => re.test(t)).map(strip);
-  const zone = (re) => strip(bullets.find((t) => re.test(t)) ?? '');
+  const heads = []; for (const p of data.pages) for (const b of p.notes ?? []) if (b.type === 'h2' && /^\d\.\d/.test(b.text)) heads.push(b.text);
+  const zone = (re) => heads.filter((t) => re.test(t)).join(' · ');
   return {
-    living: { title: 'Wohnen / Essen / Diele', zoning: zone(/\(W1\b|W1,|\(W1/), points: pick(/\((W\d|E\d)|W\d+\)|E\d+\)|\(F\d|F\d+\)|Garderobe|Entrée|Schuhschrank/).filter((t) => !/Bett|Schlafsofa|Bibliothek|Küche|HWR|Balkon/.test(t.slice(0, 40))) },
-    bedroom: { title: 'Schlafen', zoning: zone(/\(S1\b|S1,|S1\)/), points: pick(/\(S\d|S\d+\)|S\d+[,/]|Bett |Nachttisch|Schrankwand|Color-Drenching|Kopfteilwand/) },
-    office: { title: 'Arbeit / Gast', zoning: zone(/\(A1\b|A1\)/), points: pick(/\(A\d|A\d+\)|Schlafsofa|Schreibtisch|Bibliothek/) },
-    kitchen: { title: 'Kochen', zoning: zone(/Küche/), points: pick(/Küche/) },
+    living: { title: 'Wohnen / Essen / Diele', zoning: zone(/Wohnen|Diele/), points: pick(/\((W\d|E\d)|W\d+\)|E\d+\)|\(F\d|F\d+\)|Garderobe|Entrée|Schuhschrank/).filter((t) => !/Bett|Schlafsofa|Bibliothek|Küche|HWR|Balkon/.test(t.slice(0, 40))) },
+    bedroom: { title: 'Schlafen', zoning: zone(/Schlafen/), points: pick(/\(S\d|S\d+\)|S\d+[,/]|Bett |Nachttisch|Schrankwand|Color-Drenching|Kopfteilwand/) },
+    office: { title: 'Arbeit / Gast', zoning: zone(/Arbeit/), points: pick(/\(A\d|A\d+\)|Schlafsofa|Schreibtisch|Bibliothek/) },
+    kitchen: { title: 'Kochen', zoning: zone(/Kochen/), points: pick(/Küche/) },
     utility: { title: 'HWR', zoning: zone(/HWR/), points: pick(/HWR/) },
-    balcony1: { title: 'Balkon 1', zoning: zone(/Balkon 1/), points: [] },
-    balcony2: { title: 'Balkon 2', zoning: zone(/Balkon 2/), points: [] },
+    balcony1: { title: 'Balkon 1', zoning: pick(/Balkon 1/).join(' '), points: [] },
+    balcony2: { title: 'Balkon 2', zoning: pick(/Balkon 2/).join(' '), points: [] },
   };
 }
 
@@ -334,7 +335,10 @@ function furnishConcept(ctx, id) {
   const dLocal = (pt) => { const dx = pt.x - dPlace.pos[0], dy = pt.y - dPlace.pos[1], c = Math.cos(dPlace.yaw), s2 = Math.sin(dPlace.yaw); return dx * c - dy * s2; };
   put('A2', 'desk', 'office', 'Tisch', grp([K.desk(ctx, { w: 1.2, d: 0.6, h: 0.75, kind: cfg.A2 })], [K.tableLamp(ctx, { kind: cfg.A6, metal: cfg.metal }), dLocal(P.A6), 0.75, -0.12], [ctx.helpers.laptop(ctx.M), 0.05, 0.75, 0.02]), dPlace, { codes: ['A2', 'A6'], meta: { size: [1.2, 0.6] } });
   void dS;
-  put('A3', 'task-chair', 'office', 'Polster', cfg.A3 === 'lucie' ? K.chairLucie(ctx, {}) : K.chairHattefjall(ctx, {}), at('A3', 'E'), { codes: ['A3', 'A12'], meta: { size: [0.62, 0.62], round: true } });
+  put('A3', 'task-chair', 'office', 'Polster', cfg.A3 === 'lucie' ? K.chairLucie(ctx, {}) : K.chairHattefjall(ctx, {}), at('A3', 'E'), { meta: { size: [0.62, 0.62], round: true } });
+  // A12: Glas-Bodenschutzmatte 120 × 90 unter dem Drehstuhl (schützt die Natureiche-Dielen)
+  const mat = new ctx.THREE.Group(); const gm = ctx.box(mat, ctx.productM.glass, [0.9, 0.004, 1.2], [0, 0.002, 0]); gm.castShadow = false;
+  put('A12', 'floor-mat', 'office', 'Textil', mat, at('A3', 'E'), { meta: { size: [0.9, 1.2], plan: 'soft' } });
   const shelfS = S('A4', [0.8, 0.28, 2.37]);
   let shelf;
   if (cfg.A4 === 'billy') shelf = K.billy(ctx, {});
